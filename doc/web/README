@@ -1,0 +1,4 @@
+Los documentos creado en latex pueden ser fácilmente traducidos a html con el comando:
+$ htlatex tutorial.tex
+pero hay que tener cuidado, ya que este generaré un cantidad enorme de ficheros en el mismo directorio
+donde es ejecutado

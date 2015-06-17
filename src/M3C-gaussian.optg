@@ -1,0 +1,167 @@
+#!/bin/bash
+##################################################################
+#
+#  This file is part of M3C
+#  Copyright (C) by authors (2012-2015)
+#  
+#  Authors:
+#    * Dr. Néstor F. Aguirre (2012-2015)
+#          nestor.aguirre@uam.es
+#    * Dr. Sergio Díaz-Tendero (2012-2015)
+#          sergio.diaztendero@uam.es
+#    * Prof. M. Paul-Antoine Hervieux (2012-2015)
+#          Paul-Antoine.Hervieux@ipcms.unistra.fr
+#    * Prof. Fernando Martín (2012-2015)
+#          fernando.martin@uam.es
+#    * Prof. Manuel Alcamí (2012-2015)
+#          manuel.alcami@uam.es
+#  
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the
+#  following conditions are met:
+#  
+#   * Redistributions of binary or source code must retain
+#     the above copyright notice and this list of conditions
+#     and/or other materials provided with the distribution.
+#   * All advertising materials mentioning features or use of
+#     this software must display the following acknowledgement:
+#     
+#     This product includes software from M3C project.
+#
+##################################################################
+
+GAUSSIAN_TEMPLATE=$1
+
+if [ -f "$M3C_HOME/bin/gaussianDriver.sh" ]
+then
+	source $M3C_HOME/bin/gaussianDriver.sh
+else
+	source $M3C_HOME/src/gaussianDriver.sh
+fi
+
+function optgeom()
+{
+	local iFileXYZ=$1
+	local charge=$2
+	local mult=$3
+	
+	cp $iFileXYZ ${iFileXYZ%.*}.xyz0
+	optgGAUSSIANTemplate $GAUSSIAN_TEMPLATE ${iFileXYZ%.*}.xyz0 $charge $mult > ${iFileXYZ%.*}.xyz
+	mv ${iFileXYZ%.*}.out history.optg/ 2> /dev/null
+}
+
+function main()
+{
+	local xyzFile=""
+	local charge=""
+	local mult=""
+	
+	local i=0
+	local j=0
+	local ij=0
+	
+	if [ -n "$SLURM_NTASKS" ]
+	then
+		nThreads=$SLURM_NTASKS
+	else
+		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
+	fi
+	
+	if [ -d "history.optg" ]
+	then
+		echo "@@@ WARNING @@@ There is already a history directory (history.optg). Backup copy will be generated"
+		mv history.optg history.optg.backup
+	fi
+	mkdir history.optg
+	
+	xyzFile=( `ls *.xyz` )
+	charge=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'` )
+	mult=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'` )
+	
+	#-----------------------------------------------------------------------
+	
+	startTime=`date "+%s"`
+	
+	ij=-1
+	for (( i=0; i<=$(( ${#xyzFile[@]}/$nThreads-1 )); i++ ))
+	do
+		iStartTime=`date "+%s"`
+		
+		echo -n "Running: "
+		
+		for (( j=1; j<=$nThreads; j++ ))
+		do
+			ij=$(( $j-1+$nThreads*$i ))
+			
+			if (( j != $nThreads ))
+			then
+				printf "%15s," "${xyzFile[$ij]%.*}"
+			else
+				printf "%15s" "${xyzFile[$ij]%.*}"
+			fi
+			
+			optgeom ${xyzFile[$ij]} ${charge[$ij]} ${mult[$ij]} &
+		done
+		
+		echo -n " ... "
+		
+		wait
+		
+		iEndTime=`date "+%s"`
+		elapsedTime=$(( $iEndTime-$iStartTime ))
+		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+	done
+
+	if (( $ij < ${#xyzFile[@]} ))
+	then
+		iStartTime=`date "+%s"`
+		
+		echo -n "Running: "
+		
+		k=1
+		for (( i=$(( $ij+1 )); i<${#xyzFile[@]}; i++ ))
+		do
+			if (( $i != $(( ${#xyzFile[@]} - 1 )) ))
+			then
+				printf "%15s," "${xyzFile[$i]%.*}"
+			else
+				printf "%15s " "${xyzFile[$i]%.*}"
+			fi
+			
+			optgeom ${xyzFile[$i]} ${charge[$i]} ${mult[$i]} &
+			
+			k=$(( $k+1 ))
+		done
+		
+		for (( i=$k; i<=$nThreads; i++ ))
+		do
+			if (( i != $nThreads ))
+			then
+				printf "%15s " ""
+			else
+				printf "%15s" ""
+			fi
+		done
+		
+		echo -n " ... "
+		
+		wait
+		
+		iEndTime=`date "+%s"`
+		elapsedTime=$(( $iEndTime-$iStartTime ))
+		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+	fi
+	
+	endTime=`date "+%s"`
+	elapsedTime=$(( $endTime-$startTime ))
+	
+	echo -n "        "
+	printf "%$(( 15*(${nThreads}+1) ))s" ""
+	echo "            ` echo -n  "Total"`: $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+	
+	#-----------------------------------------------------------------------
+
+}
+
+main $*
+

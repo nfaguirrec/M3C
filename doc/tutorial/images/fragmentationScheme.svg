@@ -1,0 +1,1431 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   sodipodi:docname="fragmentationScheme.svg"
+   height="1459.1802"
+   width="2394.5779"
+   inkscape:version="0.48.4 r9939"
+   version="1.1"
+   id="svg2"
+   inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/fragmentationScheme.png"
+   inkscape:export-xdpi="72.15435"
+   inkscape:export-ydpi="72.15435">
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1060"
+     id="namedview4"
+     showgrid="false"
+     inkscape:zoom="0.32168806"
+     inkscape:cx="1442.5726"
+     inkscape:cy="773.61357"
+     inkscape:window-x="-2"
+     inkscape:window-y="-3"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g5894"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     showborder="true"
+     inkscape:showpageshadow="false"
+     fit-margin-top="10"
+     fit-margin-left="10"
+     fit-margin-right="10"
+     fit-margin-bottom="10" />
+  <metadata
+     id="metadata8">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs6">
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend"
+       style="overflow:visible">
+      <path
+         id="path6485"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Lend"
+       style="overflow:visible">
+      <path
+         id="path6479"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.8,0,0,-0.8,-10,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <linearGradient
+       id="linearGradient6462">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop6464" />
+      <stop
+         style="stop-color:#0000ff;stop-opacity:1;"
+         offset="1"
+         id="stop6466" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient6462-5"
+       id="radialGradient6468-5"
+       cx="283.55664"
+       cy="-29.669813"
+       fx="283.55664"
+       fy="-29.669813"
+       r="27.883879"
+       gradientTransform="translate(0,2.9570339e-5)"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       id="linearGradient6462-5">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop6464-5" />
+      <stop
+         style="stop-color:#0000ff;stop-opacity:1;"
+         offset="1"
+         id="stop6466-2" />
+    </linearGradient>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-7"
+       style="overflow:visible">
+      <path
+         inkscape:connector-curvature="0"
+         id="path6485-9"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-7-3"
+       style="overflow:visible">
+      <path
+         inkscape:connector-curvature="0"
+         id="path6485-9-3"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-5"
+       style="overflow:visible">
+      <path
+         id="path6485-0"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <radialGradient
+       r="27.883879"
+       fy="-29.669813"
+       fx="283.55664"
+       cy="-29.669813"
+       cx="283.55664"
+       gradientTransform="translate(0,2.9570339e-5)"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient7117-4"
+       xlink:href="#linearGradient6462-5-2"
+       inkscape:collect="always" />
+    <linearGradient
+       id="linearGradient6462-5-2">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop6464-5-8" />
+      <stop
+         style="stop-color:#0000ff;stop-opacity:1;"
+         offset="1"
+         id="stop6466-2-5" />
+    </linearGradient>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="marker3864"
+       style="overflow:visible">
+      <path
+         id="path3866"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient6462-2"
+       id="radialGradient6468-2"
+       cx="283.55664"
+       cy="-29.669813"
+       fx="283.55664"
+       fy="-29.669813"
+       r="27.883879"
+       gradientTransform="translate(0,2.9570339e-5)"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       id="linearGradient6462-2">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop6464-1" />
+      <stop
+         style="stop-color:#0000ff;stop-opacity:1;"
+         offset="1"
+         id="stop6466-3" />
+    </linearGradient>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-4"
+       style="overflow:visible">
+      <path
+         id="path6485-6"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <radialGradient
+       r="27.883879"
+       fy="-29.669813"
+       fx="283.55664"
+       cy="-29.669813"
+       cx="283.55664"
+       gradientTransform="translate(0,2.9570339e-5)"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient7117-2"
+       xlink:href="#linearGradient6462-5-7"
+       inkscape:collect="always" />
+    <linearGradient
+       id="linearGradient6462-5-7">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop6464-5-5" />
+      <stop
+         style="stop-color:#006600;stop-opacity:1;"
+         offset="1"
+         id="stop6466-2-55" />
+    </linearGradient>
+    <marker
+       style="overflow:visible"
+       id="Arrow1Mstart"
+       refX="0"
+       refY="0"
+       orient="auto"
+       inkscape:stockid="Arrow1Mstart">
+      <path
+         inkscape:connector-curvature="0"
+         transform="matrix(0.4,0,0,0.4,4,0)"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         id="path4917" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="marker4665-4"
+       style="overflow:visible">
+      <path
+         id="path4667-8"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;marker-start:none"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Arrow1Mstart-7"
+       refX="0"
+       refY="0"
+       orient="auto"
+       inkscape:stockid="Arrow1Mstart">
+      <path
+         inkscape:connector-curvature="0"
+         transform="matrix(0.4,0,0,0.4,4,0)"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         id="path4917-2" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="marker4665-4-0"
+       style="overflow:visible">
+      <path
+         id="path4667-8-3"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;marker-start:none"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-76"
+       style="overflow:visible">
+      <path
+         id="path6485-3"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <linearGradient
+       id="linearGradient6462-5-7-2">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop6464-5-5-4" />
+      <stop
+         style="stop-color:#006600;stop-opacity:1;"
+         offset="1"
+         id="stop6466-2-55-1" />
+    </linearGradient>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="marker5299"
+       style="overflow:visible">
+      <path
+         id="path5301"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <linearGradient
+       id="linearGradient6462-5-1">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop6464-5-55" />
+      <stop
+         style="stop-color:#0000ff;stop-opacity:1;"
+         offset="1"
+         id="stop6466-2-2" />
+    </linearGradient>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="marker5307"
+       style="overflow:visible">
+      <path
+         id="path5309"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <linearGradient
+       id="linearGradient6462-20">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop6464-18" />
+      <stop
+         style="stop-color:#0000ff;stop-opacity:1;"
+         offset="1"
+         id="stop6466-6" />
+    </linearGradient>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-2"
+       style="overflow:visible">
+      <path
+         id="path6485-91"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <linearGradient
+       id="linearGradient6462-5-7-2-6">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop6464-5-5-4-6" />
+      <stop
+         style="stop-color:#006600;stop-opacity:1;"
+         offset="1"
+         id="stop6466-2-55-1-6" />
+    </linearGradient>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="marker5809"
+       style="overflow:visible">
+      <path
+         id="path5811"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient6462-5-1-6"
+       id="radialGradient5741-3"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(0,2.9570339e-5)"
+       cx="283.55664"
+       cy="-29.669813"
+       fx="283.55664"
+       fy="-29.669813"
+       r="27.883879" />
+    <linearGradient
+       id="linearGradient6462-5-1-6">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop6464-5-55-1" />
+      <stop
+         style="stop-color:#0000ff;stop-opacity:1;"
+         offset="1"
+         id="stop6466-2-2-4" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient6462-20"
+       id="radialGradient6005"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(0,2.9570339e-5)"
+       cx="283.55664"
+       cy="-29.669813"
+       fx="283.55664"
+       fy="-29.669813"
+       r="27.883879" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient6462-5-1-6"
+       id="radialGradient6007"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(0,2.9570337e-5)"
+       cx="283.55664"
+       cy="-29.669813"
+       fx="283.55664"
+       fy="-29.669813"
+       r="27.883879" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient6462-5-7-2-6"
+       id="radialGradient6009"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(0,2.9570339e-5)"
+       cx="283.55664"
+       cy="-29.669813"
+       fx="283.55664"
+       fy="-29.669813"
+       r="27.883879" />
+  </defs>
+  <g
+     id="g5894"
+     transform="translate(-3198.9374,271.12052)">
+    <path
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       sodipodi:nodetypes="csccsccccc"
+       inkscape:connector-curvature="0"
+       d="m 5257.4013,675.90404 c 96.717,-48.35844 432.3145,-251.90971 202.2265,-360.49052 -195.6321,-92.32075 -903.4246,17.58491 -903.4246,17.58491 l 27.5005,33.84728 c 0,0 707.7925,-109.90566 903.4246,-17.58491 230.088,108.58082 -105.5095,312.13204 -202.2265,360.49054 l 53.8297,5.7188 -171.4528,50.5566 98.9151,-140.67926 z"
+       style="fill:#ff0000;fill-opacity:1;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       id="path6354-4-0" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C5SCyclic.png"
+       xlink:href="C5SCyclic.png"
+       transform="matrix(0.97040371,-0.24148839,0.24148839,0.97040371,0,0)"
+       width="194.45314"
+       height="150.87357"
+       id="image3363-0-4-6-0"
+       x="3838.3167"
+       y="1199.7537"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       inkscape:export-xdpi="50"
+       inkscape:export-ydpi="50"
+       style="opacity:0.57835825" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C2SLineal.png"
+       xlink:href="C2SLineal.png"
+       style="opacity:0.7396552"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       width="114.05948"
+       height="57.927197"
+       id="image10-92-3-4-89"
+       x="2847.1707"
+       y="2923.3503"
+       transform="matrix(0.83323375,-0.5529209,0.5529209,0.83323375,0,0)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C3SCyclic.png"
+       xlink:href="C3SCyclic.png"
+       style="opacity:0.37931034"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-3030.3247"
+       x="3526.0059"
+       id="image3084-3-3-7-0"
+       height="128.87904"
+       width="112.1415"
+       transform="matrix(0.63309847,0.77407127,-0.77407127,0.63309847,0,0)" />
+    <path
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       sodipodi:nodetypes="csccsccccc"
+       inkscape:connector-curvature="0"
+       d="m 4751.7086,728.27704 c 96.717,-48.3585 432.3145,-251.90972 202.2265,-360.49054 -195.6321,-92.32075 -903.4246,17.58491 -903.4246,17.58491 l 27.5005,33.84728 c 0,0 707.7925,-109.90566 903.4246,-17.58491 230.088,108.58083 -105.5095,312.13206 -202.2265,360.49056 l 53.8297,5.7188 -171.4528,50.5566 98.9151,-140.6793 z"
+       style="fill:#ff0000;fill-opacity:1;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       id="path6354-2" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C3SCyclic.png"
+       xlink:href="C3SCyclic.png"
+       style="opacity:0.26293102"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-1862.0728"
+       x="4235.3535"
+       id="image3084-3-3-3-0"
+       height="128.87904"
+       width="112.1415"
+       transform="matrix(0.83135862,0.5557363,-0.5557363,0.83135862,0,0)" />
+    <path
+       id="path26-1"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       sodipodi:nodetypes="csccsccccc"
+       inkscape:connector-curvature="0"
+       d="m 4267.6888,777.24074 c 96.717,-48.3585 432.3145,-251.90972 202.2265,-360.49055 -195.6321,-92.32075 -903.4246,17.58491 -903.4246,17.58491 l 27.5005,33.84728 c 0,0 707.7925,-109.90566 903.4246,-17.58491 230.088,108.58083 -105.5095,312.13207 -202.2265,360.49057 l 53.8297,5.7188 -171.4528,50.5566 98.9151,-140.6793 z"
+       style="fill:#ff0000;fill-opacity:1;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C3SCyclic.png"
+       xlink:href="C3SCyclic.png"
+       style="opacity:0.76724135"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-4124.8242"
+       x="2221.8833"
+       id="image3084-3-3-2-9"
+       height="128.87904"
+       width="112.1415"
+       transform="matrix(0.3110272,0.95040101,-0.95040101,0.3110272,0,0)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C5SCyclic.png"
+       xlink:href="C5SCyclic.png"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-186.91762"
+       x="3441.0725"
+       id="image3363-0-2"
+       height="150.87357"
+       width="194.45314"
+       transform="matrix(0.99230029,0.12385528,-0.12385528,0.99230029,0,0)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C5SCyclic.png"
+       xlink:href="C5SCyclic.png"
+       transform="matrix(0.99230029,0.12385528,-0.12385528,0.99230029,0,0)"
+       width="194.45314"
+       height="150.87357"
+       id="image3363-0-4-3"
+       x="4007.9304"
+       y="-294.10815"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       inkscape:export-xdpi="50"
+       inkscape:export-ydpi="50" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       style="opacity:0.27051733"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="945.63904"
+       x="3886.3821"
+       id="image3902-2-7-98-5"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       style="opacity:0.63793137"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="934.45032"
+       x="3878.8867"
+       id="image3902-2-7-26-9"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       style="opacity:0.74568936"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="920.66736"
+       x="3874.2925"
+       id="image3902-2-7-8-2"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="905.88257"
+       x="3873.2773"
+       id="image3902-2-7-0"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C4SCyclic.png"
+       xlink:href="C4SCyclic.png"
+       style="opacity:0.41810345"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="181.33429"
+       x="4987.8828"
+       id="image3214-4-4-1-9-0"
+       height="135.91354"
+       width="191.26649"
+       transform="matrix(0.99110989,0.1330458,-0.1330458,0.99110989,0,0)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C4SCyclic.png"
+       xlink:href="C4SCyclic.png"
+       style="opacity:0.58189655"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="2312.0867"
+       x="4424.873"
+       id="image3214-4-4-1-1-6"
+       height="135.91354"
+       width="191.26649"
+       transform="matrix(0.95396057,-0.29993205,0.29993205,0.95396057,0,0)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(0.69359826,0.72036203,-0.72036203,0.69359826,0,0)"
+       style="opacity:0.55603452"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-3023.7524"
+       x="4277.2812"
+       id="image3902-2-7-94-69-4"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(0.69359826,0.72036203,-0.72036203,0.69359826,0,0)"
+       style="opacity:0.78879311"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-3005.0686"
+       x="4276.1821"
+       id="image3902-2-7-9-9-1"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(0.69359826,0.72036203,-0.72036203,0.69359826,0,0)"
+       style="opacity:0.34051729"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-3038.0403"
+       x="4278.3804"
+       id="image3902-2-7-2-1-0"
+       height="47.260193"
+       width="46.02829" />
+    <path
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       transform="matrix(0.55406468,0,0,0.55406468,3102.0462,549.53296)"
+       sodipodi:open="true"
+       sodipodi:end="10.73126"
+       sodipodi:start="4.4505896"
+       d="m 276.72965,-55.148386 c 14.07142,-3.770427 28.53511,4.580183 32.30553,18.65161 3.77043,14.071427 -4.58018,28.5351081 -18.65161,32.3055356 -14.07142,3.77042739 -28.53511,-4.5801828 -32.30553,-18.6516096 -3.76373,-14.046411 4.55065,-28.489248 18.58755,-32.288286"
+       sodipodi:ry="26.377359"
+       sodipodi:rx="26.377359"
+       sodipodi:cy="-29.669813"
+       sodipodi:cx="283.55661"
+       id="path6460-7"
+       style="fill:url(#radialGradient6005);fill-opacity:1;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       sodipodi:type="arc" />
+    <path
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       inkscape:connector-curvature="0"
+       id="path6470-8"
+       d="M 3283.9359,513.3167 3419.0227,411.07054"
+       style="fill:none;stroke:#000000;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Mend)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C5SCyclic.png"
+       xlink:href="C5SCyclic.png"
+       transform="matrix(0.73688647,-0.67601652,0.67601652,0.73688647,0,0)"
+       width="194.45314"
+       height="150.87357"
+       id="image3363-0-4-6-1-3"
+       x="2768.0857"
+       y="2915.9016"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       inkscape:export-xdpi="50"
+       inkscape:export-ydpi="50"
+       style="opacity:0.32089568" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C5SCyclic.png"
+       xlink:href="C5SCyclic.png"
+       transform="matrix(0.11291161,-0.99360504,0.99360504,0.11291161,0,0)"
+       width="194.45314"
+       height="150.87357"
+       id="image3363-0-4-6-1-0-6"
+       x="125.28028"
+       y="4055.0615"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       inkscape:export-xdpi="50"
+       inkscape:export-ydpi="50"
+       style="opacity:0.15671644" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C5SCyclic.png"
+       xlink:href="C5SCyclic.png"
+       transform="matrix(-0.77001515,-0.6380256,0.6380256,-0.77001515,0,0)"
+       width="194.45314"
+       height="150.87357"
+       id="image3363-0-4-6-1-0-3-4"
+       x="-3425.4988"
+       y="2403.7341"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       inkscape:export-xdpi="50"
+       inkscape:export-ydpi="50"
+       style="opacity:0.08955222" />
+    <path
+       transform="matrix(0.97164246,0,0,0.97164246,3776.6384,810.38404)"
+       d="m 991.64389,159.1581 c 0,118.46149 -96.03201,214.4935 -214.4935,214.4935 -118.46149,0 -214.4935,-96.03201 -214.4935,-214.4935 0,-118.461493 96.03201,-214.493503 214.4935,-214.493503 118.46149,0 214.4935,96.03201 214.4935,214.493503 z"
+       sodipodi:ry="214.4935"
+       sodipodi:rx="214.4935"
+       sodipodi:cy="159.1581"
+       sodipodi:cx="777.15039"
+       id="path3807-5-3"
+       style="fill:none;stroke:#007ab5;stroke-width:9.50040817;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:9.50040821, 19.00081641;stroke-dashoffset:0"
+       sodipodi:type="arc" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(0.85213473,0.52332247,-0.52332247,0.85213473,0,0)"
+       style="opacity:0.55603452"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-1333.2896"
+       x="3971.8362"
+       id="image3902-2-7-94-7"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(0.85213473,0.52332247,-0.52332247,0.85213473,0,0)"
+       style="opacity:0.78879311"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-1314.6056"
+       x="3970.7371"
+       id="image3902-2-7-9-4"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(-0.85213473,-0.52332247,0.52332247,-0.85213473,0,0)"
+       style="opacity:0.55603452"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="1159.2417"
+       x="-4013.2703"
+       id="image3902-2-7-94-6-18"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(-0.85213473,-0.52332247,0.52332247,-0.85213473,0,0)"
+       style="opacity:0.78879311"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="1177.9257"
+       x="-4014.3694"
+       id="image3902-2-7-9-5-4"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(-0.85213473,-0.52332247,0.52332247,-0.85213473,0,0)"
+       style="opacity:0.34051729"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="1144.954"
+       x="-4012.1711"
+       id="image3902-2-7-2-2-9"
+       height="47.260193"
+       width="46.02829" />
+    <path
+       transform="matrix(0.97164246,0,0,0.97164246,3254.3934,794.84104)"
+       d="m 991.64389,159.1581 c 0,118.46149 -96.03201,214.4935 -214.4935,214.4935 -118.46149,0 -214.4935,-96.03201 -214.4935,-214.4935 0,-118.461493 96.03201,-214.493503 214.4935,-214.493503 118.46149,0 214.4935,96.03201 214.4935,214.493503 z"
+       sodipodi:ry="214.4935"
+       sodipodi:rx="214.4935"
+       sodipodi:cy="159.1581"
+       sodipodi:cx="777.15039"
+       id="path3807-5-8-94"
+       style="fill:none;stroke:#007ab5;stroke-width:9.50040817;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:9.50040821, 19.00081641;stroke-dashoffset:0"
+       sodipodi:type="arc" />
+    <path
+       transform="matrix(0.97164246,0,0,0.97164246,3350.76,101.62286)"
+       d="m 991.64389,159.1581 c 0,118.46149 -96.03201,214.4935 -214.4935,214.4935 -118.46149,0 -214.4935,-96.03201 -214.4935,-214.4935 0,-118.461493 96.03201,-214.493503 214.4935,-214.493503 118.46149,0 214.4935,96.03201 214.4935,214.493503 z"
+       sodipodi:ry="214.4935"
+       sodipodi:rx="214.4935"
+       sodipodi:cy="159.1581"
+       sodipodi:cx="777.15039"
+       id="path3807-5-6-1"
+       style="fill:none;stroke:#007ab5;stroke-width:9.50040817;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:9.50040821, 19.00081641;stroke-dashoffset:0"
+       sodipodi:type="arc" />
+    <path
+       transform="matrix(0.97164246,0,0,0.97164246,4320.6437,791.73244)"
+       d="m 991.64389,159.1581 c 0,118.46149 -96.03201,214.4935 -214.4935,214.4935 -118.46149,0 -214.4935,-96.03201 -214.4935,-214.4935 0,-118.461493 96.03201,-214.493503 214.4935,-214.493503 118.46149,0 214.4935,96.03201 214.4935,214.493503 z"
+       sodipodi:ry="214.4935"
+       sodipodi:rx="214.4935"
+       sodipodi:cy="159.1581"
+       sodipodi:cx="777.15039"
+       id="path3807-5-8-9-9"
+       style="fill:none;stroke:#007ab5;stroke-width:9.50040817;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:9.50040821, 19.00081641;stroke-dashoffset:0"
+       sodipodi:type="arc" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(0.9680208,0.25086994,-0.25086994,0.9680208,0,0)"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-300.27585"
+       x="5188.8325"
+       id="image3902-2-9-1-8"
+       height="48.721142"
+       width="47.451157" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C2SLineal.png"
+       xlink:href="C2SLineal.png"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       width="114.05948"
+       height="57.927197"
+       id="image10-92-3-3-3"
+       x="678.00085"
+       y="4087.8108"
+       transform="matrix(0.41275656,-0.91084138,0.91084138,0.41275656,0,0)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C2SLineal.png"
+       xlink:href="C2SLineal.png"
+       style="opacity:0.47844831"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       width="114.05948"
+       height="57.927197"
+       id="image10-92-3-4-2-3"
+       x="1815.1377"
+       y="3664.7676"
+       transform="matrix(0.62614609,-0.77970576,0.77970576,0.62614609,0,0)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C2SLineal.png"
+       xlink:href="C2SLineal.png"
+       style="opacity:0.30603446"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       width="114.05948"
+       height="57.927197"
+       id="image10-92-3-4-8-3"
+       x="-257.63351"
+       y="4104.8887"
+       transform="matrix(0.15818137,-0.98741007,0.98741007,0.15818137,0,0)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C2SLineal.png"
+       xlink:href="C2SLineal.png"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       width="114.05948"
+       height="57.927197"
+       id="image10-92-3-0"
+       x="3742.728"
+       y="1615.5392"
+       transform="matrix(0.9799256,-0.19936353,0.19936353,0.9799256,0,0)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(0.85213473,0.52332247,-0.52332247,0.85213473,0,0)"
+       style="opacity:0.34051729"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-1347.5774"
+       x="3972.9353"
+       id="image3902-2-7-2-4"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(0.41588426,-0.90941755,0.90941755,0.41588426,0,0)"
+       style="opacity:0.55603452"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="4439.4956"
+       x="892.50861"
+       id="image3902-2-7-94-8-5"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(0.41588426,-0.90941755,0.90941755,0.41588426,0,0)"
+       style="opacity:0.78879311"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="4458.1797"
+       x="891.40948"
+       id="image3902-2-7-9-1-0"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(-0.41588426,0.90941755,-0.90941755,-0.41588426,0,0)"
+       style="opacity:0.55603452"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-4613.5439"
+       x="-933.94257"
+       id="image3902-2-7-94-6-1-5"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(-0.41588426,0.90941755,-0.90941755,-0.41588426,0,0)"
+       style="opacity:0.78879311"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-4594.8599"
+       x="-935.04169"
+       id="image3902-2-7-9-5-2-1"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(-0.41588426,0.90941755,-0.90941755,-0.41588426,0,0)"
+       style="opacity:0.34051729"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-4627.8315"
+       x="-932.84357"
+       id="image3902-2-7-2-2-0-4"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C1.png"
+       xlink:href="C1.png"
+       transform="matrix(0.41588426,-0.90941755,0.90941755,0.41588426,0,0)"
+       style="opacity:0.34051729"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="4425.208"
+       x="893.6076"
+       id="image3902-2-7-2-24-8"
+       height="47.260193"
+       width="46.02829" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C2SLineal.png"
+       xlink:href="C2SLineal.png"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       width="114.05948"
+       height="57.927197"
+       id="image10-92-3-3-4-3"
+       x="-4664.8213"
+       y="311.36282"
+       transform="matrix(-0.95425207,-0.29900331,0.29900331,-0.95425207,0,0)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C3SCyclic.png"
+       xlink:href="C3SCyclic.png"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="-4650.1953"
+       x="725.72192"
+       id="image3084-3-3-4"
+       height="128.87904"
+       width="112.1415"
+       transform="matrix(-0.02630044,0.99965408,-0.99965408,-0.02630044,0,0)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C4SCyclic.png"
+       xlink:href="C4SCyclic.png"
+       style="opacity:0.12931034"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="166.31104"
+       x="4975.8857"
+       id="image3214-4-4-1-9-5-7"
+       height="135.91354"
+       width="191.26649"
+       transform="matrix(0.99110989,0.1330458,-0.1330458,0.99110989,0,0)" />
+    <image
+       sodipodi:absref="/home/nestor/Dropbox/UAM/M3C-v1.0/doc/tutorial/images/C4SCyclic.png"
+       xlink:href="C4SCyclic.png"
+       inkscape:export-ydpi="50"
+       inkscape:export-xdpi="50"
+       inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+       y="2299.105"
+       x="4441.0986"
+       id="image3214-4-4-1-8"
+       height="135.91354"
+       width="191.26649"
+       transform="matrix(0.95396057,-0.29993205,0.29993205,0.95396057,0,0)" />
+    <text
+       sodipodi:linespacing="125%"
+       id="text3937-7"
+       y="76.21743"
+       x="3709.0574"
+       style="font-size:50.21082687px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#0000ff;fill-opacity:1;stroke:none;font-family:Nimbus Roman No9 L;-inkscape-font-specification:Nimbus Roman No9 L"
+       xml:space="preserve"><tspan
+         style="text-align:center;text-anchor:middle;fill:#0000ff;fill-opacity:1"
+         y="76.21743"
+         x="3709.0574"
+         id="tspan3939-9"
+         sodipodi:role="line">Ionization</tspan><tspan
+         id="tspan4026-3"
+         style="text-align:center;text-anchor:middle;fill:#0000ff;fill-opacity:1"
+         y="138.98096"
+         x="3709.0574"
+         sodipodi:role="line">&amp; excitation</tspan><tspan
+         style="text-align:center;text-anchor:middle;fill:#0000ff;fill-opacity:1"
+         id="tspan3941-4"
+         y="201.74449"
+         x="3709.0574"
+         sodipodi:role="line">10<tspan
+   id="tspan3943-3"
+   style="font-size:32.63749695px;text-align:center;text-anchor:middle;baseline-shift:super;fill:#0000ff;fill-opacity:1">-16</tspan> s</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3945-4"
+       y="620.94196"
+       x="3207.6821"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Nimbus Roman No9 L;-inkscape-font-specification:Nimbus Roman No9 L"
+       xml:space="preserve"><tspan
+         style="font-size:50.21018219px"
+         y="620.94196"
+         x="3207.6821"
+         id="tspan3947-4"
+         sodipodi:role="line">e<tspan
+   id="tspan3949-9"
+   style="font-size:50.21018219px;baseline-shift:super">- </tspan>( ~70 eV)</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3937-2-0"
+       y="159.53059"
+       x="5363.3535"
+       style="font-size:50.21082687px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#0000ff;fill-opacity:1;stroke:none;font-family:Nimbus Roman No9 L;-inkscape-font-specification:Nimbus Roman No9 L"
+       xml:space="preserve"><tspan
+         id="tspan4026-4-0"
+         style="text-align:center;text-anchor:middle;fill:#0000ff;fill-opacity:1"
+         y="159.53059"
+         x="5363.3535"
+         sodipodi:role="line">Fragmentation</tspan><tspan
+         style="text-align:center;text-anchor:middle;fill:#0000ff;fill-opacity:1"
+         id="tspan3941-6-0"
+         y="222.29413"
+         x="5363.3535"
+         sodipodi:role="line">10<tspan
+   id="tspan3943-4-2"
+   style="font-size:32.63749695px;text-align:center;text-anchor:middle;baseline-shift:super;fill:#0000ff;fill-opacity:1">-12</tspan> - 10<tspan
+   id="tspan4574-7"
+   style="font-size:65.00091553%;baseline-shift:super">-9</tspan> s</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text4576-0"
+       y="150.54581"
+       x="4208.9795"
+       style="font-size:74.7527771px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Nimbus Roman No9 L;-inkscape-font-specification:Nimbus Roman No9 L"
+       xml:space="preserve"><tspan
+         y="150.54581"
+         x="4208.9795"
+         id="tspan4578-72"
+         sodipodi:role="line">+</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text4576-5-5"
+       y="831.09033"
+       x="3885.6021"
+       style="font-size:74.7527771px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Nimbus Roman No9 L;-inkscape-font-specification:Nimbus Roman No9 L"
+       xml:space="preserve"><tspan
+         y="831.09033"
+         x="3885.6021"
+         id="tspan4578-2-3"
+         sodipodi:role="line">+</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text4576-6-8"
+       y="908.02429"
+       x="4353.8003"
+       style="font-size:74.7527771px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Nimbus Roman No9 L;-inkscape-font-specification:Nimbus Roman No9 L"
+       xml:space="preserve"><tspan
+         y="908.02429"
+         x="4353.8003"
+         id="tspan4578-7-5"
+         sodipodi:role="line">+</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text4576-7-9"
+       y="894.83569"
+       x="5211.064"
+       style="font-size:74.7527771px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Nimbus Roman No9 L;-inkscape-font-specification:Nimbus Roman No9 L"
+       xml:space="preserve"><tspan
+         y="894.83569"
+         x="5211.064"
+         id="tspan4578-4-4"
+         sodipodi:role="line">+</tspan></text>
+    <g
+       transform="translate(2831.805,162.92981)"
+       id="g5043-1">
+      <g
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:normal;word-spacing:normal;text-anchor:start;fill:none;stroke:#000000;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10.43299961;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+         id="g5045-9"
+         transform="matrix(1.0619842,0,0,-1.0619842,-92.947941,508.2688)"
+         xml:space="preserve"
+         stroke-miterlimit="10.433"
+         font-style="normal"
+         font-variant="normal"
+         font-weight="normal"
+         font-stretch="normal"
+         font-size-adjust="none"
+         letter-spacing="normal"
+         word-spacing="normal"><path
+           style="fill:#000000;stroke-width:0"
+           inkscape:connector-curvature="0"
+           d="m 490.8,417.81 0.01,0.02 0.01,0.03 0.02,0.05 0.02,0.05 0.02,0.05 0.02,0.05 0.02,0.05 0.02,0.05 0.01,0.05 0.01,0.03 0.01,0.02 0.01,0.02 0.01,0.03 0,0.02 0.01,0.02 0.01,0.02 0,0.02 0.01,0.02 0,0.02 0.01,0.01 0,0.02 0,0.02 0,0.01 0,0.01 0.01,0.01 c 0,0.05 0,0.55 -0.6,0.55 -0.45,0 -0.55,-0.3 -0.64,-0.61 -3.25,-7.38 -5.08,-10.7 -13.61,-10.7 h -7.26 c -0.71,0 -0.8,0 -1.1,0.04 -0.5,0.05 -0.65,0.1 -0.65,0.5 0,0.14 0,0.25 0.25,1.14 l 3.39,13.61 h 4.93 c 4.24,0 4.24,-1.04 4.24,-2.29 0,-0.35 0,-0.96 -0.36,-2.44 -0.09,-0.25 -0.14,-0.41 -0.14,-0.55 0,-0.25 0.19,-0.55 0.64,-0.55 0.41,0 0.55,0.25 0.75,0.99 l 2.84,11.67 c 0,0.3 -0.25,0.55 -0.61,0.55 -0.43,0 -0.54,-0.3 -0.68,-0.91 -1.05,-3.78 -1.96,-4.92 -6.54,-4.92 h -4.68 l 3,12 c 0.43,1.75 0.5,1.94 2.68,1.94 h 7.02 c 6.08,0 7.58,-1.44 7.58,-5.53 0,-1.19 0,-1.29 -0.2,-2.64 0,-0.3 -0.05,-0.65 -0.05,-0.9 0,-0.25 0.15,-0.59 0.59,-0.59 0.56,0 0.61,0.3 0.71,1.25 l 1,8.61 c 0.14,1.34 -0.1,1.34 -1.35,1.34 h -25.15 c -1,0 -1.5,0 -1.5,-1 0,-0.54 0.45,-0.54 1.39,-0.54 1.84,0 3.23,0 3.23,-0.89 0,-0.21 0,-0.3 -0.25,-1.21 l -6.56,-26.34 c -0.5,-1.95 -0.61,-2.34 -4.55,-2.34 -0.84,0 -1.39,0 -1.39,-0.96 0,-0.59 0.45,-0.59 1.39,-0.59 h 25.86 c 1.16,0 1.2,0.05 1.55,0.84 z"
+           id="path5047-2" /><path
+           style="fill:#000000;stroke-width:0"
+           inkscape:connector-curvature="0"
+           d="m 510.22,409.87 0,0.71 -0.02,0.68 -0.03,0.66 -0.04,0.64 -0.06,0.62 -0.08,0.6 -0.09,0.57 -0.1,0.56 -0.13,0.55 -0.15,0.53 -0.17,0.51 -0.19,0.5 -0.21,0.49 -0.24,0.48 -0.26,0.47 -0.14,0.23 -0.15,0.23 c -1.08,1.61 -3.23,3 -6.03,3 v -0.98 c 1.89,0 3.7,-1.14 4.33,-3.17 0.56,-1.88 0.59,-4.39 0.59,-7.43 0,-2.57 0,-5.15 -0.45,-7.34 -0.71,-3.17 -3.06,-3.94 -4.47,-3.94 h 0 c -1.59,0 -3.72,0.94 -4.42,3.8 -0.49,2.05 -0.49,4.91 -0.49,7.48 0,2.55 0,5.21 0.52,7.11 0.73,2.75 2.97,3.49 4.39,3.49 v 0.98 c -8.08,0 -8.08,-9.51 -8.08,-12.03 0,-2.5 0,-11.81 8.08,-11.81 8.09,0 8.09,9.31 8.09,11.81 z"
+           id="path5049-5" /><path
+           style="fill:#000000;stroke-width:0"
+           inkscape:connector-curvature="0"
+           d="m 564.45,428.71 0,0.1 0,0.09 -0.01,0.09 -0.01,0.09 0,0.08 -0.02,0.08 -0.01,0.08 -0.01,0.07 -0.01,0.07 -0.02,0.07 -0.02,0.06 -0.02,0.06 -0.02,0.06 -0.02,0.05 -0.02,0.05 -0.03,0.05 -0.02,0.04 -0.03,0.04 -0.02,0.04 -0.03,0.04 -0.03,0.03 -0.03,0.03 -0.03,0.02 -0.03,0.03 -0.03,0.02 -0.03,0.02 -0.03,0.01 -0.03,0.01 -0.03,0.01 -0.03,0.01 -0.04,0 -0.03,0 c -0.2,0 -0.66,-0.2 -0.7,-1.34 -0.21,-3.44 -3.69,-5.48 -6.92,-5.48 -2.89,0 -5.39,1.54 -7.99,3.29 -2.68,1.78 -5.37,3.58 -8.61,3.58 -4.64,0 -8.32,-3.53 -8.32,-8.12 0,-1.1 0.4,-1.49 0.7,-1.49 0.5,0 0.7,0.94 0.7,1.14 0.25,4.19 4.33,5.69 6.92,5.69 2.89,0 5.38,-1.55 7.97,-3.3 2.69,-1.79 5.38,-3.59 8.63,-3.59 4.62,0 8.31,3.55 8.31,8.12 z"
+           id="path5051-3" /><path
+           style="fill:#000000;stroke-width:0"
+           inkscape:connector-curvature="0"
+           d="m 564.45,417.06 0,0.07 0,0.06 0,0.06 -0.01,0.07 0,0.06 -0.01,0.05 0,0.06 -0.01,0.05 0,0.05 -0.01,0.06 -0.01,0.04 -0.01,0.05 -0.01,0.05 0,0.04 -0.01,0.04 -0.02,0.04 -0.01,0.04 -0.01,0.04 -0.01,0.04 -0.01,0.03 -0.01,0.03 -0.02,0.04 -0.01,0.03 -0.01,0.03 -0.02,0.02 -0.01,0.03 -0.03,0.05 -0.03,0.05 -0.03,0.04 -0.03,0.03 -0.03,0.04 -0.03,0.02 -0.03,0.03 -0.03,0.02 -0.03,0.02 -0.03,0.01 -0.02,0.02 -0.03,0.01 -0.02,0.01 -0.02,0 -0.02,0.01 -0.02,0 -0.01,0 -0.02,0 -0.01,0.01 c -0.2,0 -0.66,-0.25 -0.7,-1.35 -0.21,-3.44 -3.69,-5.48 -6.92,-5.48 -2.89,0 -5.39,1.54 -7.99,3.29 -2.68,1.79 -5.37,3.58 -8.61,3.58 -4.64,0 -8.32,-3.53 -8.32,-8.12 0,-1.1 0.4,-1.49 0.7,-1.49 0.5,0 0.7,0.94 0.7,1.14 0.25,4.19 4.33,5.69 6.92,5.69 2.89,0 5.38,-1.55 7.97,-3.3 2.69,-1.79 5.38,-3.57 8.63,-3.57 4.73,0 8.31,3.68 8.31,8.06 z"
+           id="path5053-3" /><path
+           style="fill:#000000;stroke-width:0"
+           inkscape:connector-curvature="0"
+           d="m 595.68,438.09 0,0.05 0,0.06 0,0.05 0,0.05 0,0.05 0,0.05 0,0.04 0,0.05 0,0.04 0,0.04 -0.01,0.04 0,0.04 0,0.04 0,0.03 0,0.04 -0.01,0.03 -0.01,0.07 0,0.06 -0.02,0.05 -0.01,0.05 -0.02,0.05 -0.02,0.04 -0.02,0.04 -0.02,0.03 -0.03,0.03 -0.03,0.03 -0.04,0.03 -0.04,0.02 -0.04,0.02 -0.03,0.01 -0.02,0.01 -0.03,0 -0.02,0.01 -0.03,0.01 -0.03,0 -0.03,0.01 -0.03,0 -0.04,0.01 -0.03,0 -0.04,0 -0.04,0.01 -0.03,0 -0.04,0 -0.05,0 -0.04,0 -0.04,0 -0.05,0.01 -0.05,0 -0.05,0 -0.05,0 -0.05,0 c -3.09,-3.19 -7.47,-3.19 -9.06,-3.19 v -1.55 c 1,0 3.93,0 6.51,1.3 v -25.81 c 0,-1.8 -0.14,-2.39 -4.62,-2.39 h -1.6 v -1.55 c 1.75,0.16 6.08,0.16 8.07,0.16 2,0 6.32,0 8.07,-0.16 v 1.55 h -1.59 c -4.48,0 -4.64,0.54 -4.64,2.39 z"
+           id="path5055-2" /><path
+           style="fill:#000000;stroke-width:0"
+           inkscape:connector-curvature="0"
+           d="m 611.53,417.71 0.04,1.05 c 0.3,7.42 4.49,8.66 6.19,8.66 5.13,0 5.63,-6.72 5.63,-8.66 h -11.82 l -0.04,-1.05 h 13.9 c 1.1,0 1.24,0 1.24,1.05 0,4.92 -2.69,9.75 -8.91,9.75 -5.78,0 -10.37,-5.12 -10.37,-11.36 0,-6.67 5.23,-11.5 10.96,-11.5 6.08,0 8.32,5.53 8.32,6.47 0,0.5 -0.39,0.61 -0.64,0.61 -0.46,0 -0.55,-0.3 -0.66,-0.7 -1.73,-5.13 -6.22,-5.13 -6.72,-5.13 -2.5,0 -4.48,1.49 -5.62,3.33 -1.5,2.39 -1.5,5.69 -1.5,7.48 z"
+           id="path5057-6" /><path
+           style="fill:#000000;stroke-width:0"
+           inkscape:connector-curvature="0"
+           d="m 659.01,435.34 0.07,0.17 0.07,0.17 0.08,0.17 0.08,0.16 0.08,0.16 0.09,0.16 0.1,0.15 0.1,0.15 0.11,0.15 0.11,0.14 0.12,0.14 0.13,0.14 0.13,0.13 0.14,0.12 0.15,0.12 0.15,0.12 0.17,0.11 0.17,0.1 0.18,0.1 0.18,0.09 0.2,0.09 0.21,0.08 0.21,0.07 0.23,0.07 0.23,0.06 0.25,0.06 0.25,0.04 0.27,0.04 0.28,0.03 0.29,0.03 0.3,0.02 0.31,0 v 1.55 c -1.55,-0.11 -3.55,-0.16 -4.85,-0.16 -1.48,0 -4.37,0.11 -5.67,0.16 v -1.55 c 2.6,-0.04 3.64,-1.34 3.64,-2.48 0,-0.41 -0.15,-0.7 -0.25,-1 l -9.12,-24.02 -9.52,25.16 c -0.29,0.7 -0.29,0.8 -0.29,0.89 0,1.45 2.84,1.45 4.08,1.45 v 1.55 c -1.79,-0.16 -5.22,-0.16 -7.12,-0.16 -2.4,0 -4.54,0.11 -6.32,0.16 v -1.55 c 3.23,0 4.17,0 4.87,-1.89 l 11.57,-30.59 c 0.34,-0.95 0.59,-1.09 1.25,-1.09 0.84,0 0.93,0.25 1.18,0.93 z"
+           id="path5059-0" /></g>    </g>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3937-2-1-7"
+       y="1030.4734"
+       x="5486.7397"
+       style="font-size:50.21082687px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#0000ff;fill-opacity:1;stroke:none;font-family:Nimbus Roman No9 L;-inkscape-font-specification:Nimbus Roman No9 L"
+       xml:space="preserve"><tspan
+         id="tspan4026-4-3-0"
+         style="text-align:center;text-anchor:middle;fill:#0000ff;fill-opacity:1"
+         y="1030.4734"
+         x="5486.7397"
+         sodipodi:role="line">Detection</tspan><tspan
+         style="text-align:center;text-anchor:middle;fill:#0000ff;fill-opacity:1"
+         id="tspan3941-6-7-5"
+         y="1093.2369"
+         x="5486.7397"
+         sodipodi:role="line"> &gt;10<tspan
+   id="tspan3943-4-5-4"
+   style="font-size:32.63749695px;text-align:center;text-anchor:middle;baseline-shift:super;fill:#0000ff;fill-opacity:1">-7</tspan> s</tspan></text>
+    <path
+       sodipodi:nodetypes="czssccc"
+       inkscape:connector-curvature="0"
+       id="path13278-5-1"
+       d="m 4393.4028,97.489052 c 0,0 40.2854,-0.52208 75.2625,0 34.9771,0.52208 44.0132,-34.957142 47.1737,-134.397482 4.2909,-135.00466 19.6438,-112.2177 43.9295,-63.2338 48.9956,98.82243 93.6188,189.01829 284.4631,189.01829 l 0.7364,8.580822 z"
+       style="fill:#0058ff;fill-opacity:0.53191457;stroke:none" />
+    <path
+       sodipodi:nodetypes="ccc"
+       style="fill:none;stroke:#000000;stroke-width:2.50963497;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-start:url(#Arrow1Mstart);marker-end:url(#marker4665-4)"
+       d="m 4391.2713,-177.56367 0,275.324392 527.0234,0"
+       id="path6182-1-7"
+       inkscape:connector-curvature="0" />
+    <path
+       sodipodi:nodetypes="czssc"
+       inkscape:connector-curvature="0"
+       id="path13278-2"
+       d="m 4391.9549,95.214662 c 0,0 40.2854,-0.52208 75.2625,0 34.9771,0.52208 44.0132,-34.957142 47.1737,-134.397482 4.2909,-135.00466 19.6438,-112.2177 43.9295,-63.2338 48.9956,98.82243 95.173,189.56694 286.0173,189.56694"
+       style="fill:none;stroke:#000000;stroke-width:5.72141552;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <g
+       id="g4146-5"
+       transform="matrix(0.66050394,0,0,0.66050394,3949.9513,-758.8303)">
+      <g
+         word-spacing="normal"
+         letter-spacing="normal"
+         font-size-adjust="none"
+         font-stretch="normal"
+         font-weight="normal"
+         font-variant="normal"
+         font-style="normal"
+         stroke-miterlimit="10.433"
+         xml:space="preserve"
+         transform="matrix(1.6497344,0,0,-1.6497344,-288.70353,1771.8266)"
+         id="content-3"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:normal;word-spacing:normal;text-anchor:start;fill:none;stroke:#000000;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10.43299961;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"><path
+           id="path4149-2"
+           d="m 473.8,426.12 h 4.28 c 1,0 1.5,0 1.5,1 0,0.55 -0.5,0.55 -1.34,0.55 h -4.14 l 1.04,5.69 c 0.21,1.04 0.91,4.57 1.21,5.17 0.45,0.95 1.29,1.7 2.34,1.7 0.19,0 1.49,0 2.44,-0.91 -2.19,-0.18 -2.69,-1.93 -2.69,-2.68 0,-1.14 0.89,-1.74 1.85,-1.74 1.29,0 2.73,1.1 2.73,2.99 0,2.29 -2.3,3.43 -4.33,3.43 -1.7,0 -4.84,-0.89 -6.33,-5.82 -0.29,-1.05 -0.45,-1.55 -1.64,-7.83 h -3.43 c -0.96,0 -1.5,0 -1.5,-0.94 0,-0.61 0.45,-0.61 1.39,-0.61 h 3.29 l -3.75,-19.67 c -0.89,-4.83 -1.73,-9.38 -4.33,-9.38 -0.2,0 -1.43,0 -2.39,0.91 2.3,0.14 2.74,1.94 2.74,2.69 0,1.14 -0.89,1.75 -1.85,1.75 -1.29,0 -2.73,-1.1 -2.73,-3 0,-2.24 2.19,-3.44 4.23,-3.44 2.74,0 4.74,2.94 5.63,4.84 1.59,3.14 2.75,9.16 2.8,9.52 z"
+           inkscape:connector-curvature="0"
+           style="fill:#000000;stroke-width:0" /><path
+           id="path4151-2"
+           d="m 501.77,394.25 0,0.02 -0.01,0.03 0,0.01 0,0.02 0,0.01 -0.01,0.02 0,0.01 -0.01,0.02 -0.01,0.02 -0.01,0.02 -0.01,0.02 -0.01,0.03 -0.02,0.02 -0.02,0.03 -0.02,0.03 -0.02,0.03 -0.03,0.03 -0.03,0.04 -0.02,0.02 -0.01,0.02 -0.02,0.02 -0.02,0.02 -0.02,0.02 -0.02,0.03 -0.02,0.02 -0.02,0.02 -0.02,0.03 -0.03,0.02 -0.02,0.03 -0.03,0.03 -0.02,0.03 -0.03,0.03 -0.03,0.03 -0.03,0.03 -0.03,0.03 -0.03,0.03 -0.04,0.04 -0.03,0.03 -0.03,0.04 -0.04,0.03 -0.04,0.04 -0.04,0.04 c -6.22,6.28 -7.81,15.69 -7.81,23.31 0,8.67 1.89,17.35 8.01,23.56 0.65,0.61 0.65,0.71 0.65,0.86 0,0.35 -0.19,0.49 -0.49,0.49 -0.5,0 -4.98,-3.38 -7.92,-9.7 -2.55,-5.49 -3.14,-11.02 -3.14,-15.21 0,-3.89 0.55,-9.9 3.28,-15.54 2.98,-6.13 7.28,-9.36 7.78,-9.36 0.3,0 0.49,0.14 0.49,0.5 z"
+           inkscape:connector-curvature="0"
+           style="fill:#000000;stroke-width:0" /><path
+           id="path4153-6"
+           d="m 539.88,417.81 0.01,0.02 0.01,0.03 0.02,0.05 0.02,0.05 0.02,0.05 0.01,0.05 0.02,0.05 0.02,0.05 0.02,0.05 0.01,0.03 0.01,0.02 0.01,0.02 0,0.03 0.01,0.02 0.01,0.02 0,0.02 0.01,0.02 0,0.02 0.01,0.02 0,0.01 0.01,0.02 0,0.02 0,0.01 0,0.01 0,0.01 c 0,0.05 0,0.55 -0.59,0.55 -0.45,0 -0.55,-0.3 -0.64,-0.61 -3.25,-7.38 -5.08,-10.7 -13.61,-10.7 H 518 c -0.7,0 -0.79,0 -1.09,0.04 -0.5,0.05 -0.66,0.1 -0.66,0.5 0,0.14 0,0.25 0.25,1.14 l 3.4,13.61 h 4.93 c 4.24,0 4.24,-1.04 4.24,-2.29 0,-0.35 0,-0.96 -0.36,-2.44 -0.1,-0.25 -0.14,-0.41 -0.14,-0.55 0,-0.25 0.18,-0.55 0.64,-0.55 0.4,0 0.54,0.25 0.75,0.99 l 2.84,11.67 c 0,0.3 -0.25,0.55 -0.61,0.55 -0.44,0 -0.54,-0.3 -0.69,-0.91 -1.04,-3.78 -1.95,-4.92 -6.53,-4.92 h -4.69 l 3,12 c 0.44,1.75 0.5,1.94 2.69,1.94 h 7.02 c 6.08,0 7.58,-1.44 7.58,-5.53 0,-1.19 0,-1.29 -0.21,-2.64 0,-0.3 -0.04,-0.65 -0.04,-0.9 0,-0.25 0.15,-0.59 0.59,-0.59 0.56,0 0.61,0.3 0.7,1.25 l 1,8.61 c 0.14,1.34 -0.09,1.34 -1.34,1.34 h -25.16 c -1,0 -1.5,0 -1.5,-1 0,-0.54 0.46,-0.54 1.39,-0.54 1.85,0 3.24,0 3.24,-0.89 0,-0.21 0,-0.3 -0.25,-1.21 l -6.56,-26.34 c -0.5,-1.95 -0.61,-2.34 -4.55,-2.34 -0.84,0 -1.39,0 -1.39,-0.96 0,-0.59 0.45,-0.59 1.39,-0.59 h 25.86 c 1.16,0 1.2,0.05 1.54,0.84 z"
+           inkscape:connector-curvature="0"
+           style="fill:#000000;stroke-width:0" /><path
+           id="path4155-9"
+           d="m 558.59,418.65 -0.01,0.37 0,0.39 -0.01,0.39 -0.01,0.41 -0.04,0.84 -0.06,0.88 -0.08,0.92 -0.11,0.95 -0.14,0.97 -0.16,1.01 -0.2,1.02 -0.23,1.03 -0.26,1.05 -0.31,1.06 -0.35,1.07 -0.39,1.07 -0.21,0.53 -0.23,0.53 -0.24,0.53 -0.25,0.53 c -2.98,6.12 -7.26,9.36 -7.76,9.36 -0.3,0 -0.5,-0.19 -0.5,-0.49 0,-0.15 0,-0.25 0.94,-1.15 4.89,-4.92 7.73,-12.85 7.73,-23.27 0,-8.51 -1.84,-17.28 -8.03,-23.56 -0.64,-0.59 -0.64,-0.7 -0.64,-0.84 0,-0.3 0.2,-0.5 0.5,-0.5 0.5,0 4.97,3.39 7.92,9.71 2.53,5.47 3.13,11 3.13,15.19 z"
+           inkscape:connector-curvature="0"
+           style="fill:#000000;stroke-width:0" /></g>    </g>
+    <g
+       transform="matrix(0.66050394,0,0,0.66050394,4311.1413,-575.29114)"
+       id="g4403-3">
+      <g
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:normal;word-spacing:normal;text-anchor:start;fill:none;stroke:#000000;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10.43299961;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+         id="g4405-0"
+         transform="matrix(1.6497344,0,0,-1.6497344,-288.70353,1771.8266)"
+         xml:space="preserve"
+         stroke-miterlimit="10.433"
+         font-style="normal"
+         font-variant="normal"
+         font-weight="normal"
+         font-stretch="normal"
+         font-size-adjust="none"
+         letter-spacing="normal"
+         word-spacing="normal"><path
+           style="fill:#000000;stroke-width:0"
+           inkscape:connector-curvature="0"
+           d="m 490.8,417.81 0.01,0.02 0.01,0.03 0.02,0.05 0.02,0.05 0.02,0.05 0.02,0.05 0.02,0.05 0.02,0.05 0.01,0.05 0.01,0.03 0.01,0.02 0.01,0.02 0.01,0.03 0,0.02 0.01,0.02 0.01,0.02 0,0.02 0.01,0.02 0,0.02 0.01,0.01 0,0.02 0,0.02 0,0.01 0,0.01 0.01,0.01 c 0,0.05 0,0.55 -0.6,0.55 -0.45,0 -0.55,-0.3 -0.64,-0.61 -3.25,-7.38 -5.08,-10.7 -13.61,-10.7 h -7.26 c -0.71,0 -0.8,0 -1.1,0.04 -0.5,0.05 -0.65,0.1 -0.65,0.5 0,0.14 0,0.25 0.25,1.14 l 3.39,13.61 h 4.93 c 4.24,0 4.24,-1.04 4.24,-2.29 0,-0.35 0,-0.96 -0.36,-2.44 -0.09,-0.25 -0.14,-0.41 -0.14,-0.55 0,-0.25 0.19,-0.55 0.64,-0.55 0.41,0 0.55,0.25 0.75,0.99 l 2.84,11.67 c 0,0.3 -0.25,0.55 -0.61,0.55 -0.43,0 -0.54,-0.3 -0.68,-0.91 -1.05,-3.78 -1.96,-4.92 -6.54,-4.92 h -4.68 l 3,12 c 0.43,1.75 0.5,1.94 2.68,1.94 h 7.02 c 6.08,0 7.58,-1.44 7.58,-5.53 0,-1.19 0,-1.29 -0.2,-2.64 0,-0.3 -0.05,-0.65 -0.05,-0.9 0,-0.25 0.15,-0.59 0.59,-0.59 0.56,0 0.61,0.3 0.71,1.25 l 1,8.61 c 0.14,1.34 -0.1,1.34 -1.35,1.34 h -25.15 c -1,0 -1.5,0 -1.5,-1 0,-0.54 0.45,-0.54 1.39,-0.54 1.84,0 3.23,0 3.23,-0.89 0,-0.21 0,-0.3 -0.25,-1.21 l -6.56,-26.34 c -0.5,-1.95 -0.61,-2.34 -4.55,-2.34 -0.84,0 -1.39,0 -1.39,-0.96 0,-0.59 0.45,-0.59 1.39,-0.59 h 25.86 c 1.16,0 1.2,0.05 1.55,0.84 z"
+           id="path4407-3" /></g>    </g>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5237-1"
+       y="-226.82709"
+       x="4405.6558"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Nimbus Roman No9 L;-inkscape-font-specification:Nimbus Roman No9 L"
+       xml:space="preserve"><tspan
+         style="font-size:50.20999908px"
+         y="-226.82709"
+         x="4405.6558"
+         id="tspan5239-8"
+         sodipodi:role="line">Deposited energy function</tspan></text>
+    <g
+       transform="matrix(0.23528066,0.97192747,-0.97192747,0.23528066,2668.6097,-3755.4735)"
+       id="g5880">
+      <path
+         sodipodi:type="arc"
+         style="fill:url(#radialGradient6007);fill-opacity:1;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+         id="path6460-3-5-7"
+         sodipodi:cx="283.55661"
+         sodipodi:cy="-29.669813"
+         sodipodi:rx="26.377359"
+         sodipodi:ry="26.377359"
+         d="m 276.72965,-55.148386 c 14.07142,-3.770427 28.53511,4.580183 32.30553,18.65161 3.77043,14.071427 -4.58018,28.5351081 -18.65161,32.3055356 -14.07142,3.77042739 -28.53511,-4.5801828 -32.30553,-18.6516096 -3.76373,-14.046411 4.55065,-28.489248 18.58755,-32.288286"
+         sodipodi:start="4.4505896"
+         sodipodi:end="10.73126"
+         sodipodi:open="true"
+         transform="matrix(0.35298801,0,0,0.35298801,3793.5971,-543.15638)"
+         inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+         inkscape:export-xdpi="50"
+         inkscape:export-ydpi="50" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:3.34894228;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Mend)"
+         d="m 3886.7709,-567.22771 -49.6227,-102.04952"
+         id="path6470-5-1-5"
+         inkscape:connector-curvature="0"
+         inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+         inkscape:export-xdpi="50"
+         inkscape:export-ydpi="50" />
+    </g>
+    <g
+       transform="translate(-19.783019,452.81132)"
+       id="g5886">
+      <path
+         sodipodi:type="arc"
+         style="fill:url(#radialGradient6009);fill-opacity:1;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+         id="path6460-3-9-5-1"
+         sodipodi:cx="283.55661"
+         sodipodi:cy="-29.669813"
+         sodipodi:rx="26.377359"
+         sodipodi:ry="26.377359"
+         d="m 276.72965,-55.148386 c 14.07142,-3.770427 28.53511,4.580183 32.30553,18.65161 3.77043,14.071427 -4.58018,28.5351081 -18.65161,32.3055356 -14.07142,3.77042739 -28.53511,-4.5801828 -32.30553,-18.6516096 -3.76373,-14.046411 4.55065,-28.489248 18.58755,-32.288286"
+         sodipodi:start="4.4505896"
+         sodipodi:end="10.73126"
+         sodipodi:open="true"
+         transform="matrix(0.35298801,0,0,0.35298801,3905.1926,-537.99258)"
+         inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+         inkscape:export-xdpi="50"
+         inkscape:export-ydpi="50" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:3.34894228;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Mend)"
+         d="m 4012.7158,-565.04919 26.6461,-63.88861"
+         id="path6470-5-2-0-2"
+         inkscape:connector-curvature="0"
+         inkscape:export-filename="/home/nestor/Dropbox/UAM/M3C/doc/talkUAM-Apr2014/cover.png"
+         inkscape:export-xdpi="50"
+         inkscape:export-ydpi="50"
+         sodipodi:nodetypes="cc" />
+    </g>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3945-4-4-0"
+       y="-139.08537"
+       x="4103.3374"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Nimbus Roman No9 L;-inkscape-font-specification:Nimbus Roman No9 L"
+       xml:space="preserve"><tspan
+         style="font-size:50.21018219px"
+         y="-139.08537"
+         x="4103.3374"
+         id="tspan3947-4-6-4"
+         sodipodi:role="line">e<tspan
+   id="tspan3949-9-0-0"
+   style="font-size:50.21018219px;baseline-shift:super">-</tspan></tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3945-4-4-4-0"
+       y="-111.19056"
+       x="3932.1313"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Nimbus Roman No9 L;-inkscape-font-specification:Nimbus Roman No9 L"
+       xml:space="preserve"><tspan
+         style="font-size:50.21018219px"
+         y="-111.19056"
+         x="3932.1313"
+         id="tspan3947-4-6-7-3"
+         sodipodi:role="line">e<tspan
+   id="tspan3949-9-0-2-3"
+   style="font-size:50.21018219px;baseline-shift:super">-</tspan></tspan></text>
+  </g>
+  <text
+     xml:space="preserve"
+     style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Nimbus Roman No9 L;-inkscape-font-specification:Nimbus Roman No9 L"
+     x="1184.3772"
+     y="417.79865"
+     id="text6011"
+     sodipodi:linespacing="125%"><tspan
+       sodipodi:role="line"
+       id="tspan6013" /></text>
+</svg>

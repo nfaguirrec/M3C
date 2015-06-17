@@ -1,0 +1,318 @@
+#!/bin/bash
+##################################################################
+#
+#  This file is part of M3C
+#  Copyright (C) by authors (2012-2015)
+#  
+#  Authors:
+#    * Dr. Néstor F. Aguirre (2012-2015)
+#          nestor.aguirre@uam.es
+#    * Dr. Sergio Díaz-Tendero (2012-2015)
+#          sergio.diaztendero@uam.es
+#    * Prof. M. Paul-Antoine Hervieux (2012-2015)
+#          Paul-Antoine.Hervieux@ipcms.unistra.fr
+#    * Prof. Fernando Martín (2012-2015)
+#          fernando.martin@uam.es
+#    * Prof. Manuel Alcamí (2012-2015)
+#          manuel.alcami@uam.es
+#  
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the
+#  following conditions are met:
+#  
+#   * Redistributions of binary or source code must retain
+#     the above copyright notice and this list of conditions
+#     and/or other materials provided with the distribution.
+#   * All advertising materials mentioning features or use of
+#     this software must display the following acknowledgement:
+#     
+#     This product includes software from M3C project.
+#
+##################################################################
+
+if [ -f "$M3C_HOME/bin/gaussianDriver.sh" ]
+then
+	source $M3C_HOME/bin/gaussianDriver.sh
+else
+	source $M3C_HOME/src/gaussianDriver.sh
+fi
+
+##
+# @brief
+##
+function filterIsomers()
+{
+	local resultsDir=$1
+	
+	local i=""
+	local j=""
+	local value=""
+	local nAtoms1=""
+	local nAtoms2=""
+	
+	cd $resultsDir
+	
+	local list=(`ls *.xyz 2> /dev/null`)
+	
+	for i in `seq 0 $(( ${#list[@]}-2 ))`
+	do
+			for j in `seq $(($i+1)) $(( ${#list[@]}-1 ))`
+			do
+					if [ -f "${list[$i]}" -a -f "${list[$j]}" ]
+					then
+							nAtoms1=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$i]}`
+							nAtoms2=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$j]}`
+							
+							valueF=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Chemical"`
+							valueC=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Connectivity"`
+							valueI=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Inertia"`
+							
+							if [ "$nAtoms1" -ge 2 -a "$nAtoms1" -ge 2 ]
+							then
+								
+								if [ "$valueF" = "Chemical formula ...  OK" -a "$valueC" = "Connectivity ...  OK" ]
+								then
+									if [[ "$valueI" =~ "Inertia moment ...  OK" ]]
+									then
+										rm "${list[$j]}"
+									fi
+								fi
+								
+							else
+							
+								if [ "$valueF" = "Chemical formula ...  OK" ]
+								then
+									if [[ "$valueI" =~ "Inertia moment ...  OK" ]]
+									then
+										rm "${list[$j]}"
+									fi
+								fi
+								
+							fi
+					fi
+			done
+	done
+	
+	cd ..
+}
+
+##
+# @brief
+##
+function generateIsomers()
+{
+	local iFileXYZ=$1
+	local charge=$2
+	local mult=$3
+	
+	local workDir=""
+	local label=""
+	local i=""
+	local j=""
+	local nAtoms=""
+	local trial=""
+	
+	workDir="tmp-${iFileXYZ%.*}.q$charge.m$mult"
+	label="${iFileXYZ%.*}.q$charge.m$mult"
+	
+	rm -rf $workDir
+	mkdir $workDir
+	
+	cp $INIT_GEOM_DIR/*.xyz $workDir
+	cd $workDir
+	
+	nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' $iFileXYZ`
+	
+	mkdir results
+	mkdir history-$label
+	
+	cp $iFileXYZ products.xyz
+	
+	if [ "$nAtoms" -gt 1 ]
+	then
+		j=1
+		for i in `seq 1 $NSTEPS`
+		do
+			optgGAUSSIANTemplate ../$GAUSSIAN_TEMPLATE products.xyz $charge $mult > output.xyz
+			
+			cp products.out history-$label/$label-$j.out
+			
+			if [ -n "`cat output.xyz`" ]
+			then
+				cp output.xyz results/$label-$j.xyz
+				cp products.xyz history-$label/$label-$j-init.xyz
+				cp output.xyz history-$label/$label-$j-OK.xyz
+				
+				j=$(($j+1))
+			else
+				cp products.xyz history-$label/$label-$i.xyz
+			fi
+			
+			cp ../$M3C_TEMPLATE reactorT.m3c
+			
+			molRadius=`molecule.radius products.xyz`
+			if [ -n "`grep "systemRadius" reactorT.m3c`" ]
+			then
+				sed -i 's/systemRadius = .*/systemRadius = '"$molRadius"'/g' reactorT.m3c
+			else
+				sed -i 's/^\s*END GOPTIONS\s*$/        systemRadius = '"$molRadius"' #<< from M3C-gamess.geniso\nEND GOPTIONS/g' reactorT.m3c
+			fi
+			
+			successRandom="F"
+			for trial in `seq 1 100000`
+			do
+				M3C -i reactorT.m3c > M3C.log 2>&1
+				
+				if [ -n "`grep "@@@ ACCEPTED @@@" M3C.log 2> /dev/null`" ]
+				then
+					successRandom="T"
+					break
+				fi
+			done
+			
+			if [ "$successRandom" = "F" ]
+			then
+				molecule.random -i products.xyz -gamma 0.7
+			fi
+		done
+		
+		filterIsomers results
+	else
+		cp products.xyz output.xyz
+		cp output.xyz results/$label-1.xyz
+		cp output.xyz history-$label/$label-1-OK.xyz
+	fi
+	
+	cd ..
+	
+	cp $workDir/results/*.xyz $FINAL_GEOM_DIR 2> /dev/null
+	cp -r $workDir/history-$label $FINAL_GEOM_DIR
+	
+	rm -rf $workDir
+}
+
+##
+# @brief
+##
+function main()
+{
+	DATABASE=$1
+	GAUSSIAN_TEMPLATE=$2
+	M3C_TEMPLATE=$3
+	NSTEPS=$4
+	INIT_GEOM_DIR=$5
+	FINAL_GEOM_DIR=$6
+	
+	WORK_DIR=tmp
+	
+	local lineOK=""
+	local xyzFile=""
+	local charge=""
+	local mult=""
+	local oshell=""
+	
+	if [ -n "$SLURM_NTASKS" ]
+	then
+		nThreads=$SLURM_NTASKS
+	else
+		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
+	fi
+	
+	xyzFile=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $1 }' $DATABASE` )
+	charge=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $2 }' $DATABASE` )
+	mult=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $3 }' $DATABASE` )
+	
+	#-----------------------------------------------------------------------
+	
+	startTime=`date "+%s"`
+	
+	if [ -d "$FINAL_GEOM_DIR" ]
+	then
+		echo "@@@ WARNING @@@ There is already an output directory ($FINAL_GEOM_DIR). Backup copy will be generated"
+		mv $FINAL_GEOM_DIR $FINAL_GEOM_DIR.backup
+	fi
+	mkdir $FINAL_GEOM_DIR
+
+	ij=-1
+	for (( i=0; i<=$(( ${#xyzFile[@]}/$nThreads-1 )); i++ ))
+	do
+		iStartTime=`date "+%s"`
+		
+		echo -n "Running: "
+		
+		for (( j=1; j<=$nThreads; j++ ))
+		do
+			ij=$(( $j-1+$nThreads*$i ))
+			
+			if (( j != $nThreads ))
+			then
+				printf "%10s," "${xyzFile[$ij]%.*}"
+			else
+				printf "%10s" "${xyzFile[$ij]%.*}"
+			fi
+			
+			generateIsomers ${xyzFile[$ij]} ${charge[$ij]} ${mult[$ij]} &
+		done
+		
+		echo -n " ... "
+		
+		wait
+		
+		iEndTime=`date "+%s"`
+		elapsedTime=$(( $iEndTime-$iStartTime ))
+		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+	done
+
+	if (( $ij < ${#xyzFile[@]} ))
+	then
+		iStartTime=`date "+%s"`
+		
+		echo -n "Running: "
+		
+		k=1
+		for (( i=$(( $ij+1 )); i<${#xyzFile[@]}; i++ ))
+		do
+			if (( $i != $(( ${#xyzFile[@]} - 1 )) ))
+			then
+				printf "%10s," "${xyzFile[$i]%.*}"
+			else
+				printf "%10s " "${xyzFile[$i]%.*}"
+			fi
+			
+			generateIsomers ${xyzFile[$i]} ${charge[$i]} ${mult[$i]} &
+
+			k=$(( $k+1 ))
+		done
+		
+		for (( i=$k; i<=$nThreads; i++ ))
+		do
+			if (( i != $nThreads ))
+			then
+				printf "%10s " ""
+			else
+				printf "%10s" ""
+			fi
+		done
+		
+		echo -n " ... "
+		
+		wait
+		
+		iEndTime=`date "+%s"`
+		elapsedTime=$(( $iEndTime-$iStartTime ))
+		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+	fi
+	
+	endTime=`date "+%s"`
+	elapsedTime=$(( $endTime-$startTime ))
+	
+	echo -n "         "
+	printf "%$(( 10*(${nThreads} + 2) ))s" ""
+	echo "      ` echo -n  "Total"`: $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+	
+	#-----------------------------------------------------------------------
+
+}
+
+main $*
+

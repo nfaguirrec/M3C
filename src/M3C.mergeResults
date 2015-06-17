@@ -1,0 +1,152 @@
+#!/bin/bash
+##################################################################
+#
+#  This file is part of M3C
+#  Copyright (C) by authors (2012-2015)
+#  
+#  Authors:
+#    * Dr. Néstor F. Aguirre (2012-2015)
+#          nestor.aguirre@uam.es
+#    * Dr. Sergio Díaz-Tendero (2012-2015)
+#          sergio.diaztendero@uam.es
+#    * Prof. M. Paul-Antoine Hervieux (2012-2015)
+#          Paul-Antoine.Hervieux@ipcms.unistra.fr
+#    * Prof. Fernando Martín (2012-2015)
+#          fernando.martin@uam.es
+#    * Prof. Manuel Alcamí (2012-2015)
+#          manuel.alcami@uam.es
+#  
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the
+#  following conditions are met:
+#  
+#   * Redistributions of binary or source code must retain
+#     the above copyright notice and this list of conditions
+#     and/or other materials provided with the distribution.
+#   * All advertising materials mentioning features or use of
+#     this software must display the following acknowledgement:
+#     
+#     This product includes software from M3C project.
+#
+##################################################################
+
+##
+# @brief
+##
+function filterIsomers()
+{
+	local resultsDir=$1
+	
+	local i=""
+	local j=""
+	local value=""
+	local nAtoms1=""
+	local nAtoms2=""
+	
+	cd $resultsDir
+	
+	local list=(`ls *.xyz 2> /dev/null`)
+	
+	for i in `seq 0 $(( ${#list[@]}-2 ))`
+	do
+		for j in `seq $(($i+1)) $(( ${#list[@]}-1 ))`
+		do
+			category1=${list[$i]%-*}
+			category2=${list[$j]%-*}
+			
+			if [ "$category1" != "$category2" ]
+			then
+				continue
+			fi
+			
+			if [ -f "${list[$i]}" -a -f "${list[$j]}" ]
+			then
+				nAtoms1=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$i]}`
+				nAtoms2=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$j]}`
+				
+				valueF=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Chemical"`
+				valueC=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Connectivity"`
+				valueI=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Inertia"`
+				
+				if [ "$nAtoms1" -ge 2 -a "$nAtoms1" -ge 2 ]
+				then
+					
+					if [ "$valueF" = "Chemical formula ...  OK" -a "$valueC" = "Connectivity ...  OK" ]
+					then
+						if [[ "$valueI" =~ "Inertia moment ...  OK" ]]
+						then
+							rm "${list[$j]}"
+						fi
+					fi
+					
+				else
+				
+					if [ "$valueF" = "Chemical formula ...  OK" ]
+					then
+						if [[ "$valueI" =~ "Inertia moment ...  OK" ]]
+						then
+							rm "${list[$j]}"
+						fi
+					fi
+					
+				fi
+			fi
+		done
+	done
+	
+	cd ..
+}
+
+##
+# @brief
+##
+function main()
+{
+	local listDir=$*
+	
+	if [ -z "$listDir" ]
+	then
+		echo "usage:"
+		echo "    M3C.mergeResults dir1 dir2 dir3 ... "
+		echo "    M3C.mergeResults results* "
+		exit
+	fi
+	
+	categories=`ls $listDir | awk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | awk '{map[$1]=1}END{for(key in map) print key}'`
+	
+	if [ ! -d merge ]
+	then
+		mkdir merge
+	else
+		rm merge/* 2> /dev/null
+	fi
+	
+	for category in $categories
+	do
+		i=1
+		for dirName in $listDir
+		do
+			targetFiles=`ls $dirName/$category*.xyz 2> /dev/null`
+			
+			if [ -n "$targetFiles" ]
+			then
+				for target in $targetFiles
+				do
+					printf "%60s%10s%40s\n" "$target"  "---->"  "merge/$category-$i.xyz"
+					cp $target merge/$category-$i.xyz
+					
+					i=$(( i+1 ))
+				done
+			fi
+		done
+		echo ""
+		echo ""
+	done
+	
+	echo -n "Filtering of repeated isomers ... "
+	filterIsomers merge
+	echo "OK"
+}
+
+main $*
+

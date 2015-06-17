@@ -1,0 +1,429 @@
+#!/bin/bash
+##################################################################
+#
+#  This file is part of M3C
+#  Copyright (C) by authors (2012-2015)
+#  
+#  Authors:
+#    * Dr. Néstor F. Aguirre (2012-2015)
+#          nestor.aguirre@uam.es
+#    * Dr. Sergio Díaz-Tendero (2012-2015)
+#          sergio.diaztendero@uam.es
+#    * Prof. M. Paul-Antoine Hervieux (2012-2015)
+#          Paul-Antoine.Hervieux@ipcms.unistra.fr
+#    * Prof. Fernando Martín (2012-2015)
+#          fernando.martin@uam.es
+#    * Prof. Manuel Alcamí (2012-2015)
+#          manuel.alcami@uam.es
+#
+# Contributors:
+#    * Juan Pablo Sánchez
+#      juanp.sanchez@uam.es (2015-2015)
+#  
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the
+#  following conditions are met:
+#  
+#   * Redistributions of binary or source code must retain
+#     the above copyright notice and this list of conditions
+#     and/or other materials provided with the distribution.
+#   * All advertising materials mentioning features or use of
+#     this software must display the following acknowledgement:
+#     
+#     This product includes software from M3C project.
+#
+##################################################################
+
+FILTER="rxyz"
+
+##
+# @brief
+##
+function makeLatexHeader()
+{
+	echo "\documentclass[10pt]{article}"
+	echo "\usepackage[dvips]{graphicx,color}"
+	echo "\usepackage{numprint}"
+	echo "\voffset -2cm"
+	echo "\oddsidemargin 0.0cm"
+	echo "\evensidemargin -0.6cm"
+	echo "\textheight 23cm"
+	echo "\textwidth 16.5cm"
+	echo "\begin{document}"
+}
+
+##
+# @brief
+##
+function makeLatexFooter()
+{
+	echo "\end{document}"
+}
+
+##
+# @brief
+##
+function makeLatexTable()
+{
+	local nColumns=$1
+	shift
+	local files=$*
+	
+	local nFiles=`echo $files | wc -w`
+
+	echo "\begin{tabular}{|"
+	for i in `seq 1 $nColumns`
+	do
+		echo ">{\centering\arraybackslash}p{1.6cm}|"
+	done
+	echo "}"
+	echo "\hline"
+
+	i=1
+	for f in $files
+	do
+		if (( $i%$nColumns != 0 && i != $nFiles ))
+		then
+			echo "\includegraphics[bb = 14 14 115 115, scale=0.3]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} &"
+		else
+			echo "\includegraphics[bb = 14 14 115 115, scale=0.3]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} "
+			
+			if (( i != $nFiles ))
+			then
+				echo "\\\\\hline"
+			else
+				echo "\\\\\cline{1-$(($i%$nColumns))}"
+			fi
+		fi
+		
+		i=$(( $i+1 ))
+	done
+
+	echo "\end{tabular}"
+	echo ""
+}
+
+##
+# @brief
+##
+function makeLatexDocument()
+{
+	local nColumns=$1
+	local highlight=$2  # 1,4,5
+	shift
+	shift
+	local files=$*
+
+	echo "\\documentclass[10pt]{article}"
+	echo "\\usepackage[dvips]{graphicx,color}"
+	echo "\\usepackage{numprint}"
+	echo "\voffset -2cm"
+	echo "\oddsidemargin 0.0cm"
+	echo "\evensidemargin -0.6cm"
+	echo "\textheight 23cm"
+	echo "\textwidth 16.5cm"
+	echo "\\begin{document}"
+
+	declare -A highlighted
+
+	for item in `echo $highlight | gawk 'BEGIN{RS=","}{print $1}'`
+	do
+		highlighted[$item]=1
+	done
+
+	files=`ls *.eps`
+	nFiles=`echo $files | wc -w`
+
+	echo "\begin{center}"
+	echo "\begin{tabular}{|"
+	for i in `seq 1 $nColumns`
+	do
+		echo ">{\centering\arraybackslash}p{1.6cm}|"
+	done
+	echo "}"
+	echo "\hline"
+
+	i=1
+	for f in $files
+	do
+		if (( $i%$nColumns != 0 && i != $nFiles ))
+		then
+			if [ "${highlighted[$i]}" = 1 ]
+			then
+				echo "\includegraphics[bb = 14 14 115 115, scale=0.3]{$f} \textcolor{red}{\tiny{$i \hspace{5pt}${f%.*}}} &"
+			else
+				echo "\includegraphics[bb = 14 14 115 115, scale=0.3]{$f} \tiny{$i \hspace{5pt} ${f%.*}} &"
+			fi
+		else
+			if [ "${highlighted[$i]}" = 1 ]
+			then
+				echo "\includegraphics[bb = 14 14 115 115, scale=0.3]{$f} \textcolor{red}{\tiny{$i \hspace{5pt}${f%.*}}} "
+			else
+				echo "\includegraphics[bb = 14 14 115 115, scale=0.3]{$f} \tiny{$i \hspace{5pt} ${f%.*}} "
+			fi
+			
+			if (( i != $nFiles ))
+			then
+				echo "\\\\\hline"
+			else
+				echo "\\\\\cline{1-$(($i%$nColumns))}"
+			fi
+		fi
+		
+		i=$(( $i+1 ))
+	done
+
+	echo "\end{tabular}"
+	echo "\end{center}"
+	echo ""
+
+	echo "\\end{document}"
+}
+
+##
+# @brief
+##
+function buildGifFiles()
+{
+	local iFile=""
+	local sID=""
+	
+	echo "--------------------"
+	echo " Building GIF files"
+	echo "--------------------"
+	
+	for iFile in `ls *.$FILTER`
+	do
+		sID=$RANDOM
+		
+		echo -n "$iFile ... "
+		
+		molecule.rotate -i $iFile -random T > rand$iFile
+		
+		cat > geom$sID.jmol << EOF
+load "rand$iFile"
+background [255,255,255]
+wireframe 0.15; spacefill 23%
+moveto 0 1 0 0 -90
+zoom IN
+write image 100 100 ${iFile%.*}.gif
+EOF
+		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1
+		rm geom$sID.jmol
+		
+		rm rand$iFile
+		
+		echo "OK"
+	done
+}
+
+##
+# @brief
+##
+function buildEPSFiles()
+{
+	local iFile=""
+	local sID=""
+	
+	echo "--------------------"
+	echo " Building EPS files"
+	echo "--------------------"
+	
+	for iFile in `ls *.$FILTER`
+	do
+		sID=$RANDOM
+		
+		echo -n "$iFile ... "
+		
+		molecule.rotate -i $iFile -random T > rand$iFile
+		
+		cat > geom$sID.jmol << EOF
+load "rand$iFile"
+background [255,255,255]
+wireframe 0.15; spacefill 23%
+moveto 0 1 0 0 -90
+zoom IN
+write image 100 100 ${iFile%.*}.gif
+EOF
+		
+		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1
+		convert ${iFile%.*}.gif ${iFile%.*}.eps > /dev/null 2>&1
+		rm ${iFile%.*}.gif geom$sID.jmol
+		
+		rm rand$iFile
+
+		echo "OK"
+	done
+}
+
+##
+# @brief
+##
+function removeEPSFiles()
+{
+	echo -n "Cleaning EPS files ... "
+	
+	for item in `ls *.$FILTER`
+	do
+		rm ${item%.*}.eps > /dev/null 2>&1
+	done
+	
+	echo "OK"
+}
+
+##
+# @brief
+##
+function geometriesByCategories()
+{
+	local nColumns=$1  # 8
+	
+	echo "----------------------------------------"
+	echo " Generating report: geometries.sort.pdf "
+	echo "----------------------------------------"
+	
+	echo -n "Generating Latex document ... "
+	
+	makeLatexHeader > geometries-$$.tex
+	
+	cat /dev/null > .molValues$$
+	
+	ls *.$FILTER \
+	| while read line
+	do
+		fileName=`echo $line | gawk '{print $1}'`
+		
+		charge=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
+		mult=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
+		nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}(NR>3 && $0~/^[[:blank:]]*$/){exit}END{print i}' $fileName`
+		mass=`molecule.mass $fileName | gawk '{print int($1/1822.88853)}'`
+		
+		if [ -z "$charge" ]; then charge=0; fi
+		if [ -z "$mult" ]; then mult=0; fi
+		
+		echo $((1000000*$charge+100000*$nAtoms+10*$mass+$mult)) $fileName $energy >> .molValues$$
+	done
+	
+	categories=`sort -k1 -n .molValues$$ | gawk '{ gsub("[.].*","",$2); if( $2 in map ){ a=1 }else{ print $2 }; map[$2]=1 }'`
+	for item in $categories
+	do
+		list=`grep " $item[.].*" .molValues$$ | gawk '{print $2}'`
+		makeLatexTable $nColumns $list >> geometries-$$.tex
+	done
+	rm .molValues$$
+	
+	makeLatexFooter >> geometries-$$.tex
+	
+	echo "OK"
+	
+	echo -n "Compiling Latex document ... "
+	latex geometries-$$.tex > /dev/null 2>&1
+	dvipdf geometries-$$.dvi > /dev/null 2>&1
+	echo "OK"
+	
+	echo -n "Cleaning temporal files ... "
+	rm geometries-$$.tex geometries-$$.aux geometries-$$.log geometries-$$.dvi
+	mv geometries-$$.pdf geometries.sort.pdf
+	echo "OK"
+	
+	if [ -n "$DISPLAY" ]
+	then
+		okular geometries.sort.pdf > /dev/null 2>&1 &
+	fi
+}
+
+##
+# @brief
+##
+function geometries()
+{
+	local nColumns=$1  # 8
+	local highlight=$2  # 1,4,5
+	
+	echo "-----------------------------------"
+	echo " Generating report: geometries.pdf "
+	echo "-----------------------------------"
+	
+	echo -n "Generating Latex document ... "
+	makeLatexDocument $nColumns "$highlight" `ls *.eps` > geometries-$$.tex
+	echo "OK"
+	
+	echo -n "Compiling Latex document ... "
+	latex geometries-$$.tex > /dev/null 2>&1
+	dvipdf geometries-$$.dvi > /dev/null 2>&1
+	rm geometries-$$.tex geometries-$$.aux geometries-$$.log geometries-$$.dvi
+	echo "OK"
+	
+	mv geometries-$$.pdf geometries.pdf
+	
+	if [ -n "$DISPLAY" ]
+	then
+		okular geometries.pdf > /dev/null 2>&1 &
+	fi
+}
+
+function checkDependencies()
+{
+	JAVA_INTERP=""
+	if [ -n "`which java`" ]
+	then
+		JAVA_INTERP="java"
+	elif [ -n "`which gij`" ]
+	then
+		JAVA_INTERP="gij"
+	else
+		echo "### Error ### It's neccessary to have installed an interpreter for Java bytecode, e.g. java or gij"
+		exit
+	fi
+	
+	if [ -n "`which xvfb-run`" ]
+	then
+		JAVA_INTERP="xvfb-run $JAVA_INTERP"
+	fi
+	
+	if [ -z "`which convert`" ]
+	then
+		echo "### Error ### It's neccessary to have installed an image converter, e.g. convert"
+		exit
+	fi
+}
+
+##
+# @brief
+##
+function main()
+{
+	local oType=$1  # unsorted|sorted|gif
+	FILTER=$2  # xyz
+	local highlight=$3  # 1,4,5
+	local nColumns=$4  # 8
+	
+	checkDependencies
+	
+	case $oType in
+		u-pdf)
+			buildEPSFiles
+			geometries 8 $highlight
+			removeEPSFiles
+			;;
+		s-pdf)
+			buildEPSFiles
+			geometriesByCategories 8 
+			removeEPSFiles
+			;;
+		pdf)
+			buildEPSFiles
+			geometries 8 $highlight
+			geometriesByCategories 8 
+			removeEPSFiles
+			;;
+		gif)
+			buildGifFiles
+			;;
+		*)
+			echo "Usage: M3C.viewXYZ (u-pdf|s-pdf|pdf|gif) (xyz|rxyz) [highlight-list] [number-of-columns]"
+			;;
+	esac
+}
+
+main $*

@@ -1,0 +1,68 @@
+#!/bin/bash
+
+potFile=$1
+filter=$2
+
+if [ -n "$filter" ]
+then
+	awk '
+	BEGIN{
+		loc=0
+	}
+	{
+		if( $1~/^#/ && $2~/.*\(.*+.*\)$/ && loc==1)
+			exit
+			
+		if( $1~/^#/ && $2=="'$filter'")
+			loc=1
+			
+		if(loc==1)
+			print $0
+	}' $potFile > .potentials$$.dat
+fi
+
+cat > .plot$$ << EOF
+unset key
+set mxtics
+set mytics
+
+set xlabel "R (angs.)"
+set ylabel "Potential energy (eV)"
+
+set bars small
+
+npot=`grep -E "^#\s+.*\(.*+.*\)$" $potFile | wc -l`
+
+plot [-3:13] \\
+"$potFile" i 0 u (\$1-2.0):(\$2):3 with labels, \\
+"" i 0 u (\$1):(\$2):(0.4) with xerrorbars lw 2 ps 0 lc rgb "red", \\
+\\
+"" i 1 u (\$1+1.0):(\$2):3 with labels left, \\
+"" i 1 u (\$1):(\$2):(0.4) with xerrorbars lw 2 ps 0 lc rgb "red", \\
+\\
+EOF
+
+if [ -z "$filter" ]
+then
+	cat >> .plot$$ << EOF
+for [i=2:npot] \\
+"$potFile" i i u 1:2 w l lw 2 lc rgb "blue"
+
+pause -1
+EOF
+
+else
+
+	cat >> .plot$$ << EOF
+".potentials$$.dat" i 0 u 1:2 w l lw 2 lc rgb "blue"
+
+pause -1
+EOF
+	rm .potentials$$.dat
+	
+fi
+
+gnuplot .plot$$
+
+rm .plot$$
+
