@@ -463,7 +463,8 @@ module FragmentsList_
 				r = norm2(this.clusters(1).center()-this.clusters(2).center())
 							
 				! El factor sqrt, está considerado cuando se convierte LnIm_ a LnWr
-				weight = weight + GOptions_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(2.0_8*varIn)
+! 				weight = weight + GOptions_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(2.0_8*varIn)
+				weight = weight + GOptions_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(varIn/this.clusters( this.idSorted(1) ).mass())
 ! 				weight = weight + max( 0, this.clusters( this.idSorted(2) ).fr()-1 )*log(r**2)
 				
 				call random_number(varJn)
