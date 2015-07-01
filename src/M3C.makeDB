@@ -31,7 +31,21 @@
 ##################################################################
 
 MAXVIB_NSTEPS=$1
-DEBUG="FALSE"
+DEBUG=$2
+
+##############################
+# Default options
+##############################
+if [ -z "$MAXVIB_NSTEPS" ]
+then
+	MAXVIB_NSTEPS=10
+fi
+
+if [ -z "$DEBUG" ]
+then
+	DEBUG="FALSE"
+fi
+##############################
 
 declare -A SMULT
 SMULT["1"]="s"
@@ -122,11 +136,6 @@ showDataBase()
 
 main()
 {
-	if [ -z "$MAXVIB_NSTEPS" ]
-	then
-		MAXVIB_NSTEPS=10
-	fi
-	
 	cat /dev/null > .input-$$.m3c
 	cat /dev/null > .channels$$
 

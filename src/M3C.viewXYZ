@@ -206,9 +206,11 @@ function buildGifFiles()
 load "rand$iFile"
 background [255,255,255]
 wireframe 0.15; spacefill 23%
+
 moveto 0 1 0 0 -90
 zoom IN
 write image 100 100 ${iFile%.*}.gif
+
 # write image 300 300 ${iFile%.*}.gif
 EOF
 		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1

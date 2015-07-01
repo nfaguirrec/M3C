@@ -274,8 +274,8 @@ program M3CBR
 			write(*,"(A50,3F15.5)") key(idData2Exp(i)).fstr, BR, R.get(i,1), expBRerrors(i)
 			write(11,"(A50,3F15.5)") key(idData2Exp(i)).fstr, BR, R.get(i,1), expBRerrors(i)
 		else
-			write(*,"(A50,F15.5)") key(idData2Exp(i)).fstr, BR
-			write(11,"(A50,F15.5)") key(idData2Exp(i)).fstr, BR
+			write(*,"(A50,F15.5)") key(i).fstr, BR
+			write(11,"(A50,F15.5)") key(i).fstr, BR
 		end if
 	end do
 	

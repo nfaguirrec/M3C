@@ -1,4 +1,4 @@
 #!/bin/bash
 
-export M3C_HOME=$HOME/Dropbox/UAM/M3C-v1.1
+export M3C_HOME=$HOME/Develop/M3C
 export PATH=$PATH:$M3C_HOME/src

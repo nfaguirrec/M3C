@@ -296,6 +296,7 @@ module Reactor_
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Si el cluster no se puede fragmentar mas, mantenga los reactivos
 		if( nProducts > reactives.nAtoms() ) then
+! 		if( nProducts > 3 ) then   ! @todo Hay que calcular el número máximo de fragmentos al inicio del programa
 			if( GOptions_printLevel >= 2 ) then
 				call GOptions_info( &
 					"The fragmentation limit has been reached", &
@@ -638,9 +639,9 @@ module Reactor_
 		
 		call reactives.init( 1 )
 		
-		write(*,"(A30,A30,A10)") "reactive", "channel", "energy"
-		write(*,"(A30,A30,A10)") "", "", "eV"
-		write(*,"(A30,A30,A10)") "--------", "-------", "------"
+		write(*,"(A60,A60,A10)") "reactive", "channel", "energy"
+		write(*,"(A60,A60,A10)") "", "", "eV"
+		write(*,"(A60,A60,A10)") "--------", "-------", "------"
 		
 		do id=1,size(FragmentsDB_instance.clusters)
 			if( FragmentsDB_instance.clusters(id).nAtoms() == 1 ) cycle
@@ -659,7 +660,8 @@ module Reactor_
 				call fragmentsHistogram.init()
 				
 				do k=1,nSteps
-					call this.run()
+! 					call this.run()
+					call this.changeComposition( this.dNFrag )
 					
 					if( this.products.nMolecules() == dN+1 ) then
 						call fragmentsHistogram.add( FString_toString( trim(this.products.label()) ) )
@@ -675,7 +677,7 @@ module Reactor_
 					energy = ( FragmentsDB_instance.getEelecFromName(pair.first.fstr)-FragmentsDB_instance.getEelecFromName(reactives.label()) )/eV
 					
 					if( detailed ) &
-						write(*,"(A30,F10.4)") trim(adjustl(pair.first.fstr)), energy
+						write(*,"(A60,F10.4)") trim(adjustl(pair.first.fstr)), energy
 					
 					if( energy < minValue ) then
 						if( energy < 0.0_8 ) then
@@ -703,9 +705,9 @@ module Reactor_
 				write(*,*) ""
 				
 			if( .not. warningNegativeEnergy ) then
-				write(*,"(A30,A30,F10.5)") trim(adjustl(reactives.label())), trim(adjustl(labelMinEnergy.fstr)), minValue
+				write(*,"(A60,A60,F10.5)") trim(adjustl(reactives.label())), trim(adjustl(labelMinEnergy.fstr)), minValue
 			else
-				write(*,"(A30,A30,F10.5,A,A30,F10.5,A)") trim(adjustl(reactives.label())), trim(adjustl(labelMinEnergy.fstr)), minValue, &
+				write(*,"(A60,A60,F10.5,A,A30,F10.5,A)") trim(adjustl(reactives.label())), trim(adjustl(labelMinEnergy.fstr)), minValue, &
 										   "   ==> ( ", trim(adjustl(labelMinNegativeEnergy.fstr)), minNegativeValue, " )"
 			end if
 			

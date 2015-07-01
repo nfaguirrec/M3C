@@ -32,6 +32,8 @@ program M3C
 	logical :: calculateMaxVib
 	
 	integer :: elapsedTime(3)
+	integer :: status
+	character(128) :: hostname
 	
 	!------------------------------------------------------------------------------
 	
@@ -40,8 +42,13 @@ program M3C
 ! 	call FragmentsDB_test()
 ! 	call RMJLReactor_test()
 ! 	stop
+
+	write(*,*) "--------------------------------------"
+	write(*,*) "M3C version: ", __DATE__, " - ", __TIME__
+	write(*,*) "--------------------------------------"
 	
 	call programOptions.init()
+! 	status = hostnm(hostname)
 	
 	inputFileName = programOptions.getString( "-i" )
 	write(*,*) "Input file = ", trim(inputFileName.fstr)
@@ -53,6 +60,7 @@ program M3C
 	call GOptions_timer.init()
 	call GOptions_timer.start()
 	write(*,*) "---------------------------------------------------------------------------"
+! 	write(*,*) "START TIME: ", trim(GOptions_timer.startDate()), "  @"//trim(hostname)
 	write(*,*) "START TIME: ", trim(GOptions_timer.startDate())
 	write(*,*) "---------------------------------------------------------------------------"
 	
