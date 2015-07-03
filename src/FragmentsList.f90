@@ -455,6 +455,38 @@ module FragmentsList_
 			
 			weight = 0.0_8
 			
+! 			if( this.clusters( this.idSorted(1) ).fr() == 0 .and. this.clusters( this.idSorted(2) ).fr() /= 0 ) then
+				! Simplemente he utilizado como momento de inercia el valor asociado al momento orbital del átomo
+				! alrededor de la molécula
+				varIn = this.clusters( this.idSorted(1) ).mass()*this.clusters( this.idSorted(2) ).mass() &
+							*norm2(this.clusters(1).center()-this.clusters(2).center())**2/this.mass()
+				r = norm2(this.clusters(1).center()-this.clusters(2).center())
+							
+				! El factor sqrt, está considerado cuando se convierte LnIm_ a LnWr
+				weight = weight + GOptions_gammaLCorrection*maxval( [this.clusters( this.idSorted(1) ).fr(), this.clusters( this.idSorted(2) ).fr()] )*log(2.0_8*varIn)
+! 				weight = weight + GOptions_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(varIn/this.clusters( this.idSorted(1) ).mass())
+! 				weight = weight + max( 0, this.clusters( this.idSorted(2) ).fr()-1 )*log(r**2)
+				
+				call random_number(varJn)
+				varJn = -sqrt(2.0_8*this.kineticEnergy()*varIn) + 2.0_8*varJn*sqrt(2.0_8*this.kineticEnergy()*varIn)
+				this.rotationalEnergy = varJn**2/(2.0_8*varIn)
+! 			end if
+			
+			this.LnIm_ = weight
+			
+			if( GOptions_printLevel >= 3 ) then
+				write(*,"(A)") trim(this.label())
+				write(*,"(A,2F10.5)") "L-correction.weight = ", weight, log(2.0_8*varIn)
+				write(*,"(A,F10.5)") "L-correction.Erot = ", this.rotationalEnergy
+			end if
+			
+			return
+		
+		! Contribución orbital para el caso de 1 atomo y una molecula
+		else if( n==3 .and. GOptions_useLCorrection ) then
+			
+			weight = 0.0_8
+			
 			if( this.clusters( this.idSorted(1) ).fr() == 0 .and. this.clusters( this.idSorted(2) ).fr() /= 0 ) then
 				! Simplemente he utilizado como momento de inercia el valor asociado al momento orbital del átomo
 				! alrededor de la molécula
@@ -463,8 +495,8 @@ module FragmentsList_
 				r = norm2(this.clusters(1).center()-this.clusters(2).center())
 							
 				! El factor sqrt, está considerado cuando se convierte LnIm_ a LnWr
-! 				weight = weight + GOptions_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(2.0_8*varIn)
-				weight = weight + GOptions_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(varIn/this.clusters( this.idSorted(1) ).mass())
+				weight = weight + GOptions_gammaLCorrection*maxval( [this.clusters( this.idSorted(1) ).fr(), this.clusters( this.idSorted(2) ).fr()] )*log(2.0_8*varIn)
+! 				weight = weight + GOptions_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(varIn/this.clusters( this.idSorted(1) ).mass())
 ! 				weight = weight + max( 0, this.clusters( this.idSorted(2) ).fr()-1 )*log(r**2)
 				
 				call random_number(varJn)
@@ -473,6 +505,14 @@ module FragmentsList_
 			end if
 			
 			this.LnIm_ = weight
+			
+			if( GOptions_printLevel >= 3 ) then
+				write(*,"(A)") trim(this.label())
+				write(*,"(A,2F10.5)") "L-correction.weight = ", weight, log(2.0_8*varIn)
+				write(*,"(A,F10.5)") "L-correction.Erot = ", this.rotationalEnergy
+			end if
+			
+			return
 		end if
 
 		

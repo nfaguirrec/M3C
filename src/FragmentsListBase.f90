@@ -480,9 +480,14 @@ module FragmentsListBase_
 		
 		this.totalComposition = 0
 		do i=1,size(this.clusters)
+		
 			massVec(i) = this.clusters(i).mass()/amu &
 					+ this.clusters(i).charge/10.0 &
 						+ this.clusters(i).multiplicity/100.0_8 
+
+! 			massVec(i) = 10000000*this.clusters(i).mass()/amu + 1000000*this.clusters(i).nAtoms() + 100*this.clusters(i).charge &
+! 					+ this.clusters(i).multiplicity
+
 			this.totalComposition = this.totalComposition + this.clusters( i ).composition
 		end do
 			
