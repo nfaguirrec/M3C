@@ -80,6 +80,7 @@ program M3C
 	GOptions_useLWeightContrib = iParser.getLogical( "GOPTIONS:useLWeightContrib", def=.false. )
 	GOptions_useLReference = iParser.getLogical( "GOPTIONS:useLReference", def=.false. )
 	GOptions_gammaLCorrection = iParser.getReal( "GOPTIONS:gammaLCorrection", def=3.0_8 )
+	GOptions_useSpinConservationRules = iParser.getLogical( "GOPTIONS:useSpinConservationRules", def=.false. )
 	GOptions_printLevel = iParser.getInteger( "GOPTIONS:printLevel", def=1 )
 	GOptions_debugLevel = iParser.getInteger( "GOPTIONS:debugLevel", def=1 )
 	
@@ -94,6 +95,7 @@ program M3C
 	write(*,"(A40,L5)") "GOptions:useLWeightContrib = ", GOptions_useLWeightContrib
 	write(*,"(A40,L5)") "GOptions:useLReference = ", GOptions_useLReference
 	write(*,"(A40,F5.0)") "GOptions:gammaLCorrection = ", GOptions_gammaLCorrection
+	write(*,"(A40,L)") "useSpinConservationRules = ", GOptions_useSpinConservationRules
 	write(*,"(A40,I5)") "GOptions:printLevel = ", GOptions_printLevel
 	write(*,"(A40,I5)") "GOptions:debugLevel = ", GOptions_debugLevel
 	write(*,*)
@@ -133,6 +135,7 @@ program M3C
 		
 	else if( calculateMaxVib ) then
 		call reactorMethod.executeMinFragmentationEnergy( iParser )
+! 		call reactorMethod.executeGenerateAllChannels( iParser )
 		
 	!-------------------------------------------------------------------
 	! Checking for MarkovChain calculation

@@ -392,6 +392,8 @@ module FragmentsList_
 		integer :: fr
 		real(8) :: varIn
 		real(8) :: varJn
+		
+		real(8) :: Ilcorr
 		!-----------------------------------------------------------------------
 		
 		if( this.forceInitializing ) then
@@ -481,40 +483,123 @@ module FragmentsList_
 			end if
 			
 			return
-		
-		! Contribución orbital para el caso de 1 atomo y una molecula
-		else if( n==3 .and. GOptions_useLCorrection ) then
-			
-			weight = 0.0_8
-			
-			if( this.clusters( this.idSorted(1) ).fr() == 0 .and. this.clusters( this.idSorted(2) ).fr() /= 0 ) then
-				! Simplemente he utilizado como momento de inercia el valor asociado al momento orbital del átomo
-				! alrededor de la molécula
-				varIn = this.clusters( this.idSorted(1) ).mass()*this.clusters( this.idSorted(2) ).mass() &
-							*norm2(this.clusters(1).center()-this.clusters(2).center())**2/this.mass()
-				r = norm2(this.clusters(1).center()-this.clusters(2).center())
-							
-				! El factor sqrt, está considerado cuando se convierte LnIm_ a LnWr
-				weight = weight + GOptions_gammaLCorrection*maxval( [this.clusters( this.idSorted(1) ).fr(), this.clusters( this.idSorted(2) ).fr()] )*log(2.0_8*varIn)
-! 				weight = weight + GOptions_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(varIn/this.clusters( this.idSorted(1) ).mass())
-! 				weight = weight + max( 0, this.clusters( this.idSorted(2) ).fr()-1 )*log(r**2)
-				
-				call random_number(varJn)
-				varJn = -sqrt(2.0_8*this.kineticEnergy()*varIn) + 2.0_8*varJn*sqrt(2.0_8*this.kineticEnergy()*varIn)
-				this.rotationalEnergy = varJn**2/(2.0_8*varIn)
-			end if
-			
-			this.LnIm_ = weight
-			
-			if( GOptions_printLevel >= 3 ) then
-				write(*,"(A)") trim(this.label())
-				write(*,"(A,2F10.5)") "L-correction.weight = ", weight, log(2.0_8*varIn)
-				write(*,"(A,F10.5)") "L-correction.Erot = ", this.rotationalEnergy
-			end if
-			
-			return
 		end if
 
+! 		! Contribución orbital L-correction
+! 		! version:  Mon Jul 13 19:23:09 CEST 2015
+! 		if( n==2 .and. GOptions_useLCorrection ) then
+! 			
+! 			if( this.clusters( this.idSorted(1) ).fr() > this.clusters( this.idSorted(2) ).fr() ) then
+! 				mu = 1
+! 			else
+! 				mu = 2
+! 			end if
+! 			
+! 			r = norm2(this.clusters(1).center()-this.clusters(2).center())
+! 			Ilcorr = this.clusters( this.idSorted(1) ).mass()*this.clusters( this.idSorted(2) ).mass()*r**2/this.mass()
+! 			
+! 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 			! Calculo del peso
+! 			call invIi.init( 3, 3, 0.0_8 )
+! 			do j=3,4-this.clusters( this.idSorted(mu) ).fr(),-1
+! 				invIi.data( j, j ) = 1.0_8/this.clusters( this.idSorted(mu) ).diagInertiaTensor.data( j, j )
+! 			end do
+! 			
+! 			call invIi.eigen( eVals=invBi, eVecs=Ui )
+! 						
+! 			this.LnIm_ = 0.0_8
+! 			do j=3,4-this.clusters( this.idSorted(mu) ).fr(),-1
+! 				this.LnIm_ = this.LnIm_ - log(2.0_8*invBi.get(j,j))
+! 			end do
+! 			this.LnIm_ = this.LnIm_ + log(Math_PI**(this.clusters( this.idSorted(mu) ).fr()/2.0)) - log(gamma(this.clusters( this.idSorted(mu) ).fr()/2.0))
+! 			
+! 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 			! Calculo de la corrección
+! 			do j=3,4-this.clusters( this.idSorted(mu) ).fr(),-1
+! 				this.LnIm_ = this.LnIm_ - log( 1.0_8 + 1.0_8/( invBi.get(j,j)*Ilcorr ) )
+! 			end do
+! 			
+! 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 			! Calculo de la energía rotacional y de J
+! 			this.rotationalEnergy = 0.0_8
+! 			do i=1,3
+! 				if( ( .not. Math_isInf( 1.0_8/invBi.get(i,i) ) ) .and. 1.0_8/invBi.get(i,i) > maxIval ) then
+! 					call random_number( randNumber ) ! [0,1]
+! 					call random_number( randDirection ) ! [0,1]
+! 					randDirection = 0.0_8+2.0_8*randDirection  ! [0:2]
+! 					
+! 					this.clusters( this.idSorted(mu) ).J_(i) = &
+! 						(-1.0_8)**int(randDirection)*sqrt( 2.0_8*maxErot/abs( invBi.get(i,i) ) )*randNumber
+! 					
+! 					this.rotationalEnergy = this.rotationalEnergy + 0.5_8*this.clusters( this.idSorted(mu) ).J_(i)**2*invBi.get(i,i)
+! 				end if
+! 			end do
+! 			
+! 			if( GOptions_printLevel >= 3 ) then
+! 				write(*,"(A)") trim(this.label())
+! 				write(*,"(A,2F10.5)") "L-correction.weight = ", weight, log(2.0_8*varIn)
+! 				write(*,"(A,F10.5)") "L-correction.Erot = ", this.rotationalEnergy
+! 			end if
+! 			
+! 			return
+! 		
+! 		end if
+		
+		! Contribución orbital L-correction
+		! version:  Thu Jul 16 12:55:44 CEST 2015
+! 		if( GOptions_useLCorrection ) then
+! 			
+! 			mu = this.nFragments()
+! 			
+! 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 			! Calculo del peso
+! 			call invIi.init( 3, 3, 0.0_8 )
+! 			do j=3,4-this.clusters( this.idSorted(mu) ).fr(),-1
+! 				invIi.data( j, j ) = 1.0_8/this.clusters( this.idSorted(mu) ).diagInertiaTensor.data( j, j )
+! 			end do
+! 			
+! 			call invIi.eigen( eVals=invBi, eVecs=Ui )
+! 						
+! 			this.LnIm_ = 0.0_8
+! 			do j=3,4-this.clusters( this.idSorted(mu) ).fr(),-1
+! 				this.LnIm_ = this.LnIm_ - log(2.0_8*invBi.get(j,j))
+! 			end do
+! 			this.LnIm_ = this.LnIm_ + log(Math_PI**(this.clusters( this.idSorted(mu) ).fr()/2.0)) - log(gamma(this.clusters( this.idSorted(mu) ).fr()/2.0))
+! 			
+! 		end if
+		
+! 		! Contribución orbital para el caso de 1 atomo y una molecula
+! 		else if( n==3 .and. GOptions_useLCorrection ) then
+! 			
+! 			weight = 0.0_8
+! 			
+! 			if( this.clusters( this.idSorted(1) ).fr() == 0 .and. this.clusters( this.idSorted(2) ).fr() /= 0 ) then
+! 				! Simplemente he utilizado como momento de inercia el valor asociado al momento orbital del átomo
+! 				! alrededor de la molécula
+! 				varIn = this.clusters( this.idSorted(1) ).mass()*this.clusters( this.idSorted(2) ).mass() &
+! 							*norm2(this.clusters(1).center()-this.clusters(2).center())**2/this.mass()
+! 				r = norm2(this.clusters(1).center()-this.clusters(2).center())
+! 							
+! 				! El factor sqrt, está considerado cuando se convierte LnIm_ a LnWr
+! 				weight = weight + GOptions_gammaLCorrection*maxval( [this.clusters( this.idSorted(1) ).fr(), this.clusters( this.idSorted(2) ).fr()] )*log(2.0_8*varIn)
+! ! 				weight = weight + GOptions_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(varIn/this.clusters( this.idSorted(1) ).mass())
+! ! 				weight = weight + max( 0, this.clusters( this.idSorted(2) ).fr()-1 )*log(r**2)
+! 				
+! 				call random_number(varJn)
+! 				varJn = -sqrt(2.0_8*this.kineticEnergy()*varIn) + 2.0_8*varJn*sqrt(2.0_8*this.kineticEnergy()*varIn)
+! 				this.rotationalEnergy = varJn**2/(2.0_8*varIn)
+! 			end if
+! 			
+! 			this.LnIm_ = weight
+! 			
+! 			if( GOptions_printLevel >= 3 ) then
+! 				write(*,"(A)") trim(this.label())
+! 				write(*,"(A,2F10.5)") "L-correction.weight = ", weight, log(2.0_8*varIn)
+! 				write(*,"(A,F10.5)") "L-correction.Erot = ", this.rotationalEnergy
+! 			end if
+! 			
+! 			return
+! 		end if
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Calcula el numero efectivo de fragmentos no atomicos

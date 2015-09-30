@@ -11,6 +11,7 @@ module Fragment_
 	use RandomUtils_
 	use Molecule_
 	use StringList_
+	use RealList_
 	
 	use GOptions_
 	
@@ -78,6 +79,8 @@ module Fragment_
 			procedure, private :: updateLogVJ
 			
 			procedure :: showLnWComponents
+			
+			procedure :: spinAvailable
 	end type Fragment
 	
 	contains
@@ -844,6 +847,22 @@ module Fragment_
 				"     "//trim(this.name)
 		end if
 	end subroutine showLnWComponents
+	
+	!>
+	!! @brief
+	!!
+	function spinAvailable( this ) result( output )
+		class(Fragment), intent(in) :: this
+		type(RealList) :: output
+		
+		real(8) :: S, Si, Sj
+		integer :: i, j
+		
+		call output.init()
+		
+		S = (this.multiplicity-1.0_8)/2.0_8
+		call output.append( S )
+	end function spinAvailable
 	
 	!>
 	!! @brief Test method

@@ -32,6 +32,7 @@
 
 MAXVIB_NSTEPS=$1
 DEBUG=$2
+SPIN_CONSERVATION=$3
 
 ##############################
 # Default options
@@ -44,6 +45,11 @@ fi
 if [ -z "$DEBUG" ]
 then
 	DEBUG="FALSE"
+fi
+
+if [ -z "$SPIN_CONSERVATION" ]
+then
+	SPIN_CONSERVATION="FALSE"
 fi
 ##############################
 
@@ -138,6 +144,13 @@ main()
 {
 	cat /dev/null > .input-$$.m3c
 	cat /dev/null > .channels$$
+
+	if [ "$DEBUG" = "TRUE" ]
+	then
+		echo "BEGIN GOPTIONS" >> .input-$$.m3c
+		echo "useSpinConservationRules = true" >> .input-$$.m3c
+		echo "END GOPTIONS" >> .input-$$.m3c
+	fi
 
 	echo "BEGIN FRAGMENTS_DATABASE" >> .input-$$.m3c
 	echo "maxVib = true" >> .input-$$.m3c

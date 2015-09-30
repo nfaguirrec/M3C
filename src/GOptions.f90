@@ -22,6 +22,7 @@ module GOptions_
 	logical :: GOptions_useLWeightContrib = .false.
 	real(8) :: GOptions_gammaLCorrection = 1.0_8
 	logical :: GOptions_useLReference = .false.
+	logical :: GOptions_useSpinConservationRules = .false.
 	
 	! 1) MMMC
 	! 2) MMMC, Reactor

@@ -16,6 +16,7 @@ module FragmentsListBase_
 	use Atom_
 	use Molecule_
 	use BlocksIFileParser_
+	use RealList_
 	
 	use GOptions_
 	use Fragment_
@@ -130,6 +131,9 @@ module FragmentsListBase_
 			procedure, NON_OVERRIDABLE :: orient
 			procedure, NON_OVERRIDABLE :: radius
 			procedure, NON_OVERRIDABLE :: nFragments
+			
+			procedure, NON_OVERRIDABLE :: spinRange
+			procedure, NON_OVERRIDABLE :: spinAvailable
 			
 			procedure, NON_OVERRIDABLE :: executeRadiusOptimization
 	end type FragmentsListBase
@@ -2160,6 +2164,80 @@ module FragmentsListBase_
 		
 		output = size(this.clusters)
 	end function nFragments
+	
+	!>
+	!! @brief
+	!!
+	function spinRange( this ) result( output )
+		class(FragmentsListBase), intent(in) :: this
+		real(8) :: output(2)
+		
+		real(8) :: S
+		real(8) :: minS, maxS
+		logical :: firstTime
+		
+		integer :: i
+		
+		firstTime = .true.
+		minS = 0.0_8
+		maxS = 0.0_8
+		do i=1,this.nMolecules()
+			S = (this.clusters(i).multiplicity-1.0_8)/2.0_8
+			
+			if( S < 0.0_8 ) cycle
+			
+			maxS = maxS + S
+			minS = minS + merge( 1.0_8, -1.0_8, firstTime )*S
+			firstTime = .false.
+			
+! 			write(6,*) "Spin = ", S, maxS, minS
+		end do
+		minS = merge( 0.0_8, abs(minS), minS <= 0.0_8 )
+! 		write(6,*) "check Spin = ", S, maxS, minS
+		
+		output = [ minS, maxS ]
+	end function spinRange
+	
+	!>
+	!! @brief
+	!!
+	function spinAvailable( this ) result( output )
+		class(FragmentsListBase), intent(in) :: this
+		type(RealList) :: output
+		
+		real(8) :: S, Si, Sj
+		integer :: i, j
+		
+		call output.init()
+		
+		if( this.nMolecules() == 1 ) then
+			S = (this.clusters(1).multiplicity-1.0_8)/2.0_8
+			call output.append( S )
+		else
+			do i=1,this.nMolecules()-1
+				Si = (this.clusters(i).multiplicity-1.0_8)/2.0_8
+				
+				if( Si < 0.0_8 ) Si=0.0_8
+				
+				do j=i+1,this.nMolecules()
+					Sj = (this.clusters(j).multiplicity-1.0_8)/2.0_8
+					
+					if( Sj < 0.0_8 ) Sj=0.0_8
+					
+					S = abs(Si-Sj)
+					do while( int(2.0*S) <= int(2.0*(Si+Sj)) )
+						call output.append( S )
+						
+						S = S + 1.0_8
+					end do
+				end do
+			end do
+		end if
+		
+		if( output.size() == 0 ) then
+			write(*,*) "### ERROR ### FragmentsListBase.spinAvailable.size() == 0", this.nMolecules(), S, Si, Sj
+		end if
+	end function spinAvailable
 	
 	!>
 	!! @brief

@@ -13,6 +13,7 @@ module Reactor_
 	use AtomicElementsDB_
 	use BlocksIFileParser_
 	use RealHistogram_
+	use RealList_
 	use StringIntegerMap_
 	use StringRealMap_
 	use StringRealPair_
@@ -56,15 +57,21 @@ module Reactor_
 			procedure :: setType
 			procedure :: run
 			procedure, private :: changeComposition
+			procedure, private, NOPASS :: changeAllComposition
+			procedure, private, NOPASS :: isSpinForbidden
+			procedure, private, NOPASS :: reactorConstraint
 			
 			procedure :: execute
 			procedure :: executeMinFragmentationEnergy
+			procedure :: executeGenerateAllChannels
 	end type Reactor
 	
 	integer, private :: internalReactivesComposition(AtomicElementsDB_nElems) = 0 !< For convenience in changeAllComposition procedure
 	integer, private :: internalMassNumber = 0
 	integer, private :: internalCharge = 0
 	integer, private :: internalNTrials = 0
+! 	real(8), private :: internalReactivesSpinRange(2) = 0.0_8
+	type(RealList), private :: internalReactivesSpinAvail
 	
 	contains
 	
@@ -234,6 +241,70 @@ module Reactor_
 	!>
 	!! This is only necessary for changeAllComposition
 	!!
+	function isSpinForbidden( multisetPositions, current ) result( output )
+		integer, allocatable, intent(in) :: multisetPositions(:)
+		integer, intent(in) :: current
+		logical :: output
+		
+		real(8) :: S, Si, Sj
+		type(RealList) :: spinAvail
+		integer :: i, j
+		class(RealListIterator), pointer :: it1, it2
+		
+		call spinAvail.init()
+		
+		if( current == 1 ) then
+			S = (FragmentsDB_instance.clusters( multisetPositions(1) ).multiplicity-1.0_8)/2.0_8
+			call spinAvail.append( S )
+		else
+			do i=1,current-1
+				Si = (FragmentsDB_instance.clusters( multisetPositions(i) ).multiplicity-1.0_8)/2.0_8
+				
+				if( Si < 0.0_8 ) Si=0.0_8
+				
+				do j=i+1,current
+					Sj = (FragmentsDB_instance.clusters( multisetPositions(j) ).multiplicity-1.0_8)/2.0_8
+					
+					if( Sj < 0.0_8 ) Sj=0.0_8
+					
+					S = abs(Si-Sj)
+					do while( int(2.0*S) <= int(2.0*(Si+Sj)) )
+						call spinAvail.append( S )
+						S = S + 1.0_8
+					end do
+				end do
+			end do
+		end if
+		
+		if( spinAvail.size() == 0 ) then
+			write(*,*) "### ERROR ### spinAvail.size() == 0", current, S, Si, Sj
+		end if
+		
+		output = .true.
+		
+		it1 => spinAvail.begin
+		do while( associated(it1) )
+			
+			it2 => internalReactivesSpinAvail.begin
+			do while( associated(it2) )
+			
+				if( abs( it1.data - it2.data ) < 0.1 ) then
+					output = .false.
+					return
+				end if
+				
+				it2 => it2.next
+			end do
+			
+			it1 => it1.next
+		end do
+		
+		call spinAvail.clear()
+	end function isSpinForbidden
+
+	!>
+	!! This is only necessary for changeAllComposition
+	!!
 	function reactorConstraint( multisetPositions, current ) result( output )
 		integer, allocatable, intent(in) :: multisetPositions(:)
 		integer, intent(in) :: current
@@ -260,8 +331,17 @@ module Reactor_
 			output = .false.
 			
 			! @warning Acá estoy asumiendo que los reactivos tienen actualizada la formula y así su composición
-			if( all( productsComposition == internalReactivesComposition ) .and. ( internalCharge == totalCharge ) ) then
-				output = .true.
+			if( GOptions_useSpinConservationRules ) then
+				if( all( productsComposition == internalReactivesComposition ) &
+					.and. ( internalCharge == totalCharge ) &
+					.and. ( .not. isSpinForbidden( multisetPositions, current ) ) ) then
+					output = .true.
+				end if
+			else
+				if( all( productsComposition == internalReactivesComposition ) &
+					.and. ( internalCharge == totalCharge ) ) then
+					output = .true.
+				end if
 			end if
 			
 			internalNTrials = internalNTrials + 1  ! Por el momento este valor es solo informativo
@@ -351,6 +431,7 @@ module Reactor_
 			internalReactivesComposition = internalReactivesComposition + reactives.clusters(i).composition
 		end do
 		
+		internalReactivesSpinAvail = reactives.spinAvailable()
 		internalNTrials = 0
 		
 		do i=1,FragmentsDB_instance.nMolecules()
@@ -359,6 +440,7 @@ module Reactor_
 		
 		call RandomUtils_randomMultiset( ids, nProducts, channelInfo, reactorConstraint )
 		deallocate(ids)
+		call internalReactivesSpinAvail.clear()
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Se muestran lo valores importantes
@@ -720,5 +802,123 @@ module Reactor_
 		write(*,*) ""
 		
 	end subroutine executeMinFragmentationEnergy
+	
+	!>
+	!! @brief
+	!!
+	subroutine executeGenerateAllChannels( this, iParser )
+		class(Reactor) :: this
+		type(BlocksIFileParser), intent(in) :: iParser
+		
+		type(FragmentsList) :: reactives
+		character(20), allocatable :: reactiveTokens(:)
+		
+		type(String) :: strReactives
+		type(String) :: sBuffer
+		real(8) :: rBuffer, p
+		integer :: i, k, iBuffer, dN, id
+		logical :: lBuffer
+		integer :: nSteps
+		logical :: detailed
+		
+		type(StringHistogram) :: fragmentsHistogram
+		class(StringRealMapIterator), pointer :: iter
+		type(StringRealPair) :: pair
+		real(8) :: energy, minValue, minNegativeValue
+		type(String) :: labelMinEnergy, labelMinNegativeEnergy
+		logical :: warningNegativeEnergy
+		
+		if( .not. iParser.isThereBlock( "FRAGMENTS_DATABASE" ) ) then
+			return
+		end if
+		
+		nSteps = iParser.getInteger( "FRAGMENTS_DATABASE"//":maxVibNSteps", def=10000 )
+		write(*,"(A40,I10)") "maxVibNSteps = ", nSteps
+		write(*,*) ""
+		
+		detailed = iParser.getLogical( "FRAGMENTS_DATABASE"//":maxVibDetailed", def=.false. )
+		
+		call reactives.init( 1 )
+		
+		write(*,"(A60,A60,A10)") "reactive", "channel", "energy"
+		write(*,"(A60,A60,A10)") "", "", "eV"
+		write(*,"(A60,A60,A10)") "--------", "-------", "------"
+		
+! 		if( FragmentsDB_instance.clusters(id).nAtoms() == 1 ) exit
+		
+		id=size(FragmentsDB_instance.clusters)
+		call reactives.set( 1, FragmentsDB_instance.clusters(id) )
+		call FragmentsDB_instance.setEnergyReference( FragmentsDB_instance.clusters(id).electronicEnergy )
+		
+! 		call this.initReactor( reactives, 100.0_8*eV )
+		
+		warningNegativeEnergy = .false.
+		minValue = Math_INF
+		minNegativeValue = Math_INF
+		do dN=1,reactives.nAtoms()
+			call this.setType( "S:"//trim(FString_fromInteger(dN)) )
+			
+			call fragmentsHistogram.init()
+			
+			do k=1,nSteps
+! 					call this.run()
+				call this.changeComposition( this.dNFrag )
+				
+				if( this.products.nMolecules() == dN+1 ) then
+					call fragmentsHistogram.add( FString_toString( trim(this.products.label()) ) )
+				end if
+			end do
+			
+			call fragmentsHistogram.build()
+			
+			k=1
+			call fragmentsHistogram.densityBegin( iter )
+			do while( associated(iter) )
+				pair = fragmentsHistogram.pair( iter )
+				energy = ( FragmentsDB_instance.getEelecFromName(pair.first.fstr)-FragmentsDB_instance.getEelecFromName(reactives.label()) )/eV
+				
+				if( detailed ) &
+					write(*,"(A60,F10.4)") trim(adjustl(pair.first.fstr)), energy
+				
+				if( energy < minValue ) then
+					if( energy < 0.0_8 ) then
+						warningNegativeEnergy = .true.
+						
+						if( energy < minNegativeValue ) then
+							minNegativeValue = energy
+							labelMinNegativeEnergy = pair.first.fstr
+						end if
+					else
+						minValue = energy
+						labelMinEnergy = pair.first.fstr
+					end if
+				end if
+				
+				iter => iter.next
+				k = k+1
+			end do
+			
+			
+			call fragmentsHistogram.clear()
+		end do
+		
+		if( detailed ) &
+			write(*,*) ""
+			
+		if( .not. warningNegativeEnergy ) then
+			write(*,"(A60,A60,F10.5)") trim(adjustl(reactives.label())), trim(adjustl(labelMinEnergy.fstr)), minValue
+		else
+			write(*,"(A60,A60,F10.5,A,A30,F10.5,A)") trim(adjustl(reactives.label())), trim(adjustl(labelMinEnergy.fstr)), minValue, &
+									   "   ==> ( ", trim(adjustl(labelMinNegativeEnergy.fstr)), minNegativeValue, " )"
+		end if
+		
+		if( detailed ) then
+			write(*,*) ""
+			write(*,*) ""
+		end if
+		
+		write(*,*) ""
+		
+	end subroutine executeGenerateAllChannels
 
 end module Reactor_

@@ -1341,12 +1341,13 @@ set encoding iso_8859_1
 # set size square
 set size 1.0,0.8
 set xlabel "m/z"
-set ylabel "Normalized Intensity"
+set ylabel "Relative Intensity"
 set format y "%.0f"
 set xtics font "Helvetica Bold,9"
 set ytics font "Helvetica Bold,9"
 set key font "Helvetica Bold,10"
 
+set mxtics 10
 # set mytics 5
 # set grid y
 
@@ -1452,6 +1453,7 @@ set mytics 5
 set size square
 
 plot [-$xMax*0.04:$xMax*1.04] [-$yMax*0.04:$yMax*1.04] \
+"$eDistFile" u 1:2 w filledcurve ls 0 lc rgb "gray90", \
 "$eDistFile" u 1:2 w l ls 0 lw 4
 EOF
 	
@@ -1519,7 +1521,8 @@ set mytics 5
 set size square
 
 plot [-$xMax*0.04:$xMax*1.04] [-$yMax*0.04:$yMax*1.04] \
-"$eDistFile" u 1:2 w l ls 0 lw 4
+"$eDistFile" u 1:2 smooth csplines w l ls 0 lw 4 lc rgb "gray60", \
+"$eDistFile" u 1:2 smooth cspline w filledcurve ls 0 lc rgb "gray90"
 EOF
 	
 	$GNUPLOT -p .plotED-$iFile$$
