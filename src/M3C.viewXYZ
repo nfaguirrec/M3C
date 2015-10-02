@@ -35,6 +35,10 @@
 ##################################################################
 
 FILTER="rxyz"
+ZOOM="IN"
+SIZE="100"
+ORIENT="FALSE"
+RANDOM="TRUE"
 
 ##
 # @brief
@@ -70,11 +74,12 @@ function makeLatexTable()
 	local files=$*
 	
 	local nFiles=`echo $files | wc -w`
+	local effSize=`echo "1.6*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
 
 	echo "\begin{tabular}{|"
 	for i in `seq 1 $nColumns`
 	do
-		echo ">{\centering\arraybackslash}p{1.6cm}|"
+		echo ">{\centering\arraybackslash}p{${effSize}cm}|"
 	done
 	echo "}"
 	echo "\hline"
@@ -84,9 +89,9 @@ function makeLatexTable()
 	do
 		if (( $i%$nColumns != 0 && i != $nFiles ))
 		then
-			echo "\includegraphics[bb = 14 14 115 115, scale=0.3]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} &"
+			echo "\includegraphics[scale=0.3]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} &"
 		else
-			echo "\includegraphics[bb = 14 14 115 115, scale=0.3]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} "
+			echo "\includegraphics[scale=0.3]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} "
 			
 			if (( i != $nFiles ))
 			then
@@ -133,12 +138,13 @@ function makeLatexDocument()
 
 	files=`ls *.eps`
 	nFiles=`echo $files | wc -w`
+	effSize=`echo "1.6*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
 
 	echo "\begin{center}"
 	echo "\begin{tabular}{|"
 	for i in `seq 1 $nColumns`
 	do
-		echo ">{\centering\arraybackslash}p{1.6cm}|"
+		echo ">{\centering\arraybackslash}p{${effSize}cm}|"
 	done
 	echo "}"
 	echo "\hline"
@@ -150,16 +156,16 @@ function makeLatexDocument()
 		then
 			if [ "${highlighted[$i]}" = 1 ]
 			then
-				echo "\includegraphics[bb = 14 14 115 115, scale=0.3]{$f} \textcolor{red}{\tiny{$i \hspace{5pt}${f%.*}}} &"
+				echo "\includegraphics[scale=0.3]{$f} \textcolor{red}{\tiny{$i \hspace{5pt}${f%.*}}} &"
 			else
-				echo "\includegraphics[bb = 14 14 115 115, scale=0.3]{$f} \tiny{$i \hspace{5pt} ${f%.*}} &"
+				echo "\includegraphics[scale=0.3]{$f} \tiny{$i \hspace{5pt} ${f%.*}} &"
 			fi
 		else
 			if [ "${highlighted[$i]}" = 1 ]
 			then
-				echo "\includegraphics[bb = 14 14 115 115, scale=0.3]{$f} \textcolor{red}{\tiny{$i \hspace{5pt}${f%.*}}} "
+				echo "\includegraphics[scale=0.3]{$f} \textcolor{red}{\tiny{$i \hspace{5pt}${f%.*}}} "
 			else
-				echo "\includegraphics[bb = 14 14 115 115, scale=0.3]{$f} \tiny{$i \hspace{5pt} ${f%.*}} "
+				echo "\includegraphics[scale=0.3]{$f} \tiny{$i \hspace{5pt} ${f%.*}} "
 			fi
 			
 			if (( i != $nFiles ))
@@ -198,9 +204,15 @@ function buildGifFiles()
 		
 		echo -n "$iFile ... "
 		
-		molecule.rotate -i $iFile -random T > rand$iFile
-# 		cp $iFile rand$iFile
-# 		molecule.orient -i $iFile > rand$iFile
+		if [ $RANDOM=="TRUE" ]
+		then
+			molecule.rotate -i $iFile -random T > rand$iFile
+		elif [ $ORIENT=="TRUE" ]
+		then
+			molecule.orient -i $iFile > rand$iFile
+		else
+			cp $iFile rand$iFile
+		fi
 		
 		cat > geom$sID.jmol << EOF
 load "rand$iFile"
@@ -208,10 +220,8 @@ background [255,255,255]
 wireframe 0.15; spacefill 23%
 
 moveto 0 1 0 0 -90
-zoom IN
-write image 100 100 ${iFile%.*}.gif
-
-# write image 300 300 ${iFile%.*}.gif
+zoom $ZOOM
+write image $SIZE $SIZE ${iFile%.*}.gif
 EOF
 		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1
 		rm geom$sID.jmol
@@ -240,15 +250,23 @@ function buildEPSFiles()
 		
 		echo -n "$iFile ... "
 		
-		molecule.rotate -i $iFile -random T > rand$iFile
+		if [ $RANDOM=="TRUE" ]
+		then
+			molecule.rotate -i $iFile -random T > rand$iFile
+		elif [ $ORIENT=="TRUE" ]
+		then
+			molecule.orient -i $iFile > rand$iFile
+		else
+			cp $iFile rand$iFile
+		fi
 		
 		cat > geom$sID.jmol << EOF
 load "rand$iFile"
 background [255,255,255]
 wireframe 0.15; spacefill 23%
 moveto 0 1 0 0 -90
-zoom IN
-write image 100 100 ${iFile%.*}.gif
+zoom $ZOOM
+write image $SIZE $SIZE ${iFile%.*}.gif
 EOF
 		
 		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1
@@ -400,33 +418,38 @@ function main()
 {
 	local oType=$1  # unsorted|sorted|gif
 	FILTER=$2  # xyz
-	local highlight=$3  # 1,4,5
-	local nColumns=$4  # 8
+	local nColumns=$3  # 8
+	ZOOM=$4  # IN | 30 | 50
+	SIZE=$5  # 100
+	ORIENT=$6 # FALSE
+	RANDOM=$7 # TRUE
+	local highlight=$8  # 1,4,5
 	
 	checkDependencies
 	
 	case $oType in
 		u-pdf)
 			buildEPSFiles
-			geometries 8 $highlight
+			geometries $nColumns $highlight
 			removeEPSFiles
 			;;
 		s-pdf)
 			buildEPSFiles
-			geometriesByCategories 8 
+			geometriesByCategories $nColumns
 			removeEPSFiles
 			;;
 		pdf)
 			buildEPSFiles
-			geometries 8 $highlight
-			geometriesByCategories 8 
+			geometries $nColumns $highlight
+			geometriesByCategories $nColumns
 			removeEPSFiles
 			;;
 		gif)
 			buildGifFiles
 			;;
 		*)
-			echo "Usage: M3C.viewXYZ (u-pdf|s-pdf|pdf|gif) (xyz|rxyz) [highlight-list] [number-of-columns]"
+			echo "Usage: M3C.viewXYZ (u-pdf|s-pdf|pdf|gif) (xyz|rxyz) [number-of-columns] [zoom] [size] [orient] [random] [highlight-list]"
+			echo "defaults:                                                    8            IN    100     FALSE    TRUE              "
 			;;
 	esac
 }
