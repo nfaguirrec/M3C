@@ -54,6 +54,7 @@ module FragmentsList_
 			
 			procedure, private :: updateRotationalEnergy
 			procedure, private :: updateRotationalEnergyJnFull
+			procedure, private :: updateRotationalEnergyJnFull2
 			procedure, private :: updateRotationalEnergyJn
 			
 			procedure :: iTemperature
@@ -340,12 +341,15 @@ module FragmentsList_
 	subroutine updateRotationalEnergy( this )
 		class(FragmentsList) :: this
 		
-		if( GOptions_useLReference ) then
-			call updateRotationalEnergyL( this )
-		else
+! 		if( GOptions_useLReference ) then
+! 			call updateRotationalEnergyL( this )
+! 		else
 ! 			call updateRotationalEnergyJn( this )
-			call updateRotationalEnergyJnFull( this )
-		end if
+! 			call updateRotationalEnergyJnFull( this )
+			write(*,*) "Updating rotational energy ( "//trim(this.label())//" )"
+			call this.updateRotationalEnergyJnFull2()
+			write(*,*) "Updating rotational energy END"
+! 		end if
 		
 	end subroutine updateRotationalEnergy
 	
@@ -965,6 +969,452 @@ module FragmentsList_
 		end if
 		
 	end subroutine updateRotationalEnergyJnFull
+	
+	!>
+	!! @brief Actualiza la energía rotacional
+	!!
+	subroutine updateRotationalEnergyJnFull2( this )
+		class(FragmentsList) :: this
+		
+		real(8) :: maxErot
+		integer :: i, j, n
+		integer :: mu, nu, effMu, effNu
+		type(Matrix) :: In, invIn    !< Tensor de inercia de N proyectado sobre los ejes de i y su inversa
+		type(Matrix) :: Ii, invIi    !< Tensor de inercia de i proyectado sobre los ejes de i (diagonal) y su inversa
+		type(Matrix) :: Il, invIl
+		type(Matrix) :: It, invIt      !< Tensor de inercia de i proyectado sobre los ejes de i (diagonal) y su inversa
+		type(Matrix) :: Ji, L, Jn         !< Momentos angulares bf de i y n respectivamente
+		type(Matrix) :: RotMu, RotNu, RotN      !< Matrices de rotación
+		type(Matrix) :: invBigI
+		real(8) :: weight
+		real(8) :: maxIval
+		
+		type(Matrix) :: Ui
+		type(Matrix) :: Bi, invBi, tmp
+		integer :: fr_sf
+		
+		real(8) :: Ein
+		real(8) :: randNumber
+		real(8) :: randDirection
+		real(8) :: tmpErot
+		
+		logical :: debug = .false.
+		
+		integer :: nEffMu, nEffNu
+		real(8) :: Rmu, Rnu, IlmuVal, IlnuVal
+		
+		!-----------------------------------------------------------------------
+		! Valores para el apaño de 1 átomo + 1 molecula en el momento orbital
+		logical :: candidateLCorrection
+		real(8) :: Re, muMass, r, m, I_L
+		type(RandomSampler) :: rs
+		real(8), allocatable :: sample(:,:)
+		integer :: trials
+		real(8) :: ssum
+		real(8) :: l1, l2
+		real(8) :: j1, j2
+		integer :: fr
+		real(8) :: varIn
+		real(8) :: varJn
+		
+		real(8) :: Ilcorr
+		!-----------------------------------------------------------------------
+		
+		if( this.forceInitializing ) then
+			call this.initialGuessFragmentsList()
+			return
+		end if
+		
+		n = this.nMolecules()
+		
+		call Jn.columnVector( 3, val=0.0_8 )
+		this.L_ = 0.0_8
+		this.rotationalEnergy = 0.0_8
+		this.LnIm_ = 0.0_8
+		
+		do i=1,n
+			this.clusters(i).J_ = 0.0_8
+		end do
+		
+		maxErot = this.reactorEnergy()-this.vibrationalEnergy_-this.intermolEnergy_
+		
+		if( maxErot < 0.0_8 .or. n < 2 ) return
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Calcula el numero efectivo de fragmentos no atomicos
+		! e inicializa la matriz I grande
+		effMu = 0  ! << Comienza en cero porque es solo para contar
+		effNu = 0  ! << Comienza en cero porque es solo para contar
+		do mu=1,n-1
+			if( this.clusters( this.idSorted(mu) ).fr() /= 0 ) then
+				effNu = 0  ! << Comienza en cero porque es solo para contar
+				do nu=1,n-1
+					if( this.clusters( this.idSorted(nu) ).fr() /= 0 ) then
+						effNu = effNu + 1
+					end if
+				end do
+				effMu = effMu + 1
+			end if
+		end do
+		
+		if( debug ) then
+			write(*,*) trim(this.label())
+		end if
+		
+		if( effNu > 1 .and. effMu /= effNu ) then
+			write(*,"(A,2I8)") "FragmentsList.updateRotationalEnergyJnFull(). effMu /= effNu, ", effMu, effNu
+			stop 
+		end if
+		
+! 		if( effMu < 1 .and. GOptions_useLCorrection ) return
+		if( effMu < 1 ) return
+		
+		if( GOptions_useLDOSContrib ) then
+			call invBigI.init( (effMu+1)*3, (effNu+1)*3, 0.0_8 )
+		else
+			call invBigI.init( 3*effMu+3*(n-1), 3*effNu+3*(n-1), 0.0_8 )  !<< Se utiliza este cuando no se mete el L
+		end if
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Se obtiene la matriz inversa del tensor
+		! de inercia de n. Es diagonal en body fix
+		call invIn.init( 3, 3, 0.0_8 )
+		if( this.clusters( this.idSorted(n) ).fr() /= 0 ) then
+			do j=3,4-this.clusters( this.idSorted(n) ).fr(),-1
+				invIn.data( j, j ) = 1.0_8/this.clusters( this.idSorted(n) ).diagInertiaTensor.data( j, j )
+			end do
+		end if
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Creación de los Ij
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		effMu = 1
+		do mu=1,n-1
+		
+			if( debug ) then
+				write(*,*) "JJ' (mu,effMu) = ", mu, effMu
+			end if
+			
+			if( this.clusters( this.idSorted(mu) ).fr() /= 0 ) then
+				
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				! Matriz de rotación que permite transformar a los ejes
+				! de N en los ejes de i, pasando por el sistem fix
+				! RotMu = R_n^T*R_mu
+				RotMu = SpecialMatrix_rotationTransform( &
+					this.clusters( this.idSorted(mu) ).inertiaAxes(), &
+					this.clusters( this.idSorted(n) ).inertiaAxes() )
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				
+				effNu = 1
+				do nu=1,n-1
+					
+					if( debug ) then
+						write(*,*) "JJ (nu,effNu) = ", nu, effNu
+					end if
+					
+					if( this.clusters( this.idSorted(nu) ).fr() /= 0 ) then
+					
+						!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+						! Matriz de rotación que permite transformar a los ejes
+						! de N en los ejes de i, pasando por el sistem fix
+						! RotNu = R_n^T*R_nu
+						RotNu = SpecialMatrix_rotationTransform( &
+							this.clusters( this.idSorted(nu) ).inertiaAxes(), &
+							this.clusters( this.idSorted(n) ).inertiaAxes() )
+						!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+						
+						if( mu == nu ) then
+						
+							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+							! Se obtiene la matriz inversa del tensor
+							! de inercia de i
+							call invIi.init( 3, 3, 0.0_8 )
+							do j=3,4-this.clusters( this.idSorted(mu) ).fr(),-1
+								invIi.data( j, j ) = 1.0_8/this.clusters( this.idSorted(mu) ).diagInertiaTensor.data( j, j )
+							end do
+							
+							if( debug ) then
+								write(*,*) "Base(", mu, ",",  nu, ")"
+								call invIi.show( formatted=.true., precision=8 )
+! 								write(*,*) "Base(", mu, ",",  nu, ") inverse"
+! 								Ii = invIi.inverse()
+! 								call Ii.show( formatted=.true., precision=8 )
+							end if
+							
+							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+							! Se obtiene la matriz inversa del tensor
+							! de inercia efectivo.
+							invIt =  invIi + RotMu*invIn*RotMu.transpose()
+							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+							
+							if( debug ) then
+								write(*,*) "Effetive to Diag (", effMu, ",",  effNu, ")"
+								call invIt.show( formatted=.true., precision=8 )
+							end if
+							
+							do i=1,3
+								do j=1,3
+									call invBigI.set( 3*(effMu-1)+i, 3*(effNu-1)+j, invIt.get(i,j) )
+								end do
+							end do
+							
+						else
+						
+							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+							! Se obtiene la matriz de acoplamieto
+							invIt =  RotMu*invIn*RotNu.transpose()
+							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+							
+							if( debug ) then
+								write(*,*) "Extra diag(", effMu, ",",  effNu, ")"
+								call invIt.show( formatted=.true., precision=8 )
+							end if
+							
+							do i=1,3
+								do j=1,3
+									call invBigI.set( 3*(effMu-1)+i, 3*(effNu-1)+j, invIt.get(i,j) )
+								end do
+							end do
+						
+						end if
+						
+						effNu = effNu + 1
+					end if
+					
+				end do
+				
+				effMu = effMu + 1
+			end if
+			
+		end do
+		
+		nEffMu = effMu-1
+		nEffNu = effNu-1
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Creación de los Il
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		effMu = 1
+		do mu=1,n-1
+			
+			if( this.clusters( this.idSorted(mu) ).fr() /= 0 ) then
+				
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				! Matriz de rotación que permite transformar a los ejes
+				! de N en los ejes de i, pasando por el sistem fix
+				! RotMu = R_n^T*R_mu
+				RotMu =  SpecialMatrix_rotationTransform( &
+					   this.clusters( this.idSorted(mu) ).inertiaAxes(), &
+					   this.clusters( this.idSorted(n) ).inertiaAxes() )
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				
+				if( debug ) then
+					write(*,*) "JL (mu,effMu) = ", mu, effMu
+				end if
+				
+				invIt = RotMu*invIn
+				
+				if( debug ) then
+					call invIt.show( formatted=.true., precision=8 )
+				end if
+				
+				effNu = 1
+				do nu=1,n-1
+				
+					do i=1,3
+						do j=1,3
+							call invBigI.set( (effMu-1)+i+3*(effMu-1), 3*(nu-1)+j+3*nEffNu, invIt.get(i,j) )
+							call invBigI.set( 3*(nu-1)+j+3*nEffNu, (effMu-1)+i+3*(effMu-1), invIt.get(i,j) )
+						end do
+					end do
+					
+				end do
+				
+				effMu = effMu + 1
+			end if
+			
+			Rmu = norm2( this.clusters(this.idSorted(mu)).center()-this.clusters(this.idSorted(n)).center() )
+			IlmuVal = ( this.clusters( this.idSorted(mu) ).mass()+this.clusters( this.idSorted(n) ).mass() )&
+					/( this.clusters( this.idSorted(mu) ).mass()*this.clusters( this.idSorted(n) ).mass()*Rmu**2 )
+			
+			effNu = 1
+			do nu=1,n-1
+			
+				if( debug ) then
+					write(*,*) "LL (mu,nu) = ", mu, nu
+				end if
+				
+				if( mu == nu ) then
+				
+					call invIi.identity( 3, 3 )
+					invIi = invIi*IlmuVal + invIn
+					
+					if( debug ) then
+						write(*,*) "Base(", mu, ",",  nu, ")"
+						call invIi.show( formatted=.true., precision=8 )
+					end if
+					
+				else
+				
+					invIi = invIn
+					
+					if( debug ) then
+						write(*,*) "Extra diag(", mu, ",",  nu, ")"
+						call invIi.show( formatted=.true., precision=8 )
+					end if
+					
+				
+				end if
+				
+				do i=1,3
+					do j=1,3
+						call invBigI.set( 3*(mu-1)+i+3*nEffMu, 3*(nu-1)+j+3*nEffNu, invIi.get(i,j) )
+					end do
+				end do
+			end do
+		end do
+		
+		if( debug ) then
+			write(*,*) "Total"
+			call invBigI.show( formatted=.true., precision=8 )
+		end if
+		
+		!! @todo OJJJOOOO apaño
+		invBigI = invBigI + 1d-12
+		
+		maxIval = 0.0_8
+		do effMu=1,invBigI.nRows
+			if( ( .not. Math_isInf( 1.0_8/invBigI.get(effMu,effMu) ) ) .and. 1.0_8/invBigI.get(effMu,effMu) > maxIval ) then
+				maxIval = 1.0_8/invBigI.get(effMu,effMu)
+			end if
+		end do
+		
+		call invBigI.eigen( eVals=invBi, eVecs=Ui )
+		
+		if( debug ) then
+			write(*,*) "maxIval = ", maxIval
+			write(*,*) "Diag Total"
+			call invBi.show( formatted=.true., precision=8 )
+			Bi = invBi.inverse()
+			write(*,*) "Diag Total inverse"
+			call Bi.show( formatted=.true., precision=8 )
+		end if
+		
+! 		tol = 0.8*invBi.trace()/invBi.nRows
+! 		
+! 		if( debug ) then
+! 			write(*,*) "Tol = ", tol
+! 		end if
+		
+		fr_sf = 0
+		do effMu=1,invBi.nRows
+			if( 1.0_8/invBi.get(effMu,effMu) <= maxIval ) then  !< Curiosamente para el caso = funciona
+				fr_sf = fr_sf + 1
+			end if
+		end do
+		
+		if( debug ) then
+			write(*,*) "fr_sf = ", fr_sf
+		end if
+		
+		weight = 0.0_8
+		do effMu=invBi.nRows,invBi.nRows-fr_sf+1,-1
+			if( debug ) then
+				write(*,*) "effMu = ", effMu, 1.0_8/invBi.get(effMu,effMu), -log(invBi.get(effMu,effMu))
+			end if
+			
+			weight = weight - log(invBi.get(effMu,effMu))
+		end do
+		
+		if( GOptions_useLWeightContrib ) then
+			do j=3,4-this.fl(),-1
+				weight = weight - log(this.diagInertiaTensor(j))
+! 				write(*,*) "I", j, " = ", - log(this.diagInertiaTensor(j))
+			end do
+		end if
+		
+		if( debug ) then
+			write(*,*) "weight = ", weight
+		end if
+		
+		this.LnIm_ = weight
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Genera los momentos angulares en sf
+		call Jn.columnVector( 3, val=0.0_8 )
+		
+		Ein = 0.0_8
+		effMu = 1  !< effMu da las coordenadas para localizar un valor en la matriz bigI
+		do mu=1,n-1
+			if( this.clusters( this.idSorted(mu) ).fr() /= 0 ) then
+			
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				! Matriz de rotación que permite transformar a los ejes
+				! de N en los ejes de i, pasando por el sistem fix
+				! RotMu = R_n^T*R_mu
+				RotMu = SpecialMatrix_rotationTransform( &
+					this.clusters( this.idSorted(effMu) ).inertiaAxes(), &
+					this.clusters( this.idSorted(n) ).inertiaAxes() )
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				
+				do while( .true. )
+					tmpErot = 0.0_8
+					do i=1,3
+						if( ( .not. Math_isInf( 1.0_8/invBigI.get( 3*(effMu-1)+i, 3*(effMu-1)+i ) ) ) &
+								.and. 1.0_8/invBigI.get( 3*(effMu-1)+i, 3*(effMu-1)+i ) > maxIval ) then
+! 						if( ( invBi.get( 3*(effMu-1)+i, 3*(effMu-1)+i ) ) > 0.0_8 .and. abs( invBi.get( 3*(effMu-1)+i, 3*(effMu-1)+i ) ) > tol ) then
+							call random_number( randNumber ) ! [0,1]
+							call random_number( randDirection ) ! [0,1]
+							randDirection = 0.0_8+2.0_8*randDirection  ! [0:2]
+							
+							this.clusters( this.idSorted(mu) ).J_(i) = &
+								(-1.0_8)**int(randDirection)*sqrt( 2.0_8*maxErot/abs( invBi.get( 3*(effMu-1)+i, 3*(effMu-1)+i ) ) )*randNumber
+							
+	! 						write(*,*) "mu, i, J = ", mu, i, this.clusters( this.idSorted(effMu) ).J_(i)
+							tmpErot = tmpErot + 0.5_8*this.clusters( this.idSorted(mu) ).J_(i)**2*invBi.get( 3*(effMu-1)+i, 3*(effMu-1)+i )
+							
+	! 						write(*,*) "Ei = ", Ein
+						end if
+					end do
+					
+					if( tmpErot <= maxErot ) exit
+				end do
+				Ein = tmpErot
+				
+				if( debug ) then
+					write(*,"(A,A,3F10.1)") trim(this.clusters( this.idSorted(mu) ).label()), ", J = ", this.clusters( this.idSorted(mu) ).J_
+				end if
+				
+				! @todo Hace falta una linea transformadolo J a bf (La energia si se calcula en sf, tal como esta arriba)
+				
+				! Momento angular para el fragmento mu-esimo
+				call Ji.columnVector( 3, values=this.clusters( this.idSorted(mu) ).J_ )
+				
+				! Contribución a Jn
+				Jn = Jn - RotMu*Ji
+				
+				effMu = effMu + 1
+			end if
+		end do
+		
+		this.clusters(this.idSorted(n)).J_ = Jn.data(:,1)
+		
+		this.rotationalEnergy = Ein
+		
+		if( debug ) then
+			write(*,"(A,A,3F10.1)") trim(this.clusters( this.idSorted(n) ).label()), ", Jcal = ", this.clusters( this.idSorted(n) ).J_
+			write(*,"(A,F10.5)") "Energy = ", Ein
+			stop
+		end if
+		
+		if( GOptions_printLevel >= 3 ) then
+			call GOptions_valueReport( "Angular momentum coupling weight", weight, indent=2 )
+		end if
+		
+	end subroutine updateRotationalEnergyJnFull2
 	
 	!>
 	!! @brief Actualiza la energía rotacional

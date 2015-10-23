@@ -1,8 +1,7 @@
 INTELC_VERSION = `icpc -dumpversion`
 MACHINE = `uname -m`
-VERSION = "1.1"
-#SCIFT_HOME = /media/14eacb85-2460-4c08-90dc-dacc9adabbef/nestor/Dropbox/UAM/scift
-SCIFT_HOME = /home/nestor/Dropbox/UAM/scift
+VERSION = "1.2"
+SCIFT_HOME = /home/nestor/Develop/scift
 
 # all:
 # 	cd src; make; cd ..
@@ -27,20 +26,22 @@ SCIFT_HOME = /home/nestor/Dropbox/UAM/scift
 # 	doxygen doxyfile
 
 binary:
-	mkdir M3C
-	mkdir M3C/doc
-	cp doc/tutorial/M3C-tutorial.pdf M3C/doc/
-#	cp -r examples M3C
-	cp -r utils M3C
-	mkdir M3C/bin
-	find src -type f -executable -exec cp {} M3C/bin \;
-	cp ${SCIFT_HOME}/examples/molecule.compare M3C/bin
-	cp ${SCIFT_HOME}/examples/molecule.fv M3C/bin
-	cp ${SCIFT_HOME}/examples/molecule.inertia M3C/bin
-	cp ${SCIFT_HOME}/examples/molecule.mass M3C/bin
-	cp ${SCIFT_HOME}/examples/molecule.random M3C/bin
-	cp ${SCIFT_HOME}/examples/molecule.radius M3C/bin
+	mkdir M3C-v${VERSION}
+	mkdir M3C-v${VERSION}/doc
+	cp doc/tutorial/M3C-tutorial.pdf M3C-v${VERSION}/doc/
+#	cp -r examples M3C-v${VERSION}
+	cp -r utils M3C-v${VERSION}
+	mkdir M3C-v${VERSION}/bin
+	find src -type f -executable -exec cp {} M3C-v${VERSION}/bin \;
+	cp ${SCIFT_HOME}/examples/molecule.compare M3C-v${VERSION}/bin
+	cp ${SCIFT_HOME}/examples/molecule.fv M3C-v${VERSION}/bin
+	cp ${SCIFT_HOME}/examples/molecule.inertia M3C-v${VERSION}/bin
+	cp ${SCIFT_HOME}/examples/molecule.mass M3C-v${VERSION}/bin
+	cp ${SCIFT_HOME}/examples/molecule.random M3C-v${VERSION}/bin
+	cp ${SCIFT_HOME}/examples/molecule.radius M3C-v${VERSION}/bin
+	cp ${SCIFT_HOME}/examples/molecule.minMult M3C-v${VERSION}/bin
+	cp ${SCIFT_HOME}/examples/molecule.rotate M3C-v${VERSION}/bin
 	sleep 10s
-	tar cvfz M3C-${VERSION}-intelc-${INTELC_VERSION}-${MACHINE}.tar.gz M3C
-	rm -rf M3C
+	tar cvfz M3C-v${VERSION}-intelc-${INTELC_VERSION}-${MACHINE}.tar.gz M3C-v${VERSION}
+	rm -rf M3C-v${VERSION}
         
