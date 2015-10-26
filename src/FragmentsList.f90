@@ -346,9 +346,7 @@ module FragmentsList_
 ! 		else
 ! 			call updateRotationalEnergyJn( this )
 ! 			call updateRotationalEnergyJnFull( this )
-			write(*,*) "Updating rotational energy ( "//trim(this.label())//" )"
 			call this.updateRotationalEnergyJnFull2()
-			write(*,*) "Updating rotational energy END"
 ! 		end if
 		
 	end subroutine updateRotationalEnergy
@@ -971,6 +969,72 @@ module FragmentsList_
 	end subroutine updateRotationalEnergyJnFull
 	
 	!>
+	!! @brief 
+	!!
+	function buildInertiaRL( r, mass, center ) result( Im )
+		real(8), intent(in) :: r(3)
+		real(8), intent(in) :: mass
+		real(8), optional, intent(in) :: center(3)
+		type(Matrix) :: Im
+		
+		real(8) :: X, Y, Z, m
+		
+		real(8) :: effCenter(3)
+		
+		effCenter = 0.0_8
+		if( present(center) ) effCenter = center
+		
+		X = r(1) - effCenter(1)
+		Y = r(2) - effCenter(2)
+		Z = r(3) - effCenter(3)
+		m = mass
+		
+		call Im.init(3,3)
+		
+		call Im.set( 1, 1,  m*(Y**2+Z**2) )
+		call Im.set( 1, 2, -m*X*Y )
+		call Im.set( 1, 3, -m*X*Z )
+		call Im.set( 2, 1, -m*Y*X )
+		call Im.set( 2, 2,  m*(X**2+Z**2) )
+		call Im.set( 2, 3, -m*Y*Z )
+		call Im.set( 3, 1, -m*Z*X )
+		call Im.set( 3, 2, -m*Z*Y )
+		call Im.set( 3, 3,  m*(X**2+Y**2) )
+	end function buildInertiaRL
+	
+	!>
+	!! @brief 
+	!!
+	function buildinvInertiaRL( r, mass, center ) result( Im )
+		real(8), intent(in) :: r(3)
+		real(8), intent(in) :: mass
+		real(8), optional, intent(in) :: center(3)
+		type(Matrix) :: Im
+		
+		real(8) :: X, Y, Z, m
+		
+		real(8) :: effCenter(3), det
+		
+		effCenter = 0.0_8
+		if( present(center) ) effCenter = center
+		
+		X = r(1) - effCenter(1)
+		Y = r(2) - effCenter(2)
+		Z = r(3) - effCenter(3)
+		m = mass
+		
+		det = m*(X**2)*m*(Y**2)-m*X*Y*m*Y*X
+		
+		call Im.init( 3, 3, 0.0_8 )
+		
+		call Im.set( 1, 1,  m*(X**2)/det )
+		call Im.set( 1, 2,  m*X*Y/det )
+		call Im.set( 2, 1,  m*Y*X/det )
+		call Im.set( 2, 2,  m*(Y**2)/det )
+		call Im.set( 3, 3,  1.0_8/m*(X**2+Y**2) )
+	end function buildinvInertiaRL
+	
+	!>
 	!! @brief Actualiza la energía rotacional
 	!!
 	subroutine updateRotationalEnergyJnFull2( this )
@@ -998,27 +1062,11 @@ module FragmentsList_
 		real(8) :: randDirection
 		real(8) :: tmpErot
 		
-		logical :: debug = .false.
+		logical :: debug = .true.
 		
 		integer :: nEffMu, nEffNu
-		real(8) :: Rmu, Rnu, IlmuVal, IlnuVal
-		
-		!-----------------------------------------------------------------------
-		! Valores para el apaño de 1 átomo + 1 molecula en el momento orbital
-		logical :: candidateLCorrection
-		real(8) :: Re, muMass, r, m, I_L
-		type(RandomSampler) :: rs
-		real(8), allocatable :: sample(:,:)
-		integer :: trials
-		real(8) :: ssum
-		real(8) :: l1, l2
-		real(8) :: j1, j2
-		integer :: fr
-		real(8) :: varIn
-		real(8) :: varJn
-		
-		real(8) :: Ilcorr
-		!-----------------------------------------------------------------------
+		type(Matrix) :: Ilmu, invIlmu, Ilnu
+		real(8) :: det
 		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsList()
@@ -1057,6 +1105,9 @@ module FragmentsList_
 			end if
 		end do
 		
+		nEffMu = effMu
+		nEffNu = effNu
+		
 		if( debug ) then
 			write(*,*) trim(this.label())
 		end if
@@ -1066,14 +1117,11 @@ module FragmentsList_
 			stop 
 		end if
 		
-! 		if( effMu < 1 .and. GOptions_useLCorrection ) return
-		if( effMu < 1 ) return
-		
-		if( GOptions_useLDOSContrib ) then
-			call invBigI.init( (effMu+1)*3, (effNu+1)*3, 0.0_8 )
-		else
-			call invBigI.init( 3*effMu+3*(n-1), 3*effNu+3*(n-1), 0.0_8 )  !<< Se utiliza este cuando no se mete el L
-		end if
+! 		if( GOptions_useLDOSContrib ) then
+! 			call invBigI.init( (effMu+1)*3, (effNu+1)*3, 0.0_8 )
+! 		else
+			call invBigI.init( 3*nEffMu+3*(n-1), 3*nEffNu+3*(n-1), 0.0_8 )  !<< Se utiliza este cuando no se mete el L
+! 		end if
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1191,9 +1239,6 @@ module FragmentsList_
 			
 		end do
 		
-		nEffMu = effMu-1
-		nEffNu = effNu-1
-		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Creación de los Il
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1236,9 +1281,47 @@ module FragmentsList_
 				effMu = effMu + 1
 			end if
 			
-			Rmu = norm2( this.clusters(this.idSorted(mu)).center()-this.clusters(this.idSorted(n)).center() )
-			IlmuVal = ( this.clusters( this.idSorted(mu) ).mass()+this.clusters( this.idSorted(n) ).mass() )&
-					/( this.clusters( this.idSorted(mu) ).mass()*this.clusters( this.idSorted(n) ).mass()*Rmu**2 )
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Tensor de inercia orbital y su inversa
+			Ilmu = buildInertiaRL( &
+				this.clusters(this.idSorted(mu)).center(), &
+				this.clusters( this.idSorted(mu) ).mass(), &
+				this.clusters(this.idSorted(n)).center() )
+				
+			if( &
+				abs(Ilmu.get(1,3)) < 1d-10 .and. &
+				abs(Ilmu.get(2,3)) < 1d-10 .and. &
+				abs(Ilmu.get(3,1)) < 1d-10 .and. &
+				abs(Ilmu.get(3,2)) < 1d-10 &
+			) then
+! 				call invIlmu.init( 3, 3, 0.0_8 )
+! 				
+! 				det = Ilmu.get(1,1)*Ilmu.get(2,2)-Ilmu.get(1,2)*Ilmu.get(2,1)
+! 				write(*,*) "Hola", det
+! 				write(*,"(2F40.15)") Ilmu.get(1,1)*Ilmu.get(2,2), Ilmu.get(1,2)*Ilmu.get(2,1)
+! 				call invIlmu.set( 1, 1,  Ilmu.get(2,2)/det )
+! 				call invIlmu.set( 1, 2, -Ilmu.get(1,2)/det )
+! 				call invIlmu.set( 2, 1, -Ilmu.get(2,1)/det )
+! 				call invIlmu.set( 2, 2,  Ilmu.get(1,1)/det )
+! 				
+! 				call invIlmu.set( 3, 3,  1.0_8/Ilmu.get(3,3) )
+				write(*,*) "Hola"
+				invIlmu = buildinvInertiaRL( &
+					this.clusters(this.idSorted(mu)).center(), &
+					this.clusters( this.idSorted(mu) ).mass(), &
+					this.clusters(this.idSorted(n)).center() )
+			else
+				invIlmu = Ilmu.inverse()
+			end if
+			
+			if( debug ) then
+				write(*,*) "Ilmu(", mu, ")"
+				write(*,*) Ilmu.isDiagonal()
+				call Ilmu.show( formatted=.true., precision=8 )
+				write(*,*) "invIlmu(", mu, ")"
+				call invIlmu.show( formatted=.true., precision=8 )
+			end if
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			
 			effNu = 1
 			do nu=1,n-1
@@ -1248,9 +1331,8 @@ module FragmentsList_
 				end if
 				
 				if( mu == nu ) then
-				
-					call invIi.identity( 3, 3 )
-					invIi = invIi*IlmuVal + invIn
+					
+					invIi = invIlmu + invIn
 					
 					if( debug ) then
 						write(*,*) "Base(", mu, ",",  nu, ")"
