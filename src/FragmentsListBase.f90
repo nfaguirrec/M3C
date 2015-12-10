@@ -2,6 +2,7 @@
 !! @brief
 !!
 module FragmentsListBase_
+	use GOptions_
 	use String_
 	use Math_
 	use Matrix_
@@ -18,7 +19,7 @@ module FragmentsListBase_
 	use BlocksIFileParser_
 	use RealList_
 	
-	use GOptions_
+	use GOptionsM3C_
 	use Fragment_
 	use FragmentsDB_
 	
@@ -675,7 +676,7 @@ module FragmentsListBase_
 		end if
 		
 ! Testing overlap
-#define OVERLAPPING(i,j) this.clusters(i).radius()+this.clusters(j).radius()-GOptions_overlappingRadius > norm2( rVec2-rVec1 )
+#define OVERLAPPING(i,j) this.clusters(i).radius()+this.clusters(j).radius()-GOptionsM3C_overlappingRadius > norm2( rVec2-rVec1 )
 ! ! Sampling on "x" axis, which is the axis with inertia moment equal to cero
 ! #define RVEC_X(i) [ sample(1,i), 0.0_8, 0.0_8 ]
 ! ! Sampling on "x-y" axes in polar coordinates
@@ -693,12 +694,12 @@ module FragmentsListBase_
 		allocate( sample(3,this.nMolecules()) )
 		
 		call rs.init( nDim=3 )
-! 		call rs.setRange( 1, [0.0_8,GOptions_systemRadius] )     ! r in (0,Rsys)
+! 		call rs.setRange( 1, [0.0_8,GOptionsM3C_systemRadius] )     ! r in (0,Rsys)
 ! 		call rs.setRange( 2, [0.0_8,MATH_PI] )        ! theta in (0,pi)
 ! 		call rs.setRange( 3, [0.0_8,2.0_8*MATH_PI] )  ! phi in (0,2pi)
-		call rs.setRange( 1, [-GOptions_systemRadius,GOptions_systemRadius] )  ! x in (-Rsys,Rsys)
-		call rs.setRange( 2, [-GOptions_systemRadius,GOptions_systemRadius] )  ! y in (-Rsys,Rsys)
-		call rs.setRange( 3, [-GOptions_systemRadius,GOptions_systemRadius] )  ! z in (-Rsys,Rsys)
+		call rs.setRange( 1, [-GOptionsM3C_systemRadius,GOptionsM3C_systemRadius] )  ! x in (-Rsys,Rsys)
+		call rs.setRange( 2, [-GOptionsM3C_systemRadius,GOptionsM3C_systemRadius] )  ! y in (-Rsys,Rsys)
+		call rs.setRange( 3, [-GOptionsM3C_systemRadius,GOptionsM3C_systemRadius] )  ! z in (-Rsys,Rsys)
 		
 		overlap = .false.
 		
@@ -719,7 +720,7 @@ module FragmentsListBase_
 					!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 					! Se verifica que a los centros no sobrelapen ni que
 					! se salgan del radio del sistema
-					overlap = OVERLAPPING(1,2) .or. norm2(rVec1) > GOptions_systemRadius .or. norm2(rVec2) > GOptions_systemRadius
+					overlap = OVERLAPPING(1,2) .or. norm2(rVec1) > GOptionsM3C_systemRadius .or. norm2(rVec2) > GOptionsM3C_systemRadius
 					
 					!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 					! Se verifica que a ajustar el centro de masas el sistema
@@ -731,7 +732,7 @@ module FragmentsListBase_
 					cm = cm/this.mass()
 					
 					do i=1,this.nMolecules()
-						if( norm2(RVEC_X(i)-cm) > GOptions_systemRadius ) then
+						if( norm2(RVEC_X(i)-cm) > GOptionsM3C_systemRadius ) then
 							overlap = .true.
 						end if
 					end do
@@ -761,7 +762,7 @@ module FragmentsListBase_
 							rVec1 = RVEC_XY(i)
 							rVec2 = RVEC_XY(j)
 							
-							overlap = OVERLAPPING(i,j) .or. norm2(rVec1) > GOptions_systemRadius .or. norm2(rVec2) > GOptions_systemRadius
+							overlap = OVERLAPPING(i,j) .or. norm2(rVec1) > GOptionsM3C_systemRadius .or. norm2(rVec2) > GOptionsM3C_systemRadius
 							
 							if( overlap ) exit
 						end do
@@ -779,7 +780,7 @@ module FragmentsListBase_
 					cm = cm/this.mass()
 					
 					do i=1,this.nMolecules()
-						if( norm2(RVEC_XY(i)-cm) > GOptions_systemRadius ) then
+						if( norm2(RVEC_XY(i)-cm) > GOptionsM3C_systemRadius ) then
 							overlap = .true.
 						end if
 					end do
@@ -806,14 +807,14 @@ module FragmentsListBase_
 					do i=1,this.nMolecules()-1
 						rVec1 = RVEC_XYZ(i)
 						
-						overlap = norm2(rVec1) > GOptions_systemRadius
+						overlap = norm2(rVec1) > GOptionsM3C_systemRadius
 						if( overlap ) exit
 						
 						do j=i+1,this.nMolecules()
 							
 							rVec2 = RVEC_XYZ(j)
 							
-							overlap = OVERLAPPING(i,j) .or. norm2(rVec2) > GOptions_systemRadius
+							overlap = OVERLAPPING(i,j) .or. norm2(rVec2) > GOptionsM3C_systemRadius
 							
 							if( overlap ) exit
 						end do
@@ -831,7 +832,7 @@ module FragmentsListBase_
 					cm = cm/this.mass()
 					
 					do i=1,this.nMolecules()
-						if( norm2(RVEC_XYZ(i)-cm) > GOptions_systemRadius ) then
+						if( norm2(RVEC_XYZ(i)-cm) > GOptionsM3C_systemRadius ) then
 							overlap = .true.
 						end if
 					end do
@@ -886,13 +887,13 @@ module FragmentsListBase_
 		
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_paragraph( "RANDOM WALK STEP", indent=2 )
-			call GOptions_valueReport( "radius", GOptions_randomWalkStepRadius/angs, "A", indent=2 )
-			call GOptions_valueReport( "systemRadius", GOptions_systemRadius/angs, "A", indent=2 )
+			call GOptions_valueReport( "radius", GOptionsM3C_randomWalkStepRadius/angs, "A", indent=2 )
+			call GOptions_valueReport( "systemRadius", GOptionsM3C_systemRadius/angs, "A", indent=2 )
 			call GOptions_valueReport( "maxIter", effMaxIter, indent=2 )
 		end if
 		
 ! Testing overlap
-#define OVERLAPPING(i,j) this.clusters(i).radius()+this.clusters(j).radius()-GOptions_overlappingRadius > norm2( rVec2-rVec1 )
+#define OVERLAPPING(i,j) this.clusters(i).radius()+this.clusters(j).radius()-GOptionsM3C_overlappingRadius > norm2( rVec2-rVec1 )
 ! Sampling on "x" axis, which is the axis with inertia moment equal to cero (r)
 #define RVEC_X(i) [ sample(1,i), 0.0_8, 0.0_8 ]
 ! Sampling on "x-y" axes in polar coordinates (r,phi)
@@ -906,7 +907,7 @@ module FragmentsListBase_
 		allocate( sample(3,this.nMolecules()) )
 		
 		call rs.init( nDim=3 )
-		call rs.setRange( 1, [0.0_8,GOptions_randomWalkStepRadius] )     ! r in (0,dR)
+		call rs.setRange( 1, [0.0_8,GOptionsM3C_randomWalkStepRadius] )     ! r in (0,dR)
 		call rs.setRange( 2, [0.0_8,MATH_PI] )        ! theta in (0,pi)
 		call rs.setRange( 3, [0.0_8,2.0_8*MATH_PI] )  ! phi in (0,2pi)
 		
@@ -924,7 +925,7 @@ module FragmentsListBase_
 				do n=1,effMaxIter
 					call rs.uniform( sample )
 					
-					if( GOptions_useWeightedWalkStep ) then
+					if( GOptionsM3C_useWeightedWalkStep ) then
 						rVec1 = this.clusters(1).center()+RVEC_X(1)*( 1.0_8-SCALE_BY_MASS(1) )
 						rVec2 = this.clusters(2).center()+RVEC_X(2)*( 1.0_8-SCALE_BY_MASS(2) )
 					else
@@ -932,13 +933,13 @@ module FragmentsListBase_
 						rVec2 = this.clusters(2).center()+RVEC_X(2)
 					end if
 						
-					overlap = OVERLAPPING(1,2) .or. norm2(rVec1) > GOptions_systemRadius .or. norm2(rVec2) > GOptions_systemRadius
+					overlap = OVERLAPPING(1,2) .or. norm2(rVec1) > GOptionsM3C_systemRadius .or. norm2(rVec2) > GOptionsM3C_systemRadius
 					
 					if( .not. overlap ) exit
 				end do
 				
 				do i=1,this.nMolecules()
-					if( GOptions_useWeightedWalkStep ) then
+					if( GOptionsM3C_useWeightedWalkStep ) then
 						call this.clusters(i).setCenter( this.clusters(i).center()+RVEC_X(i)*( 1.0_8-SCALE_BY_MASS(i) ) )
 					else
 						call this.clusters(i).setCenter( this.clusters(i).center()+RVEC_X(i) )
@@ -957,7 +958,7 @@ module FragmentsListBase_
 					do i=1,this.nMolecules()-1
 						do j=i+1,this.nMolecules()
 							
-							if( GOptions_useWeightedWalkStep ) then
+							if( GOptionsM3C_useWeightedWalkStep ) then
 								rVec1 = this.clusters(i).center()+RVEC_XY(i)*( 1.0_8-SCALE_BY_MASS(i) )
 								rVec2 = this.clusters(j).center()+RVEC_XY(j)*( 1.0_8-SCALE_BY_MASS(j) )
 							else
@@ -965,7 +966,7 @@ module FragmentsListBase_
 								rVec2 = this.clusters(j).center()+RVEC_XY(j)
 							end if
 							
-							overlap = OVERLAPPING(i,j) .or. norm2(rVec1) > GOptions_systemRadius .or. norm2(rVec2) > GOptions_systemRadius
+							overlap = OVERLAPPING(i,j) .or. norm2(rVec1) > GOptionsM3C_systemRadius .or. norm2(rVec2) > GOptionsM3C_systemRadius
 							
 							if( overlap ) exit
 						end do
@@ -977,7 +978,7 @@ module FragmentsListBase_
 				end do
 				
 				do i=1,this.nMolecules()
-					if( GOptions_useWeightedWalkStep ) then
+					if( GOptionsM3C_useWeightedWalkStep ) then
 						call this.clusters(i).setCenter( this.clusters(i).center()+RVEC_XY(i)*( 1.0_8-SCALE_BY_MASS(i) ) )
 					else
 						call this.clusters(i).setCenter( this.clusters(i).center()+RVEC_XY(i) )
@@ -996,7 +997,7 @@ module FragmentsListBase_
 					do i=1,this.nMolecules()-1
 						do j=i+1,this.nMolecules()
 							
-							if( GOptions_useWeightedWalkStep ) then
+							if( GOptionsM3C_useWeightedWalkStep ) then
 								rVec1 = this.clusters(i).center()+RVEC_XYZ(i)*( 1.0_8-SCALE_BY_MASS(i) )
 								rVec2 = this.clusters(j).center()+RVEC_XYZ(j)*( 1.0_8-SCALE_BY_MASS(j) )
 							else
@@ -1004,7 +1005,7 @@ module FragmentsListBase_
 								rVec2 = this.clusters(j).center()+RVEC_XYZ(j)
 							end if
 							
-							overlap = OVERLAPPING(i,j) .or. norm2(rVec1) > GOptions_systemRadius .or. norm2(rVec2) > GOptions_systemRadius
+							overlap = OVERLAPPING(i,j) .or. norm2(rVec1) > GOptionsM3C_systemRadius .or. norm2(rVec2) > GOptionsM3C_systemRadius
 							
 							if( overlap ) exit
 						end do
@@ -1016,7 +1017,7 @@ module FragmentsListBase_
 				end do
 				
 				do i=1,this.nMolecules()
-					if( GOptions_useWeightedWalkStep ) then
+					if( GOptionsM3C_useWeightedWalkStep ) then
 						call this.clusters(i).setCenter( this.clusters(i).center()+RVEC_XYZ(i)*( 1.0_8-SCALE_BY_MASS(i) ) )
 					else
 						call this.clusters(i).setCenter( this.clusters(i).center()+RVEC_XYZ(i) )
@@ -1065,7 +1066,7 @@ module FragmentsListBase_
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Por omisión se generan centros aleatorios
 		! la primera vez que entra a esta función
-		if( this.forceRandomCenters .or. ( .not. GOptions_useRandomWalkers ) ) then
+		if( this.forceRandomCenters .or. ( .not. GOptionsM3C_useRandomWalkers ) ) then
 			call this.randomCenters()
 			this.forceRandomCenters = .false.
 		else
@@ -1073,7 +1074,7 @@ module FragmentsListBase_
 			do n=1,100000
 				call this.randomCentersByRandomWalkStep()
 				
-				if( this.radius() < GOptions_systemRadius ) then
+				if( this.radius() < GOptionsM3C_systemRadius ) then
 					outOfSphere = .false.
 					exit
 				end if
@@ -1092,7 +1093,7 @@ module FragmentsListBase_
 			! no se salga del volumen de simulación
 			centerOfMass = this.centerOfMass()
 			do i=1,this.nMolecules()
-				if( norm2(this.clusters(i).center()-centerOfMass) > GOptions_systemRadius ) then
+				if( norm2(this.clusters(i).center()-centerOfMass) > GOptionsM3C_systemRadius ) then
 					call this.randomCenters()
 					exit
 				end if
@@ -1196,7 +1197,7 @@ module FragmentsListBase_
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_paragraph( "Vibrational energy summary", indent=2 )
 			
-			if( GOptions_useZPECorrection ) then
+			if( GOptionsM3C_useZPECorrection ) then
 				write(*,"(<GOptions_indentLength*2>X,A15,2A10)") "id", "Evib", "maxEvib"
 				write(*,"(<GOptions_indentLength*2>X,A25,A10)") "eV", "eV"
 				do i=1,this.nMolecules()
@@ -1539,7 +1540,7 @@ module FragmentsListBase_
 		if( present(maxIter) ) effMaxIter = maxIter
 		
 ! Testing overlap
-#define OVERLAPPING(i,j) this.clusters(i).radius()+this.clusters(j).radius()-GOptions_overlappingRadius > norm2( rVec2-rVec1 )
+#define OVERLAPPING(i,j) this.clusters(i).radius()+this.clusters(j).radius()-GOptionsM3C_overlappingRadius > norm2( rVec2-rVec1 )
 ! Convertion from spherical to cartesian coordinates
 #define RVEC(i) [ sample(1,i)*sin(sample(2,i))*cos(sample(3,i)), sample(1,i)*sin(sample(2,i))*sin(sample(3,i)), sample(1,i)*cos(sample(2,i)) ]
 		
@@ -1548,9 +1549,9 @@ module FragmentsListBase_
 			this.logVfree_ = 0.0_8
 			do i=1,this.nMolecules()
 				this.logVfree_ = this.logVfree_ &
-					+ 3.0_8*log( (GOptions_systemRadius-this.clusters(i).radius())/(2.0_8*Math_PI) )+log( 4.0_8*Math_PI/3.0_8 )
+					+ 3.0_8*log( (GOptionsM3C_systemRadius-this.clusters(i).radius())/(2.0_8*Math_PI) )+log( 4.0_8*Math_PI/3.0_8 )
 					
-				if( GOptions_systemRadius < this.clusters(i).radius() ) then
+				if( GOptionsM3C_systemRadius < this.clusters(i).radius() ) then
 					write(*,*) "### ERROR ### FragmentsListBase.updateLogVfree: Rsys < Ri then Log( Rsys-Ri ) = NaN"
 					stop
 				end if
@@ -1569,22 +1570,22 @@ module FragmentsListBase_
 			! Dos clusters solo tienen un grado de libertad
 			! por lo cual el volumen de integración es un línea
 			if( this.nMolecules() == 2 ) then
-				Vsys = 2.0_8*GOptions_systemRadius
+				Vsys = 2.0_8*GOptionsM3C_systemRadius
 			! Tres clusters se mueven sobre un plano por lo
 			! cual el volumen de integración es un círculo
 			else if( this.nMolecules() == 3 ) then
-				Vsys = Math_PI*GOptions_systemRadius**2
+				Vsys = Math_PI*GOptionsM3C_systemRadius**2
 			! Para el resto de casos el sistema se mueve dentro
 			! de un volumen esférico
 			else if( this.nMolecules() > 3 ) then
-				Vsys = 4.0_8*Math_PI*GOptions_systemRadius**3/3.0_8
+				Vsys = 4.0_8*Math_PI*GOptionsM3C_systemRadius**3/3.0_8
 			end if
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			
 			allocate( sample(3,this.nMolecules()) )
 			
 			call rs.init( nDim=3 )
-			call rs.setRange( 1, [0.0_8,GOptions_systemRadius] )   ! r
+			call rs.setRange( 1, [0.0_8,GOptionsM3C_systemRadius] )   ! r
 			call rs.setRange( 2, [0.0_8,MATH_PI] )                 ! theta
 			call rs.setRange( 3, [0.0_8,2.0_8*MATH_PI] )           ! phi
 			
@@ -1601,7 +1602,7 @@ module FragmentsListBase_
 						rVec1 = RVEC(i)
 						rVec2 = RVEC(j)
 							
-						overlap = OVERLAPPING(i,j) .or. norm2(rVec1) > GOptions_systemRadius .or. norm2(rVec2) > GOptions_systemRadius
+						overlap = OVERLAPPING(i,j) .or. norm2(rVec1) > GOptionsM3C_systemRadius .or. norm2(rVec2) > GOptionsM3C_systemRadius
 						
 						if( overlap ) exit
 					end do
@@ -1638,7 +1639,7 @@ module FragmentsListBase_
 #undef RVEC
 		
 		if( GOptions_printLevel >= 3 ) then
-			call GOptions_valueReport( "Rsys", GOptions_systemRadius/angs, "A", indent=2 )
+			call GOptions_valueReport( "Rsys", GOptionsM3C_systemRadius/angs, "A", indent=2 )
 			
 			if( method == 2 ) then
 				call GOptions_valueReport( "Vsys", Vsys/angs**3, "A^3", indent=2 )
@@ -1750,7 +1751,7 @@ module FragmentsListBase_
 ! 				rvij = norm2( this.clusters(i).centerOfMass()-this.clusters(j).centerOfMass() )
 				rvij = norm2( this.clusters(i).center()-this.clusters(j).center() )
 				
-				if( this.clusters(i).radius()+this.clusters(j).radius()-GOptions_overlappingRadius > rvij ) then
+				if( this.clusters(i).radius()+this.clusters(j).radius()-GOptionsM3C_overlappingRadius > rvij ) then
 					call GOptions_error( &
 						 "Overlapping configuration found", &
 						 "SMoleculeList.updateIntermolecularPotential()", &
@@ -2300,8 +2301,8 @@ module FragmentsListBase_
 		write(*,"(15X,3A10)") "R", "nTrials_", "log(I1*I2*I3)"
 		write(*,"(A15,3A10)") "", "A", "", ""
 
-		GOptions_systemRadius = rMax
-		do while( GOptions_systemRadius >= rMin )
+		GOptionsM3C_systemRadius = rMax
+		do while( GOptionsM3C_systemRadius >= rMin )
 			
 			do i=1,nExp
 				this.forceRandomCenters = .true.
@@ -2324,14 +2325,14 @@ module FragmentsListBase_
 			stdevNTrials = sqrt( sum((logIData-averLogI)**2)/real(nExp-1,8) )
 			
 			if( trim(rSysOptOFile.fstr) /= "#@NONE@#" ) then
-				write(oFile.unit,"(15X,F10.5,5X,2F10.5,5X,2F15.5)") GOptions_systemRadius/angs, &
+				write(oFile.unit,"(15X,F10.5,5X,2F10.5,5X,2F15.5)") GOptionsM3C_systemRadius/angs, &
 					averNTrials, stdevNTrials, averLogI, stdevNTrials
 			end if
 				
-			write(*,"(15X,F10.5,5X,2F10.5,5X,2F15.5)") GOptions_systemRadius/angs, &
+			write(*,"(15X,F10.5,5X,2F10.5,5X,2F15.5)") GOptionsM3C_systemRadius/angs, &
 				averNTrials, stdevNTrials, averLogI, stdevNTrials
 			
-			GOptions_systemRadius = GOptions_systemRadius - rStep
+			GOptionsM3C_systemRadius = GOptionsM3C_systemRadius - rStep
 		end do
 		write(*,"(A)") "----------------------------------------------------------"
 		

@@ -1,11 +1,11 @@
 program M3C
+	use GOptions_
 	use String_
 	use CommandLineParser_
 	use BlocksIFileParser_
 	
-	use GOptions_
+	use GOptionsM3C_
 	use FragmentsDB_
-	
 	use FragmentsList_
 	use Reactor_
 	use MarkovChain_
@@ -69,33 +69,33 @@ program M3C
 	!-------------------------------------------------------------------
 	GOptions_zero = iParser.getReal( "GOPTIONS:zero", def=1d-12 )
 	
-	GOptions_systemRadius = iParser.getReal( "GOPTIONS:systemRadius", def=10.0_8*angs )*angs
-	GOptions_randomWalkStepRadius = iParser.getReal( "GOPTIONS:randomWalkStepRadius", def=2.0_8*angs )*angs
-	GOptions_useWeightedWalkStep = iParser.getLogical( "GOPTIONS:useWeightedWalkStep", def=.false. )
-	GOptions_overlappingRadius = iParser.getReal( "GOPTIONS:overlappingRadius", def=0.0_8 )*angs
-	GOptions_useZPECorrection = iParser.getLogical( "GOPTIONS:useZPECorrection", def=.false. )
-	GOptions_useRandomWalkers = iParser.getLogical( "GOPTIONS:useRandomWalkers", def=.true. )
-	GOptions_useLCorrection = iParser.getLogical( "GOPTIONS:useLCorrection", def=.false. )
-	GOptions_useLDOSContrib = iParser.getLogical( "GOPTIONS:useLDOSContrib", def=.false. )
-	GOptions_useLWeightContrib = iParser.getLogical( "GOPTIONS:useLWeightContrib", def=.false. )
-	GOptions_useLReference = iParser.getLogical( "GOPTIONS:useLReference", def=.false. )
-	GOptions_gammaLCorrection = iParser.getReal( "GOPTIONS:gammaLCorrection", def=3.0_8 )
-	GOptions_useSpinConservationRules = iParser.getLogical( "GOPTIONS:useSpinConservationRules", def=.false. )
+	GOptionsM3C_systemRadius = iParser.getReal( "GOPTIONS:systemRadius", def=10.0_8*angs )*angs
+	GOptionsM3C_randomWalkStepRadius = iParser.getReal( "GOPTIONS:randomWalkStepRadius", def=2.0_8*angs )*angs
+	GOptionsM3C_useWeightedWalkStep = iParser.getLogical( "GOPTIONS:useWeightedWalkStep", def=.false. )
+	GOptionsM3C_overlappingRadius = iParser.getReal( "GOPTIONS:overlappingRadius", def=0.0_8 )*angs
+	GOptionsM3C_useZPECorrection = iParser.getLogical( "GOPTIONS:useZPECorrection", def=.false. )
+	GOptionsM3C_useRandomWalkers = iParser.getLogical( "GOPTIONS:useRandomWalkers", def=.true. )
+	GOptionsM3C_useLCorrection = iParser.getLogical( "GOPTIONS:useLCorrection", def=.false. )
+	GOptionsM3C_useLDOSContrib = iParser.getLogical( "GOPTIONS:useLDOSContrib", def=.false. )
+	GOptionsM3C_useLWeightContrib = iParser.getLogical( "GOPTIONS:useLWeightContrib", def=.false. )
+	GOptionsM3C_useLReference = iParser.getLogical( "GOPTIONS:useLReference", def=.false. )
+	GOptionsM3C_gammaLCorrection = iParser.getReal( "GOPTIONS:gammaLCorrection", def=3.0_8 )
+	GOptionsM3C_useSpinConservationRules = iParser.getLogical( "GOPTIONS:useSpinConservationRules", def=.false. )
 	GOptions_printLevel = iParser.getInteger( "GOPTIONS:printLevel", def=1 )
 	GOptions_debugLevel = iParser.getInteger( "GOPTIONS:debugLevel", def=1 )
 	
 	write(*,*)
 	write(*,"(A40,E15.2)") "GOptions:zero = ", GOptions_zero
-	write(*,"(A40,F15.5,A)") "GOptions:systemRadius = ", GOptions_systemRadius/angs, " A"
-	write(*,"(A40,F15.5,A)") "GOptions:randomWalkStepRadius = ", GOptions_randomWalkStepRadius/angs, " A"
-	write(*,"(A40,F15.5,A)") "GOptions:overlappingRadius = ", GOptions_overlappingRadius/angs, " A"
-	write(*,"(A40,L5)") "GOptions:useWeightedWalkStep = ", GOptions_useWeightedWalkStep
-	write(*,"(A40,L5)") "GOptions:useLCorrection = ", GOptions_useLCorrection
-	write(*,"(A40,L5)") "GOptions:useLDOSContrib = ", GOptions_useLDOSContrib
-	write(*,"(A40,L5)") "GOptions:useLWeightContrib = ", GOptions_useLWeightContrib
-	write(*,"(A40,L5)") "GOptions:useLReference = ", GOptions_useLReference
-	write(*,"(A40,F5.0)") "GOptions:gammaLCorrection = ", GOptions_gammaLCorrection
-	write(*,"(A40,L)") "useSpinConservationRules = ", GOptions_useSpinConservationRules
+	write(*,"(A40,F15.5,A)") "GOptions:systemRadius = ", GOptionsM3C_systemRadius/angs, " A"
+	write(*,"(A40,F15.5,A)") "GOptions:randomWalkStepRadius = ", GOptionsM3C_randomWalkStepRadius/angs, " A"
+	write(*,"(A40,F15.5,A)") "GOptions:overlappingRadius = ", GOptionsM3C_overlappingRadius/angs, " A"
+	write(*,"(A40,L5)") "GOptions:useWeightedWalkStep = ", GOptionsM3C_useWeightedWalkStep
+	write(*,"(A40,L5)") "GOptions:useLCorrection = ", GOptionsM3C_useLCorrection
+	write(*,"(A40,L5)") "GOptions:useLDOSContrib = ", GOptionsM3C_useLDOSContrib
+	write(*,"(A40,L5)") "GOptions:useLWeightContrib = ", GOptionsM3C_useLWeightContrib
+	write(*,"(A40,L5)") "GOptions:useLReference = ", GOptionsM3C_useLReference
+	write(*,"(A40,F5.0)") "GOptions:gammaLCorrection = ", GOptionsM3C_gammaLCorrection
+	write(*,"(A40,L)") "useSpinConservationRules = ", GOptionsM3C_useSpinConservationRules
 	write(*,"(A40,I5)") "GOptions:printLevel = ", GOptions_printLevel
 	write(*,"(A40,I5)") "GOptions:debugLevel = ", GOptions_debugLevel
 	write(*,*)

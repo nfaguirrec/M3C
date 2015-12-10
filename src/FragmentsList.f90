@@ -2,13 +2,14 @@
 !! @brief
 !!
 module FragmentsList_
+	use GOptions_
 	use String_
 	use Math_
 	use Matrix_
 	use SpecialMatrix_
 	use RandomSampler_
 	
-	use GOptions_
+	use GOptionsM3C_
 	use FragmentsListBase_
 	
 	implicit none
@@ -341,7 +342,7 @@ module FragmentsList_
 	subroutine updateRotationalEnergy( this )
 		class(FragmentsList) :: this
 		
-! 		if( GOptions_useLReference ) then
+! 		if( GOptionsM3C_useLReference ) then
 ! 			call updateRotationalEnergyL( this )
 ! 		else
 ! 			call updateRotationalEnergyJn( this )
@@ -427,7 +428,7 @@ module FragmentsList_
 ! 			end if
 ! 		end do
 ! 		
-! 		if( candidateLCorrection .and. GOptions_useLCorrection ) then
+! 		if( candidateLCorrection .and. GOptionsM3C_useLCorrection ) then
 ! 				
 ! 				Re = this.clusters( this.idSorted(n) ).radius()  ! El valor exacto es radius-rcov(1)-rcov(n), el valor que está es para una diatómica
 ! 				mu = 0.5*this.clusters( this.idSorted(n) ).mass()
@@ -443,7 +444,7 @@ module FragmentsList_
 ! 						I_L = m*r**2
 ! 					end if
 ! 					
-! 					weight = weight + GOptions_gammaLCorrection*this.clusters( this.idSorted(n) ).fr()*log(2.0_8*I_L)
+! 					weight = weight + GOptionsM3C_gammaLCorrection*this.clusters( this.idSorted(n) ).fr()*log(2.0_8*I_L)
 ! 				end do
 ! 				
 ! 				this.LnIm_ = weight
@@ -455,7 +456,7 @@ module FragmentsList_
 ! 		end if
 		
 		! Contribución orbital para el caso de 1 atomo y una molecula
-		if( n==2 .and. GOptions_useLCorrection ) then
+		if( n==2 .and. GOptionsM3C_useLCorrection ) then
 			
 			weight = 0.0_8
 			
@@ -467,8 +468,8 @@ module FragmentsList_
 				r = norm2(this.clusters(1).center()-this.clusters(2).center())
 							
 				! El factor sqrt, está considerado cuando se convierte LnIm_ a LnWr
-				weight = weight + GOptions_gammaLCorrection*maxval( [this.clusters( this.idSorted(1) ).fr(), this.clusters( this.idSorted(2) ).fr()] )*log(2.0_8*varIn)
-! 				weight = weight + GOptions_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(varIn/this.clusters( this.idSorted(1) ).mass())
+				weight = weight + GOptionsM3C_gammaLCorrection*maxval( [this.clusters( this.idSorted(1) ).fr(), this.clusters( this.idSorted(2) ).fr()] )*log(2.0_8*varIn)
+! 				weight = weight + GOptionsM3C_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(varIn/this.clusters( this.idSorted(1) ).mass())
 ! 				weight = weight + max( 0, this.clusters( this.idSorted(2) ).fr()-1 )*log(r**2)
 				
 				call random_number(varJn)
@@ -489,7 +490,7 @@ module FragmentsList_
 
 ! 		! Contribución orbital L-correction
 ! 		! version:  Mon Jul 13 19:23:09 CEST 2015
-! 		if( n==2 .and. GOptions_useLCorrection ) then
+! 		if( n==2 .and. GOptionsM3C_useLCorrection ) then
 ! 			
 ! 			if( this.clusters( this.idSorted(1) ).fr() > this.clusters( this.idSorted(2) ).fr() ) then
 ! 				mu = 1
@@ -549,7 +550,7 @@ module FragmentsList_
 		
 		! Contribución orbital L-correction
 		! version:  Thu Jul 16 12:55:44 CEST 2015
-! 		if( GOptions_useLCorrection ) then
+! 		if( GOptionsM3C_useLCorrection ) then
 ! 			
 ! 			mu = this.nFragments()
 ! 			
@@ -571,7 +572,7 @@ module FragmentsList_
 ! 		end if
 		
 ! 		! Contribución orbital para el caso de 1 atomo y una molecula
-! 		else if( n==3 .and. GOptions_useLCorrection ) then
+! 		else if( n==3 .and. GOptionsM3C_useLCorrection ) then
 ! 			
 ! 			weight = 0.0_8
 ! 			
@@ -583,8 +584,8 @@ module FragmentsList_
 ! 				r = norm2(this.clusters(1).center()-this.clusters(2).center())
 ! 							
 ! 				! El factor sqrt, está considerado cuando se convierte LnIm_ a LnWr
-! 				weight = weight + GOptions_gammaLCorrection*maxval( [this.clusters( this.idSorted(1) ).fr(), this.clusters( this.idSorted(2) ).fr()] )*log(2.0_8*varIn)
-! ! 				weight = weight + GOptions_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(varIn/this.clusters( this.idSorted(1) ).mass())
+! 				weight = weight + GOptionsM3C_gammaLCorrection*maxval( [this.clusters( this.idSorted(1) ).fr(), this.clusters( this.idSorted(2) ).fr()] )*log(2.0_8*varIn)
+! ! 				weight = weight + GOptionsM3C_gammaLCorrection*this.clusters( this.idSorted(2) ).fr()*log(varIn/this.clusters( this.idSorted(1) ).mass())
 ! ! 				weight = weight + max( 0, this.clusters( this.idSorted(2) ).fr()-1 )*log(r**2)
 ! 				
 ! 				call random_number(varJn)
@@ -629,10 +630,10 @@ module FragmentsList_
 			stop 
 		end if
 		
-! 		if( effMu < 1 .and. GOptions_useLCorrection ) return
+! 		if( effMu < 1 .and. GOptionsM3C_useLCorrection ) return
 		if( effMu < 1 ) return
 		
-		if( GOptions_useLDOSContrib ) then
+		if( GOptionsM3C_useLDOSContrib ) then
 			call invBigI.init( (effMu+1)*3, (effNu+1)*3, 0.0_8 )
 		else
 			call invBigI.init( (effMu)*3, (effNu)*3, 0.0_8 )  !<< Se utiliza este cuando no se mete el L
@@ -753,7 +754,7 @@ module FragmentsList_
 			
 		end do
 		
-		if( GOptions_useLDOSContrib ) then
+		if( GOptionsM3C_useLDOSContrib ) then
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Matriz de rotación que permite transformar a los ejes
 			! de N en los ejes de i, pasando por el sistem fix
@@ -882,7 +883,7 @@ module FragmentsList_
 			weight = weight - log(invBi.get(effMu,effMu))
 		end do
 		
-		if( GOptions_useLWeightContrib ) then
+		if( GOptionsM3C_useLWeightContrib ) then
 			do j=3,4-this.fl(),-1
 				weight = weight - log(this.diagInertiaTensor(j))
 ! 				write(*,*) "I", j, " = ", - log(this.diagInertiaTensor(j))
@@ -1117,7 +1118,7 @@ module FragmentsList_
 			stop 
 		end if
 		
-! 		if( GOptions_useLDOSContrib ) then
+! 		if( GOptionsM3C_useLDOSContrib ) then
 ! 			call invBigI.init( (effMu+1)*3, (effNu+1)*3, 0.0_8 )
 ! 		else
 			call invBigI.init( 3*nEffMu+3*(n-1), 3*nEffNu+3*(n-1), 0.0_8 )  !<< Se utiliza este cuando no se mete el L
@@ -1411,7 +1412,7 @@ module FragmentsList_
 			weight = weight - log(invBi.get(effMu,effMu))
 		end do
 		
-		if( GOptions_useLWeightContrib ) then
+		if( GOptionsM3C_useLWeightContrib ) then
 			do j=3,4-this.fl(),-1
 				weight = weight - log(this.diagInertiaTensor(j))
 ! 				write(*,*) "I", j, " = ", - log(this.diagInertiaTensor(j))
@@ -1571,7 +1572,7 @@ module FragmentsList_
 			end if
 		end do
 		
-		if( candidateLCorrection .and. GOptions_useLCorrection ) then
+		if( candidateLCorrection .and. GOptionsM3C_useLCorrection ) then
 				
 				Re = this.clusters( this.idSorted(n) ).radius()  ! El valor exacto es radius-rcov(1)-rcov(n), el valor que está es para una diatómica
 				mu = 0.5*this.clusters( this.idSorted(n) ).mass()
@@ -1686,7 +1687,7 @@ module FragmentsList_
 		end if
 		
 ! 		! Contribución orbital para el caso de 1 atomo y una molecula
-! 		if( n==2 .and. GOptions_useLCorrection ) then
+! 		if( n==2 .and. GOptionsM3C_useLCorrection ) then
 ! 			if( this.clusters( this.idSorted(1) ).fr() == 0 .and. this.clusters( this.idSorted(2) ).fr() /= 0 ) then
 ! 				! Simplemente he utilizado como momento de inercia el valor asociado al momento orbital del átomo
 ! 				! alrededor de la molécula
@@ -1695,7 +1696,7 @@ module FragmentsList_
 ! 							
 ! ! 				this.LnIm_ = this.LnIm_ + this.clusters( this.idSorted(2) ).fr()*log(sqrt(2.0_8*varIn))
 ! ! 				this.LnIm_ = this.LnIm_ + 2.0_8*log(sqrt(2.0_8*varIn))
-! 				this.LnIm_ = this.LnIm_ + GOptions_frLCorrection*log(sqrt(2.0_8*varIn))
+! 				this.LnIm_ = this.LnIm_ + GOptionsM3C_frLCorrection*log(sqrt(2.0_8*varIn))
 ! 				
 ! ! 				call random_number(varJn)
 ! ! 				varJn = -sqrt(2.0_8*this.kineticEnergy()*varIn) + 2.0_8*varJn*sqrt(2.0_8*this.kineticEnergy()*varIn)
@@ -1844,7 +1845,7 @@ module FragmentsList_
 			
 			this.rotationalEnergy = this.rotationalEnergy + Ein
 
-! 			if( GOptions_useLWeightContrib ) then
+! 			if( GOptionsM3C_useLWeightContrib ) then
 	            do j=3,4-this.fl(),-1
 					this.LnIm_ = this.LnIm_ - log(this.diagInertiaTensor(j))
 ! 					write(*,*) "I", j, " = ", - log(this.diagInertiaTensor(j))
@@ -2236,7 +2237,7 @@ module FragmentsList_
 ! 		write(*,*) " Checking reactivity"
 ! 		write(*,*) "------------------------------------"
 ! 		
-! 		GOptions_printRigidMoleculeData = .false.
+! 		GOptionsM3C_printRigidMoleculeData = .false.
 ! 		
 ! 		call clist.init(3)
 ! 		call clist.setFromRigidMolecule( 1, RigidMoleculeDatabase_instance.clusters(1) )

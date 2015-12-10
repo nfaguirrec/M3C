@@ -2,6 +2,7 @@
 !! @brief
 !!
 module Fragment_
+	use GOptions_
 	use Math_
 	use IOStream_
 	use UnitsConverter_
@@ -13,7 +14,7 @@ module Fragment_
 	use StringList_
 	use RealList_
 	
-	use GOptions_
+	use GOptionsM3C_
 	
 	implicit none
 	private
@@ -193,7 +194,7 @@ module Fragment_
 			end if
 		end if
 			
-		if( GOptions_useZPECorrection ) then
+		if( GOptionsM3C_useZPECorrection ) then
 			this.electronicEnergy = this.electronicEnergy + this.ZPE
 		end if
 			
@@ -506,7 +507,7 @@ module Fragment_
 		if( this.frozen ) then
 			this.vibrationalEnergy_ = 0.0_8
 		else
-			if( GOptions_useZPECorrection ) then
+			if( GOptionsM3C_useZPECorrection ) then
 				this.vibrationalEnergy_ = RandomUtils_uniform( [0.0_8,this.maxEvib] )
 			else
 				this.vibrationalEnergy_ = RandomUtils_uniform( [this.ZPE,this.maxEvib] )

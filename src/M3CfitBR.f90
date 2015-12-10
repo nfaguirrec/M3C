@@ -1,4 +1,5 @@
 program M3CfitBR
+	use GOptions_
 	use Math_
 	use String_
 	use IOStream_
@@ -310,7 +311,7 @@ program M3CfitBR
 	do i=1,nChannels
 		do k=1,basisSize
 			f = B(k)*P(i)
-			call integrator.init( f, BOOLE )
+			call integrator.init( f, NIntegrator_BOOLE )
 			call A.set(i, k, integrator.evaluate() )
 		end do
 	end do
@@ -429,7 +430,7 @@ program M3CfitBR
 	
 	call f.fromFunction( energyGrid, energyFunction )
 	call f.save( energyDistFileName.fstr )
-	call integrator.init( f, BOOLE )
+	call integrator.init( f, NIntegrator_BOOLE )
 	write(*,"(A15,F10.5)") "Integral = ", integrator.evaluate()
 	
 	if( integrator.evaluate() < 98.0_8 ) then

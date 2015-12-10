@@ -2,6 +2,7 @@
 !! @brief
 !!
 module Reactor_
+	use GOptions_
 	use Math_
 	use String_
 	use IOStream_
@@ -18,8 +19,8 @@ module Reactor_
 	use StringRealMap_
 	use StringRealPair_
 	use StringHistogram_
-	use GOptions_
 	
+	use GOptionsM3C_
 	use Fragment_
 	use FragmentsList_
 	use FragmentsDB_
@@ -331,7 +332,7 @@ module Reactor_
 			output = .false.
 			
 			! @warning Acá estoy asumiendo que los reactivos tienen actualizada la formula y así su composición
-			if( GOptions_useSpinConservationRules ) then
+			if( GOptionsM3C_useSpinConservationRules ) then
 				if( all( productsComposition == internalReactivesComposition ) &
 					.and. ( internalCharge == totalCharge ) &
 					.and. ( .not. isSpinForbidden( multisetPositions, current ) ) ) then

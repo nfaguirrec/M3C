@@ -2,12 +2,13 @@
 !! @brief
 !!
 module ModelPotential_
+	use GOptions_
 	use Math_
 	use String_
 	use UnitsConverter_
 	
+	use GOptionsM3C_
 	use AzizSlamanPotential_
-	use GOptions_
 	
 	implicit none
 	private
@@ -223,7 +224,7 @@ module ModelPotential_
 		
 		Re = params(1) ! Ra+Rb = Re
 		
-		if( r > Re-GOptions_overlappingRadius ) then
+		if( r > Re-GOptionsM3C_overlappingRadius ) then
 			output = 0.0_8
 		else
 			output = (10.0d3)*eV
