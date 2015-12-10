@@ -345,8 +345,8 @@ module FragmentsList_
 ! 			call updateRotationalEnergyL( this )
 ! 		else
 ! 			call updateRotationalEnergyJn( this )
-! 			call updateRotationalEnergyJnFull( this )
-			call this.updateRotationalEnergyJnFull2()
+			call updateRotationalEnergyJnFull( this )
+! 			call this.updateRotationalEnergyJnFull2()
 ! 		end if
 		
 	end subroutine updateRotationalEnergy

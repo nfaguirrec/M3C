@@ -1,4 +1,5 @@
 program M3CBR
+	use GOptions_
 	use Math_
 	use String_
 	use IOStream_
@@ -31,7 +32,7 @@ program M3CBR
 	type(String) :: errorType
 	type(String), allocatable :: expBRTable(:)
 	type(String), allocatable :: expBRKey(:)
-		real(8), allocatable :: expBRerrors(:)
+	real(8), allocatable :: expBRerrors(:)
 	type(Matrix) :: R !< Experimental branching ratios matrix
 	
 	type(String) :: inputFileName
@@ -266,7 +267,7 @@ program M3CBR
 		BR = 0.0_8
 		do k=1,basisSize
 			f = B(k)*P(i)
-			call integrator.init( f, BOOLE )
+			call integrator.init( f, NIntegrator_BOOLE )
 			BR = BR + C.get(k,1)*integrator.evaluate()
 		end do
 		
@@ -283,7 +284,7 @@ program M3CBR
 
 	call f.fromFunction( energyGrid, energyFunction )
 	call f.save( energyDistFileName.fstr )
-	call integrator.init( f, BOOLE )
+	call integrator.init( f, NIntegrator_BOOLE )
 	write(*,*) ""
 	write(*,"(A15,F10.5)") "Integral = ", integrator.evaluate()
 	
