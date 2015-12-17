@@ -38,7 +38,7 @@ FILTER="rxyz"
 ZOOM="IN"
 SIZE="100"
 ORIENT="FALSE"
-RANDOM="TRUE"
+RANDOM_ORIENT="TRUE"
 
 ##
 # @brief
@@ -72,10 +72,12 @@ function makeLatexTable()
 	local nColumns=$1
 	shift
 	local files=$*
+
 	
 	local nFiles=`echo $files | wc -w`
 	local effSize=`echo "1.6*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
 
+	
 	echo "\begin{tabular}{|"
 	for i in `seq 1 $nColumns`
 	do
@@ -87,13 +89,13 @@ function makeLatexTable()
 	i=1
 	for f in $files
 	do
-		if (( $i%$nColumns != 0 && i != $nFiles ))
+		if (( $i%$nColumns != 0 && $i != $nFiles )) 
 		then
 			echo "\includegraphics[scale=0.3]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} &"
 		else
 			echo "\includegraphics[scale=0.3]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} "
 			
-			if (( i != $nFiles ))
+			if (( $i != $nFiles ))
 			then
 				echo "\\\\\hline"
 			else
@@ -152,7 +154,7 @@ function makeLatexDocument()
 	i=1
 	for f in $files
 	do
-		if (( $i%$nColumns != 0 && i != $nFiles ))
+		if (( $i%$nColumns != 0 && $i != $nFiles ))
 		then
 			if [ "${highlighted[$i]}" = 1 ]
 			then
@@ -168,7 +170,7 @@ function makeLatexDocument()
 				echo "\includegraphics[scale=0.3]{$f} \tiny{$i \hspace{5pt} ${f%.*}} "
 			fi
 			
-			if (( i != $nFiles ))
+			if (( $i != $nFiles ))
 			then
 				echo "\\\\\hline"
 			else
@@ -204,7 +206,7 @@ function buildGifFiles()
 		
 		echo -n "$iFile ... "
 		
-		if [ $RANDOM=="TRUE" ]
+		if [ $RANDOM_ORIENT=="TRUE" ]
 		then
 			molecule.rotate -i $iFile -random T > rand$iFile
 		elif [ $ORIENT=="TRUE" ]
@@ -250,7 +252,7 @@ function buildEPSFiles()
 		
 		echo -n "$iFile ... "
 		
-		if [ $RANDOM=="TRUE" ]
+		if [ $RANDOM_ORIENT=="TRUE" ]
 		then
 			molecule.rotate -i $iFile -random T > rand$iFile
 		elif [ $ORIENT=="TRUE" ]
@@ -268,7 +270,7 @@ moveto 0 1 0 0 -90
 zoom $ZOOM
 write image $SIZE $SIZE ${iFile%.*}.gif
 EOF
-		
+	
 		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1
 		convert ${iFile%.*}.gif ${iFile%.*}.eps > /dev/null 2>&1
 		rm ${iFile%.*}.gif geom$sID.jmol
@@ -315,7 +317,6 @@ function geometriesByCategories()
 	| while read line
 	do
 		fileName=`echo $line | gawk '{print $1}'`
-		
 		charge=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
 		mult=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
 		nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}(NR>3 && $0~/^[[:blank:]]*$/){exit}END{print i}' $fileName`
@@ -336,7 +337,7 @@ function geometriesByCategories()
 	rm .molValues$$
 	
 	makeLatexFooter >> geometries-$$.tex
-	
+
 	echo "OK"
 	
 	echo -n "Compiling Latex document ... "
@@ -362,23 +363,23 @@ function geometries()
 {
 	local nColumns=$1  # 8
 	local highlight=$2  # 1,4,5
-	
+
 	echo "-----------------------------------"
 	echo " Generating report: geometries.pdf "
 	echo "-----------------------------------"
-	
+
 	echo -n "Generating Latex document ... "
 	makeLatexDocument $nColumns "$highlight" `ls *.eps` > geometries-$$.tex
 	echo "OK"
-	
+
 	echo -n "Compiling Latex document ... "
 	latex geometries-$$.tex > /dev/null 2>&1
 	dvipdf geometries-$$.dvi > /dev/null 2>&1
 	rm geometries-$$.tex geometries-$$.aux geometries-$$.log geometries-$$.dvi
 	echo "OK"
-	
+
 	mv geometries-$$.pdf geometries.pdf
-	
+
 	if [ -n "$DISPLAY" ]
 	then
 		okular geometries.pdf > /dev/null 2>&1 &
@@ -388,6 +389,7 @@ function geometries()
 function checkDependencies()
 {
 	JAVA_INTERP=""
+	
 	if [ -n "`which java`" ]
 	then
 		JAVA_INTERP="java"
@@ -398,12 +400,21 @@ function checkDependencies()
 		echo "### Error ### It's neccessary to have installed an interpreter for Java bytecode, e.g. java or gij"
 		exit
 	fi
-	
-	if [ -n "`which xvfb-run`" ]
-	then
-		JAVA_INTERP="xvfb-run $JAVA_INTERP"
+
+	if [ -z "`echo $DISPLAY`" ] 
+	then 
+		if [ -n "`which xvfb-run`" ]
+		then
+			JAVA_INTERP="xvfb-run $JAVA_INTERP"
+		else
+			echo "### Error ### It's neccessary to have installed a display server, e.g. xvfb-run"
+			exit
+		fi
+					
+	else
+		JAVA_INTERP="$JAVA_INTERP"
 	fi
-	
+
 	if [ -z "`which convert`" ]
 	then
 		echo "### Error ### It's neccessary to have installed an image converter, e.g. convert"
@@ -416,17 +427,44 @@ function checkDependencies()
 ##
 function main()
 {
-	local oType=$1  # unsorted|sorted|gif
-	FILTER=$2  # xyz
-	local nColumns=$3  # 8
-	ZOOM=$4  # IN | 30 | 50
-	SIZE=$5  # 100
-	ORIENT=$6 # FALSE
-	RANDOM=$7 # TRUE
-	local highlight=$8  # 1,4,5
-	
-	checkDependencies
-	
+		###### Reading from input line######
+		local oType=$1  # unsorted|sorted|gif
+		FILTER=$2  # xyz
+		local nColumns=$3  # 8
+		ZOOM=$4  # IN | 30 | 50
+		SIZE=$5  # 100
+		ORIENT=$6 # FALSE
+		RANDOM_ORIENT=$7 # TRUE
+		local highlight=$8  # 1,4,5
+		####################################
+		
+
+		##### Defining default values ######
+		if [ -z "$oType" ] ; then oType="none"; fi
+		if [ -z "$FILTER" ] ; then FILTER="xyz";fi
+		if [ -z "$nColumns" ] ; then nColumns=8; fi
+		if [ -z "$ZOOM" ] ; then ZOOM="IN"; fi
+		if [ -z "$SIZE" ] ; then SIZE=100; fi
+		if [ -z "$ORIENT" ] ; then ORIENT="FALSE"; fi
+		if [ -z "$RANDOM_ORIENT" ] ; then RANDOM_ORIENT="TRUE"; fi
+		####################################
+		
+
+		### INPUT CHECK#####################
+		echo ""
+		echo "Output file type: $oType"
+		echo "Input file filter: $FILTER"
+		echo "Number of Columns: $nColumns"
+		echo "Zoom: $ZOOM"
+		echo "Size: ${SIZE}%"
+		echo "Orient: $ORIENT"
+		echo "Random orientation? ${RANDOM_ORIENT}"
+		echo "Highlighted structures: $highlight"
+		echo ""
+		####################################
+
+		checkDependencies
+
 	case $oType in
 		u-pdf)
 			buildEPSFiles
