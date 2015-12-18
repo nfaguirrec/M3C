@@ -477,10 +477,10 @@ function main()
 			removeEPSFiles
 			;;
 		pdf)
-			buildEPSFiles
-			geometries $nColumns $highlight
+# 			buildEPSFiles
+# 			geometries $nColumns $highlight
 			geometriesByCategories $nColumns
-			removeEPSFiles
+# 			removeEPSFiles
 			;;
 		gif)
 			buildGifFiles
