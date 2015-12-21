@@ -35,6 +35,8 @@
 ##################################################################
 
 FILTER="rxyz"
+NCOLUMNS=8
+NROWS=14
 ZOOM="IN"
 SIZE="100"
 ORIENT="FALSE"
@@ -67,19 +69,16 @@ function makeLatexFooter()
 ##
 # @brief
 ##
-function makeLatexTable()
+function makeLatexTableBase()
 {
-	local nColumns=$1
-	shift
 	local files=$*
-
 	
 	local nFiles=`echo $files | wc -w`
 	local effSize=`echo "1.6*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
-
+	local i=0
 	
 	echo "\begin{tabular}{|"
-	for i in `seq 1 $nColumns`
+	for i in `seq 1 $NCOLUMNS`
 	do
 		echo ">{\centering\arraybackslash}p{${effSize}cm}|"
 	done
@@ -89,7 +88,7 @@ function makeLatexTable()
 	i=1
 	for f in $files
 	do
-		if (( $i%$nColumns != 0 && $i != $nFiles )) 
+		if (( $i%$NCOLUMNS != 0 && $i != $nFiles )) 
 		then
 			echo "\includegraphics[scale=0.3]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} &"
 		else
@@ -99,7 +98,7 @@ function makeLatexTable()
 			then
 				echo "\\\\\hline"
 			else
-				echo "\\\\\cline{1-$(($i%$nColumns))}"
+				echo "\\\\\cline{1-$(($i%$NCOLUMNS))}"
 			fi
 		fi
 		
@@ -109,15 +108,32 @@ function makeLatexTable()
 	echo "\end{tabular}"
 	echo ""
 }
+##
+# @brief
+##
+function makeLatexTable()
+{
+	local files=$*
+	
+	local nFiles=`echo $files | wc -w`
+	local effSize=`echo "1.6*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
+	local list=""
+	
+	echo $files | awk 'BEGIN{RS=" "; id=1; n=1}{print $1 > sprintf("%05d.mkgroup",id); if(n%'$(($NCOLUMNS*$NROWS))'==0){ id=id+1;}; n=n+1}'
+	for item in `ls *.mkgroup`
+	do
+		list=`cat $item`
+		makeLatexTableBase $list
+	done
+	rm *.mkgroup
+}
 
 ##
 # @brief
 ##
 function makeLatexDocument()
 {
-	local nColumns=$1
-	local highlight=$2  # 1,4,5
-	shift
+	local highlight=$1  # 1,4,5
 	shift
 	local files=$*
 
@@ -144,7 +160,7 @@ function makeLatexDocument()
 
 	echo "\begin{center}"
 	echo "\begin{tabular}{|"
-	for i in `seq 1 $nColumns`
+	for i in `seq 1 $NCOLUMNS`
 	do
 		echo ">{\centering\arraybackslash}p{${effSize}cm}|"
 	done
@@ -154,7 +170,7 @@ function makeLatexDocument()
 	i=1
 	for f in $files
 	do
-		if (( $i%$nColumns != 0 && $i != $nFiles ))
+		if (( $i%$NCOLUMNS != 0 && $i != $nFiles ))
 		then
 			if [ "${highlighted[$i]}" = 1 ]
 			then
@@ -174,7 +190,7 @@ function makeLatexDocument()
 			then
 				echo "\\\\\hline"
 			else
-				echo "\\\\\cline{1-$(($i%$nColumns))}"
+				echo "\\\\\cline{1-$(($i%$NCOLUMNS))}"
 			fi
 		fi
 		
@@ -301,7 +317,7 @@ function removeEPSFiles()
 ##
 function geometriesByCategories()
 {
-	local nColumns=$1  # 8
+	local list=""
 	
 	echo "----------------------------------------"
 	echo " Generating report: geometries.sort.pdf "
@@ -332,7 +348,7 @@ function geometriesByCategories()
 	for item in $categories
 	do
 		list=`grep " $item[.].*" .molValues$$ | gawk '{print $2}'`
-		makeLatexTable $nColumns $list >> geometries-$$.tex
+		makeLatexTable $list >> geometries-$$.tex
 	done
 	rm .molValues$$
 	
@@ -361,30 +377,64 @@ function geometriesByCategories()
 ##
 function geometries()
 {
-	local nColumns=$1  # 8
-	local highlight=$2  # 1,4,5
-
 	echo "-----------------------------------"
 	echo " Generating report: geometries.pdf "
 	echo "-----------------------------------"
-
+	
 	echo -n "Generating Latex document ... "
-	makeLatexDocument $nColumns "$highlight" `ls *.eps` > geometries-$$.tex
-	echo "OK"
+	
+	makeLatexHeader > geometries-$$.tex
+	
+	makeLatexTable `ls *.$FILTER` >> geometries-$$.tex
+	
+	makeLatexFooter >> geometries-$$.tex
 
+	echo "OK"
+	
 	echo -n "Compiling Latex document ... "
 	latex geometries-$$.tex > /dev/null 2>&1
 	dvipdf geometries-$$.dvi > /dev/null 2>&1
-	rm geometries-$$.tex geometries-$$.aux geometries-$$.log geometries-$$.dvi
 	echo "OK"
-
+	
+	echo -n "Cleaning temporal files ... "
+	rm geometries-$$.tex geometries-$$.aux geometries-$$.log geometries-$$.dvi
 	mv geometries-$$.pdf geometries.pdf
-
+	echo "OK"
+	
 	if [ -n "$DISPLAY" ]
 	then
 		okular geometries.pdf > /dev/null 2>&1 &
 	fi
 }
+
+##
+# @brief
+##
+# function geometries()
+# {
+# 	local highlight=$1  # 1,4,5
+# 
+# 	echo "-----------------------------------"
+# 	echo " Generating report: geometries.pdf "
+# 	echo "-----------------------------------"
+# 
+# 	echo -n "Generating Latex document ... "
+# 	makeLatexDocument "$highlight" `ls *.eps` > geometries-$$.tex
+# 	echo "OK"
+# 
+# 	echo -n "Compiling Latex document ... "
+# 	latex geometries-$$.tex > /dev/null 2>&1
+# 	dvipdf geometries-$$.dvi > /dev/null 2>&1
+# 	rm geometries-$$.tex geometries-$$.aux geometries-$$.log geometries-$$.dvi
+# 	echo "OK"
+# 
+# 	mv geometries-$$.pdf geometries.pdf
+# 
+# 	if [ -n "$DISPLAY" ]
+# 	then
+# 		okular geometries.pdf > /dev/null 2>&1 &
+# 	fi
+# }
 
 function checkDependencies()
 {
@@ -427,67 +477,72 @@ function checkDependencies()
 ##
 function main()
 {
-		###### Reading from input line######
-		local oType=$1  # unsorted|sorted|gif
-		FILTER=$2  # xyz
-		local nColumns=$3  # 8
-		ZOOM=$4  # IN | 30 | 50
-		SIZE=$5  # 100
-		ORIENT=$6 # FALSE
-		RANDOM_ORIENT=$7 # TRUE
-		local highlight=$8  # 1,4,5
-		####################################
-		
+	###### Reading from input line######
+	local oType=$1  # unsorted|sorted|gif
+	FILTER=$2  # xyz
+	NCOLUMNS=$3  # 8
+	NROWS=$4  # 14
+	ZOOM=$5  # IN | 30 | 50
+	SIZE=$6  # 100
+	ORIENT=$7 # FALSE
+	RANDOM_ORIENT=$8 # TRUE
+	local highlight=$9  # 1,4,5
+	####################################
+	
 
-		##### Defining default values ######
-		if [ -z "$oType" ] ; then oType="none"; fi
-		if [ -z "$FILTER" ] ; then FILTER="xyz";fi
-		if [ -z "$nColumns" ] ; then nColumns=8; fi
-		if [ -z "$ZOOM" ] ; then ZOOM="IN"; fi
-		if [ -z "$SIZE" ] ; then SIZE=100; fi
-		if [ -z "$ORIENT" ] ; then ORIENT="FALSE"; fi
-		if [ -z "$RANDOM_ORIENT" ] ; then RANDOM_ORIENT="TRUE"; fi
-		####################################
-		
+	##### Defining default values ######
+	if [ -z "$oType" ] ; then oType="none"; fi
+	if [ -z "$FILTER" ] ; then FILTER="xyz";fi
+	if [ -z "$NCOLUMNS" ] ; then NCOLUMNS=8; fi
+	if [ -z "$NROWS" ] ; then NROWS=14; fi
+	if [ -z "$ZOOM" ] ; then ZOOM="IN"; fi
+	if [ -z "$SIZE" ] ; then SIZE=100; fi
+	if [ -z "$ORIENT" ] ; then ORIENT="FALSE"; fi
+	if [ -z "$RANDOM_ORIENT" ] ; then RANDOM_ORIENT="TRUE"; fi
+	####################################
+	
 
-		### INPUT CHECK#####################
-		echo ""
-		echo "Output file type: $oType"
-		echo "Input file filter: $FILTER"
-		echo "Number of Columns: $nColumns"
-		echo "Zoom: $ZOOM"
-		echo "Size: ${SIZE}%"
-		echo "Orient: $ORIENT"
-		echo "Random orientation? ${RANDOM_ORIENT}"
-		echo "Highlighted structures: $highlight"
-		echo ""
-		####################################
+	### INPUT CHECK#####################
+	echo ""
+	echo "Output file type: $oType"
+	echo "Input file filter: $FILTER"
+	echo "Number of Columns: $NCOLUMNS"
+	echo "Number of Rows: $NROWS"
+	echo "Zoom: $ZOOM"
+	echo "Size: ${SIZE}%"
+	echo "Orient: $ORIENT"
+	echo "Random orientation? ${RANDOM_ORIENT}"
+	echo "Highlighted structures: $highlight"
+	echo ""
+	####################################
 
-		checkDependencies
+	checkDependencies
 
 	case $oType in
 		u-pdf)
 			buildEPSFiles
-			geometries $nColumns $highlight
+			geometries $highlight
 			removeEPSFiles
 			;;
 		s-pdf)
 			buildEPSFiles
-			geometriesByCategories $nColumns
+			geometriesByCategories
 			removeEPSFiles
 			;;
 		pdf)
-# 			buildEPSFiles
-# 			geometries $nColumns $highlight
-			geometriesByCategories $nColumns
-# 			removeEPSFiles
+			buildEPSFiles
+			geometries $highlight
+			geometriesByCategories
+			removeEPSFiles
 			;;
 		gif)
 			buildGifFiles
 			;;
 		*)
-			echo "Usage: M3C.viewXYZ (u-pdf|s-pdf|pdf|gif) (xyz|rxyz) [number-of-columns] [zoom] [size] [orient] [random] [highlight-list]"
-			echo "defaults:                                                    8            IN    100     FALSE    TRUE              "
+			echo "Usage: M3C.viewXYZ (u-pdf|s-pdf|pdf|gif) (xyz|rxyz) [number-of-columns] [number-of-rows] [zoom] [size] [orient] [random] [highlight-list]"
+			echo "defaults:                                                    8                  14         IN    100     FALSE    TRUE              "
+			echo ""
+			echo "   @@ WARNING @@ Option to highlight molecules has been disabled in this version"
 			;;
 	esac
 }
