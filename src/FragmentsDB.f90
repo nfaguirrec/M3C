@@ -144,7 +144,7 @@ module FragmentsDB_
 		end if
 		
 		call iParser.getBlock( "FRAGMENTS_DATABASE", massTable )
-		strReference = iParser.getString( "MOLECULE_DATABASE:reference", def="@@NONE@@" )
+		strReference = iParser.getString( "FRAGMENTS_DATABASE:reference", def="@@NONE@@" )
 		
 		if( strReference /= "@@NONE@@" ) then
 			call this.fromMassTable( massTable, strReference )
