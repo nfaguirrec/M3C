@@ -497,13 +497,13 @@ module Reactor_
 				
 				! Para que fuerce los centros aleatorios en la siguiente iteración
 				this.products.forceRandomCenters = .true.
-	! 			call this.products.initialGuessFragmentsList()
 				
 				! Los productos utilizan parte de la energía
-				call this.products.changeVibrationalEnergy()
-				call this.products.changeOrientations()
-! 				call this.products.changeAngularMomenta()
-				call this.products.changeGeometry()
+				call this.products.initialGuessFragmentsList()
+				
+! 				call this.products.changeVibrationalEnergy()
+! 				call this.products.changeGeometry()
+! 				call this.products.changeOrientations()
 				
 			case( VIBRATIONAL_REACTOR )
 				
@@ -526,7 +526,6 @@ module Reactor_
 				
 				! Los productos utilizan parte de la energía
 				call this.products.changeOrientations()
-! 				call this.products.changeAngularMomenta()
 		end select
 		
 		if( GOptions_printLevel >= 2 ) then

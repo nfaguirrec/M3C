@@ -327,7 +327,7 @@ module FragmentsListBase_
 			end do
 		end do
 		
-		call ofile.destroy()
+		call ofile.close()
 	end subroutine saveXYZ
 	
 	!>
@@ -640,13 +640,13 @@ module FragmentsListBase_
 		call this.updateLnWn()
 		call this.updateLnWe()
 		
-		call this.changeGeometryFragmentsListBase()
-		call this.changeOrientationsFragmentsListBase()
+! 		call this.changeGeometryFragmentsListBase()
+! 		call this.changeOrientationsFragmentsListBase()
 		
 		call this.updateLogVfree() ! El metodo 1 necesita this.nTrials_ de changeGeometryFragmentsListBase
 		call this.updateLogVtheta()
 		
-		call this.changeVibrationalEnergyFragmentsListBase()
+! 		call this.changeVibrationalEnergyFragmentsListBase()
 	end subroutine initialGuessFragmentsListBase
 	
 	!>
@@ -1185,7 +1185,7 @@ module FragmentsListBase_
 		end if
 		
 		if( GOptions_printLevel >= 3 ) then
-			call GOptions_subsection( "Random vibrational energies"//trim(this.label()), indent=2 )
+			call GOptions_subsection( "Random vibrational energies "//trim(this.label()), indent=2 )
 		end if
 		
 		this.vibrationalEnergy_ = 0.0_8
@@ -1513,6 +1513,7 @@ module FragmentsListBase_
 		end do
 			
 		if( GOptions_printLevel >= 3 ) then
+			write(*,*) ""
 			call GOptions_valueReport( "logVtheta", this.logVtheta_, indent=2 )
 		end if
 	end subroutine updateLogVtheta
@@ -1853,7 +1854,7 @@ module FragmentsListBase_
 		this.kineticEnergy_ = this.reactorEnergy() - this.internalEnergy()
 		
 		if( GOptions_printLevel >= 3 ) then
-			call GOptions_valueReport( "updated Et", this.kineticEnergy()/eV, indent=2 )
+			call GOptions_valueReport( "updated K", this.kineticEnergy()/eV, indent=2 )
 		end if
 	end subroutine updateKineticEnergy
 	
