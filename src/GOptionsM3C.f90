@@ -5,6 +5,7 @@ module GOptionsM3C_
 	use UnitsConverter_
 	use IOStream_
 	use Timer_
+	use String_
 	
 	implicit none
 	public
@@ -21,4 +22,5 @@ module GOptionsM3C_
 	real(8) :: GOptionsM3C_gammaLCorrection = 1.0_8
 	logical :: GOptionsM3C_useLReference = .false.
 	logical :: GOptionsM3C_useSpinConservationRules = .false.
+	type(String) :: GOptionsM3C_angularMomentumCouplingScheme ! = "JJ"
 end module GOptionsM3C_

@@ -35,6 +35,8 @@ program M3C
 	integer :: status
 	character(128) :: hostname
 	
+	type(String) :: sBuffer
+	
 	!------------------------------------------------------------------------------
 	
 ! 	call RigidMolecule_test()
@@ -81,6 +83,7 @@ program M3C
 	GOptionsM3C_useLReference = iParser.getLogical( "GOPTIONS:useLReference", def=.false. )
 	GOptionsM3C_gammaLCorrection = iParser.getReal( "GOPTIONS:gammaLCorrection", def=3.0_8 )
 	GOptionsM3C_useSpinConservationRules = iParser.getLogical( "GOPTIONS:useSpinConservationRules", def=.false. )
+	GOptionsM3C_angularMomentumCouplingScheme = iParser.getString( "GOPTIONS:angularMomentumCouplingScheme", def="JJ" )
 	GOptions_printLevel = iParser.getInteger( "GOPTIONS:printLevel", def=1 )
 	GOptions_debugLevel = iParser.getInteger( "GOPTIONS:debugLevel", def=1 )
 	
