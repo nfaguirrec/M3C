@@ -90,9 +90,9 @@ function makeLatexTableBase()
 	do
 		if (( $i%$NCOLUMNS != 0 && $i != $nFiles )) 
 		then
-			echo "\includegraphics[scale=0.3]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} &"
+			echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} &"
 		else
-			echo "\includegraphics[scale=0.3]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} "
+			echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} "
 			
 			if (( $i != $nFiles ))
 			then
@@ -154,9 +154,9 @@ function makeLatexDocument()
 		highlighted[$item]=1
 	done
 
-	files=`ls *.eps`
-	nFiles=`echo $files | wc -w`
-	effSize=`echo "1.6*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
+	local files=`ls *.eps`
+	local nFiles=`echo $files | wc -w`
+	local effSize=`echo "1.6*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
 
 	echo "\begin{center}"
 	echo "\begin{tabular}{|"
@@ -174,16 +174,16 @@ function makeLatexDocument()
 		then
 			if [ "${highlighted[$i]}" = 1 ]
 			then
-				echo "\includegraphics[scale=0.3]{$f} \textcolor{red}{\tiny{$i \hspace{5pt}${f%.*}}} &"
+				echo "\includegraphics[width=${effSize}cm]{$f} \textcolor{red}{\tiny{$i \hspace{5pt}${f%.*}}} &"
 			else
-				echo "\includegraphics[scale=0.3]{$f} \tiny{$i \hspace{5pt} ${f%.*}} &"
+				echo "\includegraphics[width=${effSize}cm]{$f} \tiny{$i \hspace{5pt} ${f%.*}} &"
 			fi
 		else
 			if [ "${highlighted[$i]}" = 1 ]
 			then
-				echo "\includegraphics[scale=0.3]{$f} \textcolor{red}{\tiny{$i \hspace{5pt}${f%.*}}} "
+				echo "\includegraphics[width=${effSize}cm]{$f} \textcolor{red}{\tiny{$i \hspace{5pt}${f%.*}}} "
 			else
-				echo "\includegraphics[scale=0.3]{$f} \tiny{$i \hspace{5pt} ${f%.*}} "
+				echo "\includegraphics[width=${effSize}cm]{$f} \tiny{$i \hspace{5pt} ${f%.*}} "
 			fi
 			
 			if (( $i != $nFiles ))
@@ -212,6 +212,8 @@ function buildGifFiles()
 	local iFile=""
 	local sID=""
 	
+	local effSize=`echo "100*$SIZE/100.0" | bc -l`  # 100px para 100%
+	
 	echo "--------------------"
 	echo " Building GIF files"
 	echo "--------------------"
@@ -239,7 +241,7 @@ wireframe 0.15; spacefill 23%
 
 moveto 0 1 0 0 -90
 zoom $ZOOM
-write image $SIZE $SIZE ${iFile%.*}.gif
+write image $effSize $effSize ${iFile%.*}.gif
 EOF
 		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1
 		rm geom$sID.jmol
@@ -257,6 +259,8 @@ function buildEPSFiles()
 {
 	local iFile=""
 	local sID=""
+	
+	local effSize=`echo "100.0*$SIZE/100.0" | bc`  # 100px para 100%
 	
 	echo "--------------------"
 	echo " Building EPS files"
@@ -284,7 +288,7 @@ background [255,255,255]
 wireframe 0.15; spacefill 23%
 moveto 0 1 0 0 -90
 zoom $ZOOM
-write image $SIZE $SIZE ${iFile%.*}.gif
+write image $effSize $effSize ${iFile%.*}.gif
 EOF
 	
 		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1

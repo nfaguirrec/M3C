@@ -3,6 +3,7 @@
 !!
 module FragmentsList_
 	use GOptions_
+	use AtomicElementsDB_
 	use String_
 	use Math_
 	use Matrix_
@@ -48,6 +49,7 @@ module FragmentsList_
 			procedure, private :: updateLambda
 ! 			procedure :: showLnWComponents
 			
+			procedure, private :: N2LCorrection
 			procedure, private :: updateDiagInertiaTensor
 			procedure, private :: updateDiagInertiaTensorJJ
 			procedure, private :: updateDiagInertiaTensorJL
@@ -321,19 +323,144 @@ module FragmentsList_
 	subroutine updateDiagInertiaTensor( this )
 		class(FragmentsList) :: this
 		
-		select case( trim(GOptionsM3C_angularMomentumCouplingScheme.fstr) )
-			case( "JJ" )
-				call this.updateDiagInertiaTensorJJ()
-			case( "JL" )
+! 		select case( trim(GOptionsM3C_angularMomentumCouplingScheme.fstr) )
+! 			case( "JJ" )
+! 				call this.updateDiagInertiaTensorJJ()
+! 			case( "JL" )
 				call this.updateDiagInertiaTensorJL()
-			case default
-				call GOptions_error( &
-					"Unknown angular momentum coupling scheme"//" ("//trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)//")", &
-					"FragmentsListBase.updateDiagInertiaTensor()", &
-					"Posible implemented values: JJ, JL" &
-					)
-		end select
+! 			case default
+! 				call GOptions_error( &
+! 					"Unknown angular momentum coupling scheme"//" ("//trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)//")", &
+! 					"FragmentsListBase.updateDiagInertiaTensor()", &
+! 					"Posible implemented values: JJ, JL" &
+! 					)
+! 		end select
 	end subroutine updateDiagInertiaTensor
+	
+	!>
+	!! @brief Actualiza la energía rotacional
+	!!
+	subroutine N2LCorrection( this )
+		class(FragmentsList) :: this
+		
+		integer :: n
+		real(8) :: valI_L, Re, mu, r, m, m_1, m_2
+		
+		type(Matrix) :: invIi, invBi, Ui, I_L
+		real(8) :: Il, molRef
+		integer :: j
+		type(Matrix) :: RotMu
+		
+		n = this.nMolecules()
+	
+		! Contribución orbital para el caso de 1 atomo y una molecula lineal
+		if( n==2 .and. GOptionsM3C_useLCorrection ) then
+! 			if( this.clusters( this.idSorted(1) ).fr() == 0 .and. this.clusters( this.idSorted(2) ).fr() /= 0 ) then
+! 				if( this.clusters( this.idSorted(1) ).fr() == 0 .and. this.clusters( this.idSorted(2) ).nAtoms() == 2 ) then
+! 				
+! 	!                               Re = 0.5*this.clusters( this.idSorted(2) ).radius()  ! El valor exacto es radius-rcov(1)-rcov(n), el valor que está es para una diatómica
+! 	!                               mu = this.clusters( this.idSorted(2) ).mass()
+! 						Re = norm2(this.clusters( this.idSorted(2) ).atoms(1).r-this.clusters( this.idSorted(2) ).atoms(2).r)
+! 						
+! 						m_1 = AtomicElementsDB_instance.atomicMass( this.clusters( this.idSorted(2) ).atoms(1).symbol )
+! 						m_2 = AtomicElementsDB_instance.atomicMass( this.clusters( this.idSorted(2) ).atoms(2).symbol )
+! 						mu = m_1*m_2/(m_1+m_2)
+! 						
+! 						m = this.clusters( this.idSorted(1) ).mass()
+! 						r = norm2(this.clusters(1).center()-this.clusters(2).center())
+! 												
+! 						valI_L = 1.0_8/( 1.0_8/( 2.0_8*mu*Re**2  ) + 1.0_8/( 2.0_8*m*r**2 ) )
+! 												
+! 						this.LnDiagI_ = this.LnDiagI_ + 1.0_8*log(sqrt(2.0_8*valI_L))
+
+! 				Re = 0.5*this.clusters( this.idSorted(2) ).radius()  ! El valor exacto es radius-rcov(1)-rcov(n), el valor que está es para una diatómica
+! 				mu = this.clusters( this.idSorted(2) ).mass()
+! 
+! 				r = norm2(this.clusters(1).center()-this.clusters(2).center())
+! 				m = this.clusters( this.idSorted(1) ).mass()*this.clusters( this.idSorted(2) ).mass()/this.mass()
+! 				
+! 				valI_L = ( mu*Re**2 * m*r**2 )/( mu*Re**2  + m*r**2 )
+! 				
+! 				this.LnDiagI_ = this.LnDiagI_ + log(valI_L)
+
+				!--------------------------------------
+				
+				! mu es el que está rotando y molRef el que está en el centro
+! 				if( this.clusters( this.idSorted(1) ).fr() > this.clusters( this.idSorted(2) ).fr() ) then
+! 				      mu = 2
+! 				      molRef = 1
+! 				else
+				      mu = 1
+				      molRef = 2
+! 				end if
+
+				r = norm2(this.clusters(mu).center()-this.clusters(molRef).center())
+				Il = this.clusters( this.idSorted(mu) ).mass()*this.clusters( this.idSorted(molRef) ).mass()*r**2/this.mass()
+				
+! 				! El valor que sale para valIl es el mismo que con el tensor de inercia
+! ! 				call this.buildInertiaTensor( I_L, this.clusters( this.idSorted(molRef) ).center() )
+! ! ! 				call this.buildInertiaTensor( I_L )
+! ! 				write(*,*) "Il = ", log(Il)
+! ! 				write(*,*) "I_L = "
+! ! 				call I_L.show( formatted=.true. )
+! ! 				I_L.data = log(I_L.data)
+! ! 				write(*,*) "log(I_L) = "
+! ! 				call I_L.show( formatted=.true. )
+! ! 				stop
+				
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				! Calculo del tensor de inerciaq que está en el centro
+				call invIi.init( 3, 3, 0.0_8 )
+				do j=3,4-this.clusters( this.idSorted(molRef) ).fr(),-1
+				      invIi.data( j, j ) = 1.0_8/this.clusters( this.idSorted(molRef) ).diagInertiaTensor.data( j, j )
+				end do
+
+				call invIi.eigen( eVals=invBi, eVecs=Ui )
+! 				
+! 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 				! Matriz de rotación que permite transformar a los ejes
+! 				! de N en los ejes de i, pasando por el sistem fix
+! 				! RotMu = R_n^T*R_mu
+! 				RotMu = SpecialMatrix_rotationTransform( &
+! 					this.inertiaAxes(), &
+! 					this.clusters( this.idSorted(molRef) ).inertiaAxes() )
+! 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 				
+! 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 				! Se obtiene la matriz inversa del tensor
+! 				! de inercia efectivo.
+! 				invIt =  invIi + RotMu*invIn*RotMu.transpose()
+! 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				        
+! 				this.LnIm_ = 0.0_8
+! 				do j=3,4-this.clusters( this.idSorted(mu) ).fr(),-1
+! 				      this.LnDiagI_ = this.LnDiagI_ - log(2.0_8*invBi.get(j,j))
+! 				end do
+! 				this.LnDiagI_ = this.LnDiagI_ + log(Math_PI**(this.clusters( this.idSorted(mu) ).fr()/2.0)) - log(gamma(this.clusters( this.idSorted(mu) ).fr()/2.0))
+
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				! Calculo de la corrección
+				valI_L = 0.0_8
+				do j=3,4-this.clusters( this.idSorted(molRef) ).fr(),-1
+				      valI_L = valI_L + (- log( 1.0_8 + 1.0_8/( invBi.get(j,j)*Il ) ) - log(invBi.get(j,j)))/3.0_8
+				end do
+! 				valI_L = - log( 1.0_8 + 1.0_8/( invBi.get(3,3)*Il ) ) - log(invBi.get(3,3))
+				
+				this.LnDiagI_ = this.LnDiagI_ + valI_L
+				
+				if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
+					write(*,*) ""
+					write(*,*) trim(this.label())
+					write(*,*) mu, molRef, this.clusters( this.idSorted(molRef) ).fr(), invBi.get(1,1), invBi.get(2,2), invBi.get(3,3), Il
+					write(*,*) log( 1.0_8 + 1.0_8/( invBi.get(1,1)*Il ) ), log( 1.0_8 + 1.0_8/( invBi.get(2,2)*Il ) ), log( 1.0_8 + 1.0_8/( invBi.get(3,3)*Il ) )
+					write(*,*) log(invBi.get(1,1)), log(invBi.get(2,2)), log(invBi.get(3,3))
+					write(*,"(5X,A10,20X,F20.5)") "L-corr", valI_L
+					write(*,*) ""
+				end if
+! 			end if
+		end if
+		
+	end subroutine N2LCorrection
 	
 	!>
 	!! @brief Actualiza la energía rotacional
@@ -352,6 +479,10 @@ module FragmentsList_
 		type(Matrix) :: Ui
 		type(Matrix) :: invBi
 		integer :: fr_sf
+		integer :: molRef
+		
+! 		type(Matrix) :: I_L, invI_L
+! 		integer :: fl_sf
 		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsList()
@@ -384,6 +515,8 @@ module FragmentsList_
 			call GOptions_subsection( "Angular momentum coupling JJ --> "//trim(this.label()), indent=2 )
 		end if
 		
+		call this.N2LCorrection()
+		
 		if( effNu > 1 .and. effMu /= effNu ) then
 			write(*,"(A,2I8)") "FragmentsList.updateDiagInertiaTensorJJ(). effMu /= effNu, ", effMu, effNu
 			stop 
@@ -392,6 +525,7 @@ module FragmentsList_
 		if( effMu < 1 ) return
 		
 		call invBigI.init( 3*effMu, 3*effNu, 0.0_8 )
+! 		call invBigI.init( 3*effMu+3, 3*effNu+3, 0.0_8 )
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Se obtiene la matriz inversa del tensor
@@ -407,6 +541,8 @@ module FragmentsList_
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Creación de los Ij
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		molRef = n
+		
 		effMu = 1
 		do mu=1,n-1
 		
@@ -418,7 +554,7 @@ module FragmentsList_
 				! RotMu = R_n^T*R_mu
 				RotMu = SpecialMatrix_rotationTransform( &
 					this.clusters( this.idSorted(mu) ).inertiaAxes(), &
-					this.clusters( this.idSorted(n) ).inertiaAxes() )
+					this.clusters( this.idSorted(molRef) ).inertiaAxes() )
 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 				
 				effNu = 1
@@ -432,7 +568,7 @@ module FragmentsList_
 						! RotNu = R_n^T*R_nu
 						RotNu = SpecialMatrix_rotationTransform( &
 							this.clusters( this.idSorted(nu) ).inertiaAxes(), &
-							this.clusters( this.idSorted(n) ).inertiaAxes() )
+							this.clusters( this.idSorted(molRef) ).inertiaAxes() )
 						!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 						
 						if( mu == nu ) then
@@ -503,6 +639,38 @@ module FragmentsList_
 			
 		end do
 		
+! 		call this.buildInertiaTensor( I_L, this.clusters( this.idSorted(molRef) ).center() )
+! 		invI_L = I_L.inverse()
+! 		invI_L.data = invI_L.data + 1e-8
+! 			
+! 		if( GOptions_debugLevel >= 3 ) then
+! 			write(*,*) "I_L"
+! 			call I_L.show( formatted=.true., precision=10 )
+! 			write(*,*) ""
+! 			
+! 			write(*,*) "inv I_L"
+! 			call invI_L.show( formatted=.true., precision=10 )
+! 			write(*,*) ""
+! 		end if
+! 		
+! 		select case( n )
+! 			case( 1 )
+! 				fl_sf = 0
+! 			case( 2 )
+! 				fl_sf = 1
+! ! 			case( 3 )
+! ! 				fl_sf = 2
+! 			case default
+! ! 				fl_sf = 3
+! 				fl_sf = 1
+! 		end select
+! 
+! 		do i=3,4-fl_sf,-1
+! 			do j=3,4-fl_sf,-1
+! 				call invBigI.set( 3*(effMu-1)+i, 3*(effNu-1)+j, invI_L.get(i,j) )
+! 			end do
+! 		end do
+		
 		if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
 			write(*,*) ""
 			write(*,*) "Total invI matrix"
@@ -519,6 +687,7 @@ module FragmentsList_
 		
 		if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
 			write(*,*) "effective fr = ", fr_sf
+! 			write(*,*) "effective fl = ", fl_sf
 			write(*,*) ""
 			write(*,*) "Total diag(invI) matrix"
 			call invBi.show( formatted=.true., precision=10 )
@@ -530,6 +699,7 @@ module FragmentsList_
 			
 		this.LnDiagI_ = 0.0_8
 		do effMu=invBi.nRows,invBi.nRows-fr_sf+1,-1
+! 		do effMu=invBi.nRows,invBi.nRows-fr_sf-fl_sf+1,-1
 			if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
 				write(*,"(10X,I5,F20.8,F20.5)") effMu, invBi.get(effMu,effMu), -log(invBi.get(effMu,effMu))
 			end if
@@ -539,8 +709,9 @@ module FragmentsList_
 		
 		if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
 			write(*,"(10X,5X,20X,A20)") "---------------"
-			write(*,"(10X,5X,20X,F20.5)") this.LnDiagI_
+			write(*,"(5X,A10,20X,F20.5)") "Total", this.LnDiagI_
 			write(*,*) ""
+			stop
 		end if
 		
 	end subroutine updateDiagInertiaTensorJJ
@@ -626,7 +797,7 @@ module FragmentsList_
 				! RotMu = R_n^T*R_mu
 				RotMu = SpecialMatrix_rotationTransform( &
 					this.clusters( this.idSorted(mu) ).inertiaAxes(), &
-					this.clusters( this.idSorted(n) ).inertiaAxes() )
+					this.inertiaAxes )
 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 				
 				effNu = 1
@@ -662,7 +833,8 @@ module FragmentsList_
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							! Se obtiene la matriz inversa del tensor
 							! de inercia efectivo.
-							invIt =  invIi + RotMu*invIn*RotMu.transpose()
+! 							invIt =  invIi + RotMu*invIn*RotMu.transpose()
+							invIt =  invIi + RotMu.transpose()*invIn*RotMu
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							
 							if( GOptions_debugLevel >= 3 ) then
@@ -681,7 +853,8 @@ module FragmentsList_
 						
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							! Se obtiene la matriz de acoplamieto
-							invIt =  RotMu*invIn*RotNu.transpose()
+! 							invIt =  RotMu*invIn*RotNu.transpose()
+							invIt =  RotMu.transpose()*invIn*RotNu
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							
 							if( GOptions_debugLevel >= 3 ) then
@@ -747,6 +920,12 @@ module FragmentsList_
 			write(*,"(10X,5X,20X,F20.5)") this.LnDiagI_
 			write(*,*) ""
 		end if
+		
+		! Lo he probado en varios sistemas y no funciona. No se si
+		! al cambiar el radio del sistema tenga algún efecto
+! 		do j=3,4-this.fl(),-1
+! 			this.LnDiagI_ = this.LnDiagI_ - log(this.diagInertiaTensor( j ))
+! 		end do
 		
 	end subroutine updateDiagInertiaTensorJL
 	
@@ -869,18 +1048,25 @@ module FragmentsList_
 			do i=1,n
 				logMu = logMu + log(this.clusters(i).mass())
 				
-				if( i /= n ) then
+! 				if( i /= n ) then
 					fr = fr + this.clusters( this.idSorted(i) ).fr()
-				end if
+! 				end if
 			end do
-			logMu = logMu - log( this.mass() ) !+ (n-1.0_8)*log(2.0_8)
+! 			logMu = logMu - log( this.mass() )
 			
-			s = this.ft() + this.fl() + fr
+! 			if( n==2 .and. GOptionsM3C_useLCorrection ) then
+! 				s = this.ft() + this.fl() + fr + 1
+! 			else
+				s = this.ft() + this.fl() + fr
+! 			end if
 			
 			this.LnLambda = \
-				0.5_8*s*log(2.0_8*Math_PI) - log( Gamma(0.5_8*s) ) &
+				0.5_8*s*log(2.0_8*Math_PI) &
+! 				- (3.0_8+this.fl())*log(2.0_8*Math_PI) &
+				- log( Gamma(0.5_8*s) ) &
 				+ 1.5*logMu &
 				+ this.logVfree_ + this.logVtheta_ &
+				+ 0.5_8*fr*log(2.0_8) &
 				+ 0.5_8*this.LnDiagI_ &
 				+ (0.5_8*s-1.0_8)*log(Et)
 				
