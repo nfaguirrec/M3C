@@ -114,7 +114,7 @@ showDataBase()
 
 	if [ "$nAtoms" -eq 1 ]
 	then
-		printf "\t%15s%5d%3d%3d%5d%23s%20.6f\n" "$finalLabel" $charge $mult 0 1 $fileName $energy
+		printf "\t%21s%5d%3d%3d%5d%30s%20.6f\n" "$finalLabel" $charge $mult 0 1 $fileName $energy
 	else
 		if [ -f "$maxVibChannelsFile" ]
 		then
