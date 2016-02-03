@@ -74,9 +74,9 @@ showDataBase()
 {
   local maxVibChannelsFile=$1
   
-  printf "\t#--------------------------------------------------------------------------------------------------------\n"
-  printf "\t#%14s%5s%3s%3s%5s%23s%20s%30s\n" "Label" "Z" "M" "L" "SYM" "geomFile" "Eelec" "maxVib"
-  printf "\t#--------------------------------------------------------------------------------------------------------\n"
+  printf "\t#---------------------------------------------------------------------------------------------------------------------\n"
+  printf "\t#%20s%5s%3s%3s%5s%30s%20s%30s\n" "Label" "Z" "M" "L" "SYM" "geomFile" "Eelec" "maxVib"
+  printf "\t#---------------------------------------------------------------------------------------------------------------------\n"
 
   cat /dev/null > .molValues$$
 
@@ -125,19 +125,19 @@ showDataBase()
 			if [ -n "$channel" ]
 			then
 		# 				printf "\t%15s%5d%3d%3d%5d%23s%20.6f%20s%30s\n" "$finalLabel" $charge $mult 0 1 $fileName $energy $channel   "# $channelEnergy"
-				printf "\t%15s%5d%3d%3d%5d%23s%20.6f%30s\n" "$finalLabel" $charge $mult 0 1 $fileName $energy $channel
+				printf "\t%21s%5d%3d%3d%5d%30s%20.6f%30s\n" "$finalLabel" $charge $mult 0 1 $fileName $energy $channel
 			else
-				printf "\t%15s%5d%3d%3d%5d%23s%20.6f%30s\n" "$finalLabel" $charge $mult 0 1 $fileName $energy "NONE"
+				printf "\t%21s%5d%3d%3d%5d%30s%20.6f%30s\n" "$finalLabel" $charge $mult 0 1 $fileName $energy "NONE"
 			fi
 		else
-			printf "\t%15s%5d%3d%3d%5d%23s%20.6f%30s\n" "$finalLabel" $charge $mult 0 1 $fileName $energy 0.0000
+			printf "\t%21s%5d%3d%3d%5d%30s%20.6f%30s\n" "$finalLabel" $charge $mult 0 1 $fileName $energy 0.0000
 		fi
 	fi
   done
 
   rm .molValues$$
 
-  printf "\t#--------------------------------------------------------------------------------------------------------\n"
+  printf "\t#---------------------------------------------------------------------------------------------------------------------\n"
 }
 
 main()

@@ -1894,13 +1894,19 @@ module FragmentsListBase_
 	!! around of the origin of the coordinates system by considering
 	!! each cluster as a punctual mass
 	!!
-	subroutine buildInertiaTensor( this, Im )
+	subroutine buildInertiaTensor( this, Im, center )
 		class(FragmentsListBase), intent(in) :: this
 		type(Matrix), intent(out) :: Im
+		real(8), optional, intent(in) :: center(3)
+		
+		real(8) :: effCenter(3)
 		
 		integer :: i
 		real(8) :: iCenterOfMass(3)
 		real(8), allocatable :: X(:), Y(:), Z(:), m(:)
+		
+		effCenter = 0.0_8
+		if( present(center) ) effCenter = center
 		
 		allocate( X(this.nMolecules()) )
 		allocate( Y(this.nMolecules()) )
@@ -1909,9 +1915,9 @@ module FragmentsListBase_
 		
 		do i=1,this.nMolecules()
 			iCenterOfMass = this.clusters(i).centerOfMass()
-			X(i) = iCenterOfMass(1)
-			Y(i) = iCenterOfMass(2)
-			Z(i) = iCenterOfMass(3)
+			X(i) = iCenterOfMass(1) - effCenter(1)
+			Y(i) = iCenterOfMass(2) - effCenter(2)
+			Z(i) = iCenterOfMass(3) - effCenter(3)
 			m(i) = this.clusters(i).mass()
 		end do
 		
