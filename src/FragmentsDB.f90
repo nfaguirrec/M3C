@@ -242,7 +242,8 @@ module FragmentsDB_
 					do j=i,this.nMolecules()
 ! 					do j=i+1,this.nMolecules()
 						do n=1,MAXPOTPP
-							if( this.potentials(i,j,n).getId() /= 0 ) then
+! 							if( this.potentials(i,j,n).getId() /= 0 ) then
+							if( this.potentials(i,j,n).getId() > 1 ) then  ! Esto evita que imprima NONE y HARDSPHERE
 							
 								write(*,"(A)") "#  " &
 									//this.clusters(i).name &
@@ -258,19 +259,19 @@ module FragmentsDB_
 
 								r = rMin
 								do while( r <= rMax )
-									write(*,"(2F20.7)") r/angs, &
-										( this.clusters(i).electronicEnergy &
-										+ this.clusters(j).electronicEnergy &
+									write(*,"(2F20.7)") r/angs, ( &
+! 										+ this.clusters(i).electronicEnergy &
+! 										+ this.clusters(j).electronicEnergy &
 										+ this.potential( i, j, r, n ) &
-										- this.energyReference() &
+! 										- this.energyReference() &
 										)/eV
 									
 									if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-										write(oFile.unit,"(2F20.7)") r/angs, &
-											( this.clusters(i).electronicEnergy &
-											+ this.clusters(j).electronicEnergy &
+										write(oFile.unit,"(2F20.7)") r/angs, ( &
+! 											+ this.clusters(i).electronicEnergy &
+! 											+ this.clusters(j).electronicEnergy &
 											+ this.potential( i, j, r, n ) &
-											- this.energyReference() &
+! 											- this.energyReference() &
 											)/eV
 									end if
 									
