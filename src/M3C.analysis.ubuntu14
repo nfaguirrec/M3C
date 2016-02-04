@@ -4,6 +4,16 @@ FILTER=".*"
 GNUPLOT="gnuplot"
 GNUPLOT_TERMINAL="set terminal wxt size 800,400"
 
+if [ -z "$PLOT_SIZE" ]
+then
+	PLOT_SIZE="square"
+fi
+
+if [ -z "$PLOT_LW" ]
+then
+	PLOT_LW="2.0"
+fi
+
 ####################################
 #
 ####################################
@@ -346,7 +356,7 @@ energyCorrelationDiagramSaulo()
 $GNUPLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
-set size square
+set size $PLOT_SIZE
 set format y "%.1f"
 set format x "%.1f"
 set format cb "10^{%T}"
@@ -481,7 +491,7 @@ energyCorrelationDiagram()
 $GNUPLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
-set size square
+set size $PLOT_SIZE
 set format y "%.1f"
 set format x "%.1f"
 set format cb "10^{%T}"
@@ -669,7 +679,7 @@ for item in speciesSorted:
 	' $iFile > .rawData-$$
 	
 	cat > .plotJ-$$ << EOF
-set size square
+set size $PLOT_SIZE
 set origin 0.0,0.02
 unset key
 set style fill transparent solid border lc rgb "black"
@@ -1000,27 +1010,23 @@ $GNUPLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-# set xlabel "Step"
-# set ylabel "Energy (eV)"
-# set y2label "Ln(W)"
 set format x "%.1f"
 set format y "%.0f"
 set xlabel "Excitation energy (eV)"
 set ylabel "Probability (%)"
-# set key out right center
 set xtics font "Helvetica Bold,9"
 set ytics font "Helvetica Bold,9"
-# set y2tics nomirror
-set key out left bottom font "Helvetica Bold,8" Right spacing 1.0
+set key out right bottom font "Helvetica Bold,8" Right spacing 1.0
 set mxtics 5
 set mytics 5
 set grid y
-set size square
+set size $PLOT_SIZE
 
 set linestyle  2 lc rgb "forest-green"
 set linestyle  3 lc rgb "#4253BB"
 set linestyle  5 lc rgb "#8196FF"
-set linestyle  6 lc rgb "#FBDF06"
+# set linestyle  6 lc rgb "#FBDF06"
+set linestyle  6 lc rgb "green"
 
 plot [$xMin-($xMax-$xMin)*0.03:$xMax+($xMax-$xMin)*0.03] [-3:103] \\
 EOF
@@ -1033,13 +1039,13 @@ EOF
 		
 		if (( $i != $nChannels ))
 		then
-			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw 2.0, \\" >> .plotMtj-$iFile$$
-			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt 7 ps 0.7 lw 0.5, \\" >> .plotMtj-$iFile$$
-			echo "'matrix.data' u 1:$yCol notitle w p pt 7 ps 0.1 lc rgb 'white', \\" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $PLOT_LW, \\" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt 7 ps $PLOT_LW/2.9 lw $PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol notitle w p pt 7 ps $PLOT_LW/20.0 lc rgb 'white', \\" >> .plotMtj-$iFile$$
 		else
-			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw 2.0, \\" >> .plotMtj-$iFile$$
-			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt 7 ps 0.7 lw 0.5, \\" >> .plotMtj-$iFile$$
-			echo "'matrix.data' u 1:$yCol notitle w p pt 7 ps 0.1 lc rgb 'white'" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $PLOT_LW, \\" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt 7 ps $PLOT_LW/2.9 lw $PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol notitle w p pt 7 ps $PLOT_LW/20.0 lc rgb 'white'" >> .plotMtj-$iFile$$
 		fi
 	done
 	
@@ -1124,7 +1130,7 @@ $GNUPLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-set size square
+set size $PLOT_SIZE
 # set size 0.9,1.0
 set ylabel "Branching ratios (%)"
 set format y "%.0f"
@@ -1222,7 +1228,7 @@ $GNUPLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-set size square
+set size $PLOT_SIZE
 # set size 0.9,1.0
 set xlabel "Channel"
 set ylabel "Branching ratios (%)"
@@ -1300,7 +1306,7 @@ $GNUPLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-set size square
+set size $PLOT_SIZE
 # set size 0.9,1.0
 set xlabel "Channel"
 set ylabel "Branching ratios (%)"
@@ -1338,8 +1344,8 @@ $GNUPLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-# set size square
-set size 1.0,0.8
+set size $PLOT_SIZE
+# set size 1.0,0.8
 set xlabel "m/z"
 set ylabel "Relative Intensity"
 set format y "%.0f"
@@ -1450,7 +1456,7 @@ set ytics font "Helvetica Bold,9"
 set mxtics 5
 set mytics 5
 # set grid
-set size square
+set size $PLOT_SIZE
 
 plot [-$xMax*0.04:$xMax*1.04] [-$yMax*0.04:$yMax*1.04] \
 "$eDistFile" u 1:2 w filledcurve ls 0 lc rgb "gray90", \
@@ -1518,7 +1524,7 @@ set ytics font "Helvetica Bold,9"
 set mxtics 5
 set mytics 5
 # set grid
-set size square
+set size $PLOT_SIZE
 
 plot [-$xMax*0.04:$xMax*1.04] [-$yMax*0.04:$yMax*1.04] \
 "$eDistFile" u 1:2 smooth csplines w l ls 0 lw 4 lc rgb "gray60", \
