@@ -19,7 +19,6 @@ module GOptionsM3C_
 	logical :: GOptionsM3C_useLCorrection = .false.
 	logical :: GOptionsM3C_useLWeightContrib = .false.
 	real(8) :: GOptionsM3C_gammaLCorrection = 1.0_8
-	logical :: GOptionsM3C_useLReference = .false.
 	logical :: GOptionsM3C_useSpinConservationRules = .false.
 	type(String) :: GOptionsM3C_angularMomentumCouplingScheme ! = "JJ"
 end module GOptionsM3C_
