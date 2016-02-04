@@ -20,7 +20,7 @@ module FragmentsList_
 		FragmentsList_test
 	
 	type, public, extends( FragmentsListBase ) :: FragmentsList
-		real(8) :: rotationalEnergy      !< It is calculated into updateRotationalEnergy procedure
+		real(8) :: rotationalEnergy_      !< It is calculated into updateRotationalEnergy procedure
 		
 		real(8), private :: LnLambda     !< Translational weight
 		real(8), private :: LnDiagI_     !< Contiene el log del producto de la diagonal de los tensores de inercia efectivos
@@ -41,6 +41,7 @@ module FragmentsList_
 			procedure :: totalEnergy
 			procedure :: internalEnergy
 			procedure :: translationalEnergy
+			procedure :: rotationalEnergy
 			
 			procedure :: energyHistoryLine
 			procedure :: weightHistoryLine
@@ -52,7 +53,7 @@ module FragmentsList_
 			procedure, private :: N2LCorrection
 			procedure, private :: updateDiagInertiaTensor
 			procedure, private :: updateDiagInertiaTensorJJ
-			procedure, private :: updateDiagInertiaTensorJL
+			procedure, private :: updateDiagInertiaTensorJJL
 			
 			procedure :: iTemperature
 	end type FragmentsList
@@ -74,7 +75,7 @@ module FragmentsList_
 		
 		call this.initFragmentsListBase( nMolecules )
 		
-		this.rotationalEnergy = 0.0_8
+		this.rotationalEnergy_ = 0.0_8
 		this.LnLambda = 0.0_8
 		this.LnDiagI_ = 0.0_8
 	end subroutine initFragmentsList
@@ -88,7 +89,7 @@ module FragmentsList_
 		
 		call this.copyFragmentsListBase( other )
 		
-		this.rotationalEnergy = other.rotationalEnergy
+		this.rotationalEnergy_ = other.rotationalEnergy_
 		this.LnLambda = other.LnLambda
 		this.LnDiagI_ = other.LnDiagI_
 	end subroutine copyFragmentsList
@@ -243,7 +244,7 @@ module FragmentsList_
 	!! @brief Returns the total energy
 	!!
 	function totalEnergy( this ) result( output )
-		class(FragmentsList) :: this
+		class(FragmentsList), intent(in) :: this
 		real(8) :: output
 		
 		output = this.kineticEnergy() + this.vibrationalEnergy_ + this.intermolEnergy_
@@ -253,7 +254,7 @@ module FragmentsList_
 	!! @brief Return the internal energy
 	!!
 	function internalEnergy( this ) result( output )
-		class(FragmentsList) :: this
+		class(FragmentsList), intent(in) :: this
 		real(8) :: output
 		
 		output = this.vibrationalEnergy_  + this.intermolEnergy_
@@ -262,12 +263,22 @@ module FragmentsList_
 	!>
 	!! @brief Return the translacional energy
 	!!
-	function translationalEnergy( this ) result( output )
-		class(FragmentsList) :: this
+	pure function translationalEnergy( this ) result( output )
+		class(FragmentsList), intent(in) :: this
 		real(8) :: output
 		
-		output = this.kineticEnergy() - this.rotationalEnergy
+		output = this.kineticEnergy() - this.rotationalEnergy_
 	end function translationalEnergy
+	
+	!>
+	!! @brief Return the translacional energy
+	!!
+	pure function rotationalEnergy( this ) result( output )
+		class(FragmentsList), intent(in) :: this
+		real(8) :: output
+		
+		output = this.rotationalEnergy_
+	end function rotationalEnergy
 	
 	!>
 	!! @brief
@@ -287,7 +298,7 @@ module FragmentsList_
 			trim(prefixEff), &
 			this.translationalEnergy()/eV, this.intermolEnergy_/eV, &
 			this.vibrationalEnergy_/eV, &
-			this.rotationalEnergy/eV, &
+			this.rotationalEnergy_/eV, &
 			this.totalEnergy()/eV, trim(this.label())
 			
 		output = line
@@ -323,18 +334,28 @@ module FragmentsList_
 	subroutine updateDiagInertiaTensor( this )
 		class(FragmentsList) :: this
 		
-! 		select case( trim(GOptionsM3C_angularMomentumCouplingScheme.fstr) )
-! 			case( "JJ" )
-! 				call this.updateDiagInertiaTensorJJ()
-! 			case( "JL" )
-				call this.updateDiagInertiaTensorJL()
-! 			case default
-! 				call GOptions_error( &
-! 					"Unknown angular momentum coupling scheme"//" ("//trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)//")", &
-! 					"FragmentsListBase.updateDiagInertiaTensor()", &
-! 					"Posible implemented values: JJ, JL" &
-! 					)
-! 		end select
+		integer :: j
+		
+		select case( trim(GOptionsM3C_angularMomentumCouplingScheme.fstr) )
+			case( "JJ" )
+				call this.updateDiagInertiaTensorJJ()
+			case( "JJL" )
+				call this.updateDiagInertiaTensorJJL()
+			case default
+				call GOptions_error( &
+					"Unknown angular momentum coupling scheme"//" ("//trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)//")", &
+					"FragmentsListBase.updateDiagInertiaTensor()", &
+					"Posible implemented values: JJ, JL" &
+					)
+		end select
+
+		! Lo he probado en varios sistemas y no funciona. No se si
+		! al cambiar el radio del sistema tenga algún efecto
+		if( GOptionsM3C_useLWeightContrib ) then
+			do j=3,4-this.fl(),-1
+				this.LnDiagI_ = this.LnDiagI_ - log(this.diagInertiaTensor( j ))
+			end do
+		end if
 	end subroutine updateDiagInertiaTensor
 	
 	!>
@@ -354,7 +375,7 @@ module FragmentsList_
 		n = this.nMolecules()
 	
 		! Contribución orbital para el caso de 1 atomo y una molecula lineal
-		if( n==2 .and. GOptionsM3C_useLCorrection ) then
+		if( n==2 ) then
 ! 			if( this.clusters( this.idSorted(1) ).fr() == 0 .and. this.clusters( this.idSorted(2) ).fr() /= 0 ) then
 ! 				if( this.clusters( this.idSorted(1) ).fr() == 0 .and. this.clusters( this.idSorted(2) ).nAtoms() == 2 ) then
 ! 				
@@ -481,9 +502,6 @@ module FragmentsList_
 		integer :: fr_sf
 		integer :: molRef
 		
-! 		type(Matrix) :: I_L, invI_L
-! 		integer :: fl_sf
-		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsList()
 ! 			return
@@ -515,7 +533,7 @@ module FragmentsList_
 			call GOptions_subsection( "Angular momentum coupling JJ --> "//trim(this.label()), indent=2 )
 		end if
 		
-		call this.N2LCorrection()
+		if( GOptionsM3C_useLCorrection ) call this.N2LCorrection()
 		
 		if( effNu > 1 .and. effMu /= effNu ) then
 			write(*,"(A,2I8)") "FragmentsList.updateDiagInertiaTensorJJ(). effMu /= effNu, ", effMu, effNu
@@ -525,7 +543,6 @@ module FragmentsList_
 		if( effMu < 1 ) return
 		
 		call invBigI.init( 3*effMu, 3*effNu, 0.0_8 )
-! 		call invBigI.init( 3*effMu+3, 3*effNu+3, 0.0_8 )
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Se obtiene la matriz inversa del tensor
@@ -593,7 +610,7 @@ module FragmentsList_
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							! Se obtiene la matriz inversa del tensor
 							! de inercia efectivo.
-							invIt =  invIi + RotMu*invIn*RotMu.transpose()
+							invIt =  invIi + RotMu.transpose()*invIn*RotMu
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							
 							if( GOptions_debugLevel >= 3 ) then
@@ -612,7 +629,7 @@ module FragmentsList_
 						
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							! Se obtiene la matriz de acoplamieto
-							invIt =  RotMu*invIn*RotNu.transpose()
+							invIt =  RotMu.transpose()*invIn*RotNu
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							
 							if( GOptions_debugLevel >= 3 ) then
@@ -639,38 +656,6 @@ module FragmentsList_
 			
 		end do
 		
-! 		call this.buildInertiaTensor( I_L, this.clusters( this.idSorted(molRef) ).center() )
-! 		invI_L = I_L.inverse()
-! 		invI_L.data = invI_L.data + 1e-8
-! 			
-! 		if( GOptions_debugLevel >= 3 ) then
-! 			write(*,*) "I_L"
-! 			call I_L.show( formatted=.true., precision=10 )
-! 			write(*,*) ""
-! 			
-! 			write(*,*) "inv I_L"
-! 			call invI_L.show( formatted=.true., precision=10 )
-! 			write(*,*) ""
-! 		end if
-! 		
-! 		select case( n )
-! 			case( 1 )
-! 				fl_sf = 0
-! 			case( 2 )
-! 				fl_sf = 1
-! ! 			case( 3 )
-! ! 				fl_sf = 2
-! 			case default
-! ! 				fl_sf = 3
-! 				fl_sf = 1
-! 		end select
-! 
-! 		do i=3,4-fl_sf,-1
-! 			do j=3,4-fl_sf,-1
-! 				call invBigI.set( 3*(effMu-1)+i, 3*(effNu-1)+j, invI_L.get(i,j) )
-! 			end do
-! 		end do
-		
 		if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
 			write(*,*) ""
 			write(*,*) "Total invI matrix"
@@ -687,7 +672,6 @@ module FragmentsList_
 		
 		if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
 			write(*,*) "effective fr = ", fr_sf
-! 			write(*,*) "effective fl = ", fl_sf
 			write(*,*) ""
 			write(*,*) "Total diag(invI) matrix"
 			call invBi.show( formatted=.true., precision=10 )
@@ -699,7 +683,6 @@ module FragmentsList_
 			
 		this.LnDiagI_ = 0.0_8
 		do effMu=invBi.nRows,invBi.nRows-fr_sf+1,-1
-! 		do effMu=invBi.nRows,invBi.nRows-fr_sf-fl_sf+1,-1
 			if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
 				write(*,"(10X,I5,F20.8,F20.5)") effMu, invBi.get(effMu,effMu), -log(invBi.get(effMu,effMu))
 			end if
@@ -719,7 +702,7 @@ module FragmentsList_
 	!>
 	!! @brief Actualiza la energía rotacional
 	!!
-	subroutine updateDiagInertiaTensorJL( this )
+	subroutine updateDiagInertiaTensorJJL( this )
 		class(FragmentsList) :: this
 		
 		integer :: i, j, n
@@ -762,11 +745,13 @@ module FragmentsList_
 		end do
 		
 		if( GOptions_debugLevel >= 3 ) then
-			call GOptions_subsection( "Angular momentum coupling JL --> "//trim(this.label()), indent=2 )
+			call GOptions_subsection( "Angular momentum coupling JJL --> "//trim(this.label()), indent=2 )
 		end if
 		
+		if( GOptionsM3C_useLCorrection ) call this.N2LCorrection()
+		
 		if( effNu > 1 .and. effMu /= effNu ) then
-			write(*,"(A,2I8)") "FragmentsList.updateDiagInertiaTensorJL(). effMu /= effNu, ", effMu, effNu
+			write(*,"(A,2I8)") "FragmentsList.updateDiagInertiaTensorJJL(). effMu /= effNu, ", effMu, effNu
 			stop 
 		end if
 		
@@ -833,7 +818,6 @@ module FragmentsList_
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							! Se obtiene la matriz inversa del tensor
 							! de inercia efectivo.
-! 							invIt =  invIi + RotMu*invIn*RotMu.transpose()
 							invIt =  invIi + RotMu.transpose()*invIn*RotMu
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							
@@ -853,7 +837,6 @@ module FragmentsList_
 						
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							! Se obtiene la matriz de acoplamieto
-! 							invIt =  RotMu*invIn*RotNu.transpose()
 							invIt =  RotMu.transpose()*invIn*RotNu
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							
@@ -921,13 +904,7 @@ module FragmentsList_
 			write(*,*) ""
 		end if
 		
-		! Lo he probado en varios sistemas y no funciona. No se si
-		! al cambiar el radio del sistema tenga algún efecto
-! 		do j=3,4-this.fl(),-1
-! 			this.LnDiagI_ = this.LnDiagI_ - log(this.diagInertiaTensor( j ))
-! 		end do
-		
-	end subroutine updateDiagInertiaTensorJL
+	end subroutine updateDiagInertiaTensorJJL
 	
 	!>
 	!! @brief
@@ -1009,7 +986,7 @@ module FragmentsList_
 ! 			write(*,"(10X,3F10.5,5X,A,A)") this.clusters( this.idSorted(n) ).J_, trim(this.clusters( this.idSorted(n) ).label()), "   <<<< ref"
 ! 		end if
 ! 		
-! 		this.rotationalEnergy = Ein
+! 		this.rotationalEnergy_ = Ein
 ! 		
 ! 		if( GOptions_debugLevel >= 3 ) then
 ! 			write(*,"(A,A,3F10.1)") trim(this.clusters( this.idSorted(n) ).label()), ", Jcal = ", this.clusters( this.idSorted(n) ).J_
@@ -1037,11 +1014,9 @@ module FragmentsList_
 		
 		if( Et < 0.0_8 ) then
 			this.LnLambda = 0.0_8
-! 			write(*,"(A,A,F10.5)") "E < 0", "   "//trim(this.label()), this.LnLambda
 		else if( this.nMolecules() == 1 ) then
 ! 			this.LnLambda = this.logVfree_ + this.logVtheta_
 			this.LnLambda = 0.0_8
-! 			write(*,"(A,A,F10.5)") "n = 0", "   "//trim(this.label()), this.LnLambda
 		else
 			logMu = 0.0_8
 			fr = 0
@@ -1052,17 +1027,11 @@ module FragmentsList_
 					fr = fr + this.clusters( this.idSorted(i) ).fr()
 ! 				end if
 			end do
-! 			logMu = logMu - log( this.mass() )
 			
-! 			if( n==2 .and. GOptionsM3C_useLCorrection ) then
-! 				s = this.ft() + this.fl() + fr + 1
-! 			else
-				s = this.ft() + this.fl() + fr
-! 			end if
+			s = this.ft() + this.fl() + fr
 			
 			this.LnLambda = \
 				0.5_8*s*log(2.0_8*Math_PI) &
-! 				- (3.0_8+this.fl())*log(2.0_8*Math_PI) &
 				- log( Gamma(0.5_8*s) ) &
 				+ 1.5*logMu &
 				+ this.logVfree_ + this.logVtheta_ &
@@ -1070,7 +1039,6 @@ module FragmentsList_
 				+ 0.5_8*this.LnDiagI_ &
 				+ (0.5_8*s-1.0_8)*log(Et)
 				
-! 			write(*,"(A,4I5,A,F10.5)") "s = ", s, this.ft(), this.fl(), fr, "   "//trim(this.label()), this.LnLambda
 		end if
 		
 		if( ( Math_isNaN(this.LnLambda) .or. Math_isInf(this.LnLambda) ) .and. GOptions_printLevel >= 2 ) then
@@ -1079,7 +1047,7 @@ module FragmentsList_
 			call GOptions_valueReport( "internalEnergy", this.internalEnergy()/eV, "eV", indent=2 )
 			call GOptions_valueReport( "kineticEnergy", this.kineticEnergy()/eV, "eV", indent=2 )
 			call GOptions_valueReport( "vibrationalEnergy", this.vibrationalEnergy_/eV, "eV", indent=2 )
-			call GOptions_valueReport( "rotationalEnergy", this.rotationalEnergy/eV, "eV", indent=2 )
+			call GOptions_valueReport( "rotationalEnergy", this.rotationalEnergy_/eV, "eV", indent=2 )
 			call GOptions_valueReport( "used Et", Et/eV, "eV", indent=2 )
 			call GOptions_valueReport( "logVfree", this.logVfree_, indent=2 )
 			call GOptions_valueReport( "logVtheta", this.logVtheta_, indent=2 )

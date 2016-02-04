@@ -78,7 +78,6 @@ program M3C
 	GOptionsM3C_useZPECorrection = iParser.getLogical( "GOPTIONS:useZPECorrection", def=.false. )
 	GOptionsM3C_useRandomWalkers = iParser.getLogical( "GOPTIONS:useRandomWalkers", def=.true. )
 	GOptionsM3C_useLCorrection = iParser.getLogical( "GOPTIONS:useLCorrection", def=.false. )
-	GOptionsM3C_useLDOSContrib = iParser.getLogical( "GOPTIONS:useLDOSContrib", def=.false. )
 	GOptionsM3C_useLWeightContrib = iParser.getLogical( "GOPTIONS:useLWeightContrib", def=.false. )
 	GOptionsM3C_useLReference = iParser.getLogical( "GOPTIONS:useLReference", def=.false. )
 	GOptionsM3C_gammaLCorrection = iParser.getReal( "GOPTIONS:gammaLCorrection", def=3.0_8 )
@@ -94,7 +93,6 @@ program M3C
 	write(*,"(A40,F15.5,A)") "GOptions:overlappingRadius = ", GOptionsM3C_overlappingRadius/angs, " A"
 	write(*,"(A40,L5)") "GOptions:useWeightedWalkStep = ", GOptionsM3C_useWeightedWalkStep
 	write(*,"(A40,L5)") "GOptions:useLCorrection = ", GOptionsM3C_useLCorrection
-	write(*,"(A40,L5)") "GOptions:useLDOSContrib = ", GOptionsM3C_useLDOSContrib
 	write(*,"(A40,L5)") "GOptions:useLWeightContrib = ", GOptionsM3C_useLWeightContrib
 	write(*,"(A40,L5)") "GOptions:useLReference = ", GOptionsM3C_useLReference
 	write(*,"(A40,F5.0)") "GOptions:gammaLCorrection = ", GOptionsM3C_gammaLCorrection

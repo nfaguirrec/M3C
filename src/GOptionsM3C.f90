@@ -17,7 +17,6 @@ module GOptionsM3C_
 	logical :: GOptionsM3C_useRandomWalkers = .true.
 	logical :: GOptionsM3C_useZPECorrection = .false.
 	logical :: GOptionsM3C_useLCorrection = .false.
-	logical :: GOptionsM3C_useLDOSContrib = .false.
 	logical :: GOptionsM3C_useLWeightContrib = .false.
 	real(8) :: GOptionsM3C_gammaLCorrection = 1.0_8
 	logical :: GOptionsM3C_useLReference = .false.
