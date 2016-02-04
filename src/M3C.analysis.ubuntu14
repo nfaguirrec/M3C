@@ -1,18 +1,11 @@
 #!/bin/bash
 
 FILTER=".*"
-GNUPLOT="gnuplot"
-GNUPLOT_TERMINAL="set terminal wxt size 800,400"
 
-if [ -z "$PLOT_SIZE" ]
-then
-	PLOT_SIZE="square"
-fi
-
-if [ -z "$PLOT_LW" ]
-then
-	PLOT_LW="2.0"
-fi
+test -z "$M3C_PLOT_SIZE"     && M3C_PLOT_SIZE="square"
+test -z "$M3C_PLOT_LW"       && M3C_PLOT_LW="2.0"
+test -z "$M3C_PLOT_TERMINAL" && M3C_PLOT_TERMINAL="set terminal wxt size 800,400"
+test -z "$M3C_GNUPLOT_EXEC"  && M3C_GNUPLOT_EXEC="gnuplot"
 
 ####################################
 #
@@ -52,7 +45,7 @@ getTableFromIFile()
 ####################################
 #
 ####################################
-energyHistoryDiagramSaulo()
+energyHistoryDiagram()
 {
 	local iFile=$1
 	
@@ -60,7 +53,7 @@ energyHistoryDiagramSaulo()
 	nExp=`gawk 'BEGIN{n=0}($0~/^[[:blank:]]*$/){ n++ }END{print n/2-0.5}' $iFile`
 	
 	cat > .plotE-$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
@@ -143,7 +136,7 @@ EOF
 unset multiplot
 EOF
 	
-	$GNUPLOT -p .plotE-$$
+	$M3C_GNUPLOT_EXEC -p .plotE-$$
 
 	rm .plotE-$$
 }
@@ -158,7 +151,7 @@ historyDiagram()
 	nExp=`gawk 'BEGIN{n=0}($0~/^[[:blank:]]*$/){ n++ }END{print n/2}' $iFile`
 	
 	cat > .plotE-$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
@@ -243,7 +236,7 @@ EOF
 unset multiplot
 EOF
 	
-	$GNUPLOT -p .plotE-$$
+	$M3C_GNUPLOT_EXEC -p .plotE-$$
 
 	rm .plotE-$$
 }
@@ -353,10 +346,10 @@ energyCorrelationDiagramSaulo()
 	nExp=`gawk 'BEGIN{n=0}($0~/^[[:blank:]]+$/){ n++ }END{print n/2}' $iFile`
 	
 	cat > .plotE-$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
-set size $PLOT_SIZE
+set size $M3C_PLOT_SIZE
 set format y "%.1f"
 set format x "%.1f"
 set format cb "10^{%T}"
@@ -471,7 +464,7 @@ EOF
 			exit
 	esac
 
-	$GNUPLOT -p .plotE-$$
+	$M3C_GNUPLOT_EXEC -p .plotE-$$
 
 	rm .plotE-$$
 }
@@ -488,10 +481,10 @@ energyCorrelationDiagram()
 	nExp=`gawk 'BEGIN{n=0}($0~/^[[:blank:]]+$/){ n++ }END{print n/2}' $iFile`
 	
 	cat > .plotE-$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
-set size $PLOT_SIZE
+set size $M3C_PLOT_SIZE
 set format y "%.1f"
 set format x "%.1f"
 set format cb "10^{%T}"
@@ -577,7 +570,7 @@ EOF
 			exit
 	esac
 
-	$GNUPLOT -p .plotE-$$
+	$M3C_GNUPLOT_EXEC -p .plotE-$$
 
 	rm .plotE-$$
 }
@@ -679,7 +672,7 @@ for item in speciesSorted:
 	' $iFile > .rawData-$$
 	
 	cat > .plotJ-$$ << EOF
-set size $PLOT_SIZE
+set size $M3C_PLOT_SIZE
 set origin 0.0,0.02
 unset key
 set style fill transparent solid border lc rgb "black"
@@ -707,7 +700,7 @@ EOF
 			echo "pause -1" >> .plotJ-$$
 	done
 
-	$GNUPLOT -p .plotJ-$$
+	$M3C_GNUPLOT_EXEC -p .plotJ-$$
 	
 	rm .rawData-$$ .plotJ-$$
 }
@@ -736,7 +729,7 @@ speciesDiagram()
 	sed -i -r '{s/(_)([[:digit:]]+)/_{\2}/g}' .dataC-$$  # Escribir bien los superindices
 	
 	cat > .plotC-$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
@@ -759,7 +752,7 @@ plot [] [0:] \
 '.dataC-$$' i 2 u (\$$(($nExp+2))*100.0):(\$$(($nExp+3))*100.0):xticlabels(1)
 
 EOF
-	$GNUPLOT -p .plotC-$$
+	$M3C_GNUPLOT_EXEC -p .plotC-$$
 	
 	############################################
 	# Plot species with details
@@ -771,7 +764,7 @@ EOF
 	sed -i -r '{s/,//g}' .dataC-$$ # Eliminar las comas entre carga, espin y geometria
 	
 	cat > .plotC-$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
@@ -794,7 +787,7 @@ plot [] [0:] \
 '.dataC-$$' i 3 u (\$$(($nExp+2))*100.0):(\$$(($nExp+3))*100.0):xticlabels(1)
 
 EOF
-	$GNUPLOT -p .plotC-$$
+	$M3C_GNUPLOT_EXEC -p .plotC-$$
 	
 	rm .dataC-$$ .plotC-$$
 }
@@ -823,7 +816,7 @@ channelsDiagram()
 	sed -i -r '{s/(_)([[:digit:]]+)/_{\2}/g}' .dataC-$$  # Escribir bien los superindices
 	
 	cat > .plotC-$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
@@ -846,7 +839,7 @@ plot [] [0:] \
 '.dataC-$$' i 0 u (\$$(($nExp+2))*100.0):(\$$(($nExp+3))*100.0):xticlabels(1)
 
 EOF
-	$GNUPLOT -p .plotC-$$
+	$M3C_GNUPLOT_EXEC -p .plotC-$$
 	
 	############################################
 	# Plot channels with details
@@ -858,7 +851,7 @@ EOF
 	sed -i -r '{s/,//g}' .dataC-$$ # Eliminar las comas entre carga, espin y geometria
 	
 	cat > .plotC-$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
@@ -881,7 +874,7 @@ plot [] [0:] \
 '.dataC-$$' i 1 u (\$$(($nExp+2))*100.0):(\$$(($nExp+3))*100.0):xticlabels(1)
 
 EOF
-	$GNUPLOT -p .plotC-$$
+	$M3C_GNUPLOT_EXEC -p .plotC-$$
 	
 	rm .dataC-$$ .plotC-$$
 }
@@ -1006,7 +999,7 @@ energyDiagram()
 	rm keys.dat
 
 	cat > .plotMtj-$iFile$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
@@ -1020,7 +1013,7 @@ set key out right bottom font "Helvetica Bold,8" Right spacing 1.0
 set mxtics 5
 set mytics 5
 set grid y
-set size $PLOT_SIZE
+set size $M3C_PLOT_SIZE
 
 set linestyle  2 lc rgb "forest-green"
 set linestyle  3 lc rgb "#4253BB"
@@ -1039,17 +1032,17 @@ EOF
 		
 		if (( $i != $nChannels ))
 		then
-			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $PLOT_LW, \\" >> .plotMtj-$iFile$$
-			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt 7 ps $PLOT_LW/2.9 lw $PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
-			echo "'matrix.data' u 1:$yCol notitle w p pt 7 ps $PLOT_LW/20.0 lc rgb 'white', \\" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb 'white', \\" >> .plotMtj-$iFile$$
 		else
-			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $PLOT_LW, \\" >> .plotMtj-$iFile$$
-			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt 7 ps $PLOT_LW/2.9 lw $PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
-			echo "'matrix.data' u 1:$yCol notitle w p pt 7 ps $PLOT_LW/20.0 lc rgb 'white'" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb 'white'" >> .plotMtj-$iFile$$
 		fi
 	done
 	
-	$GNUPLOT -p .plotMtj-$iFile$$
+	$M3C_GNUPLOT_EXEC -p .plotMtj-$iFile$$
 	
 	rm .plotMtj-$iFile$$ matrix.data
 	
@@ -1126,11 +1119,11 @@ channelBRDiagram()
 	yMax=`gawk '($0!~/#/){printf "%s\n%s\n",$2,$3}' $BRFile | sort -k 1 -n | tail -n1`
 	
 	cat > .plotBR-$iFile$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-set size $PLOT_SIZE
+set size $M3C_PLOT_SIZE
 # set size 0.9,1.0
 set ylabel "Branching ratios (%)"
 set format y "%.0f"
@@ -1149,7 +1142,7 @@ plot [-$nChannels*0.1:$nChannels*1.1] [-$yMax*0.1:$yMax*1.1] \
 "" u :2:xtic(1) t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
 EOF
 	
-	$GNUPLOT -p .plotBR-$iFile$$ 2> /dev/null
+	$M3C_GNUPLOT_EXEC -p .plotBR-$iFile$$ 2> /dev/null
 	
 	rm .plotBR-$iFile$$
 }
@@ -1224,11 +1217,11 @@ channelFitBRDiagram()
 	yMax=`gawk '($0!~/#/){printf "%s\n%s\n",$2,$3}' $BRFile | sort -k 1 -n | tail -n1`
 	
 	cat > .plotBR-$iFile$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-set size $PLOT_SIZE
+set size $M3C_PLOT_SIZE
 # set size 0.9,1.0
 set xlabel "Channel"
 set ylabel "Branching ratios (%)"
@@ -1248,7 +1241,7 @@ plot [-$nChannels*0.1:$nChannels*1.1] [-$yMax*0.1:$yMax*1.1] \
 "" u :2 t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
 EOF
 	
-	$GNUPLOT -p .plotBR-$iFile$$
+	$M3C_GNUPLOT_EXEC -p .plotBR-$iFile$$
 	
 	rm .plotBR-$iFile$$
 }
@@ -1302,11 +1295,11 @@ speciesFitBRDiagram()
 	yMax=`gawk '($0!~/#/){printf "%s\n%s\n",$2,$3}' $BRFile | sort -k 1 -n | tail -n1`
 	
 	cat > .plotBR-$iFile$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-set size $PLOT_SIZE
+set size $M3C_PLOT_SIZE
 # set size 0.9,1.0
 set xlabel "Channel"
 set ylabel "Branching ratios (%)"
@@ -1326,7 +1319,7 @@ plot [-$nSpecies*0.1:$nSpecies*1.1] [-$yMax*0.1:$yMax*1.1] \
 "" u :2:xtic(1) t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
 EOF
 	
-	$GNUPLOT -p .plotBR-$iFile$$
+	$M3C_GNUPLOT_EXEC -p .plotBR-$iFile$$
 	rm .plotBR-$iFile$$
 	
 	cp $BRFile .$BRFile-tmp$$
@@ -1340,11 +1333,11 @@ EOF
 	done
 	
 	cat > .plotmqBR-$iFile$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-set size $PLOT_SIZE
+set size $M3C_PLOT_SIZE
 # set size 1.0,0.8
 set xlabel "m/z"
 set ylabel "Relative Intensity"
@@ -1373,7 +1366,7 @@ plot [0:] [-5:125] \
 "" u (\$1):(100*\$3/maxI+5.0):2 notitle w labels left font "Serif,8" rotate by 90
 
 EOF
-	$GNUPLOT -p .plotmqBR-$iFile$$
+	$M3C_GNUPLOT_EXEC -p .plotmqBR-$iFile$$
 	rm .plotmqBR-$iFile$$
 	rm .$BRFile-tmp$$
 }
@@ -1442,7 +1435,7 @@ energyDistDiagram()
 	yMax=`gawk '{printf "%15.6f%15.6f\n",$1,$2}' $eDistFile | sort -k 2 -n | tail -n1 | gawk '{print $2}'`
 	
 	cat > .plotED-$iFile$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
@@ -1456,14 +1449,14 @@ set ytics font "Helvetica Bold,9"
 set mxtics 5
 set mytics 5
 # set grid
-set size $PLOT_SIZE
+set size $M3C_PLOT_SIZE
 
 plot [-$xMax*0.04:$xMax*1.04] [-$yMax*0.04:$yMax*1.04] \
 "$eDistFile" u 1:2 w filledcurve ls 0 lc rgb "gray90", \
 "$eDistFile" u 1:2 w l ls 0 lw 4
 EOF
 	
-	$GNUPLOT -p .plotED-$iFile$$
+	$M3C_GNUPLOT_EXEC -p .plotED-$iFile$$
 	
 	rm .plotED-$iFile$$
 }
@@ -1510,7 +1503,7 @@ speciesEnergyDistDiagram()
 	yMax=`gawk '{printf "%15.6f%15.6f\n",$1,$2}' $eDistFile | sort -k 2 -n | tail -n1 | gawk '{print $2}'`
 	
 	cat > .plotED-$iFile$$ << EOF
-$GNUPLOT_TERMINAL
+$M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
@@ -1524,14 +1517,14 @@ set ytics font "Helvetica Bold,9"
 set mxtics 5
 set mytics 5
 # set grid
-set size $PLOT_SIZE
+set size $M3C_PLOT_SIZE
 
 plot [-$xMax*0.04:$xMax*1.04] [-$yMax*0.04:$yMax*1.04] \
 "$eDistFile" u 1:2 smooth csplines w l ls 0 lw 4 lc rgb "gray60", \
 "$eDistFile" u 1:2 smooth cspline w filledcurve ls 0 lc rgb "gray90"
 EOF
 	
-	$GNUPLOT -p .plotED-$iFile$$
+	$M3C_GNUPLOT_EXEC -p .plotED-$iFile$$
 	
 	rm .plotED-$iFile$$
 }
@@ -1823,7 +1816,7 @@ main()
 		energy)
 			if [ -n "$id" ]
 			then
-				energyHistoryDiagramSaulo ${iFile%.*}.data/E_${availableEnergies[$id]}.ehistory
+				energyHistoryDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.ehistory
 # 				historyDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.ehistory
 			else
 # 				dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAINenergyHistoryFile`
@@ -1835,7 +1828,7 @@ main()
 					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:energyHistoryFile`
 				fi
 				
-				energyHistoryDiagramSaulo $dataFile
+				energyHistoryDiagram $dataFile
 # 				historyDiagram $dataFile
 			fi
 			;;

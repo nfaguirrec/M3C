@@ -36,6 +36,10 @@ module MarkovChain_
 		
 		type(RealHistogram), allocatable :: iTemperatureHistogram(:) ! One item for each experiment
 		type(RealHistogram), allocatable :: entropyHistogram(:)      ! One item for each experiment
+		type(RealHistogram), allocatable :: translationalEnergyHistogram(:)   ! One item for each experiment
+		type(RealHistogram), allocatable :: intermolEnergyHistogram(:)        ! One item for each experiment
+		type(RealHistogram), allocatable :: vibrationalEnergyHistogram(:)     ! One item for each experiment
+		type(RealHistogram), allocatable :: rotationalEnergyHistogram(:)      ! One item for each experiment
 		
 		type(StringHistogram) :: reactorAcceptedHistogram    ! One for all experiments
 		type(StringHistogram) :: reactorRejectedHistogram    ! One for all experiments
@@ -46,6 +50,8 @@ module MarkovChain_
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Histogramas
+		type(StringIntegerMap), allocatable :: nFragsHistogram(:) ! One item for each experiment
+		
 		type(StringIntegerMap), allocatable :: speciesHistogram(:) ! One item for each experiment
 		type(StringIntegerMap), allocatable :: speciesDetHistogram(:) ! One item for each experiment
 		
@@ -120,13 +126,12 @@ module MarkovChain_
 		
 		integer :: nExp
 		
-		if( allocated(this.iTemperatureHistogram) ) then
-			deallocate( this.iTemperatureHistogram )
-		end if
-		
-		if( allocated(this.entropyHistogram) ) then
-			deallocate( this.entropyHistogram )
-		end if
+		if( allocated(this.iTemperatureHistogram) ) deallocate( this.iTemperatureHistogram )
+		if( allocated(this.entropyHistogram) ) deallocate( this.entropyHistogram )
+		if( allocated(this.translationalEnergyHistogram) ) deallocate( this.translationalEnergyHistogram )
+		if( allocated(this.intermolEnergyHistogram) ) deallocate( this.intermolEnergyHistogram )
+		if( allocated(this.vibrationalEnergyHistogram) ) deallocate( this.vibrationalEnergyHistogram )
+		if( allocated(this.rotationalEnergyHistogram) ) deallocate( this.rotationalEnergyHistogram )
 		
 		call this.reactorAcceptedHistogram.clear()
 		call this.reactorRejectedHistogram.clear()
@@ -134,6 +139,14 @@ module MarkovChain_
 		
 		call this.transitionHistogram.clear()
 		call this.transitionDetHistogram.clear()
+		
+		if( allocated(this.nFragsHistogram) ) then
+			do nExp=1,this.numberOfExperiments
+				call this.nFragsHistogram(nExp).clear()
+			end do
+			
+			deallocate( this.nFragsHistogram )
+		end if
 		
 		if( allocated(this.speciesHistogram) ) then
 			do nExp=1,this.numberOfExperiments
@@ -178,6 +191,12 @@ module MarkovChain_
 		
 		allocate( this.iTemperatureHistogram(this.numberOfExperiments) )
 		allocate( this.entropyHistogram(this.numberOfExperiments) )
+		allocate( this.translationalEnergyHistogram(this.numberOfExperiments) )
+		allocate( this.intermolEnergyHistogram(this.numberOfExperiments) )
+		allocate( this.vibrationalEnergyHistogram(this.numberOfExperiments) )
+		allocate( this.rotationalEnergyHistogram(this.numberOfExperiments) )
+		
+		allocate( this.nFragsHistogram(this.numberOfExperiments) )
 		allocate( this.speciesHistogram(this.numberOfExperiments) )
 		allocate( this.speciesDetHistogram(this.numberOfExperiments) )
 		allocate( this.channelHistogram(this.numberOfExperiments) )
@@ -193,6 +212,12 @@ module MarkovChain_
 		do nExp=1,this.numberOfExperiments
 			call this.iTemperatureHistogram(nExp).initRealHistogram()
 			call this.entropyHistogram(nExp).initRealHistogram()
+			call this.translationalEnergyHistogram(nExp).initRealHistogram()
+			call this.intermolEnergyHistogram(nExp).initRealHistogram()
+			call this.vibrationalEnergyHistogram(nExp).initRealHistogram()
+			call this.rotationalEnergyHistogram(nExp).initRealHistogram()
+			
+			call this.nFragsHistogram(nExp).init()
 			call this.speciesHistogram(nExp).init()
 			call this.speciesDetHistogram(nExp).init()
 			call this.channelHistogram(nExp).init()
@@ -410,6 +435,13 @@ module MarkovChain_
 					
 						call this.iTemperatureHistogram(nExp).append( react.reactives.iTemperature() )
 						call this.entropyHistogram(nExp).append( react.reactives.LnW() )
+						call this.translationalEnergyHistogram(nExp).append( react.reactives.translationalEnergy() )
+						call this.intermolEnergyHistogram(nExp).append( react.reactives.intermolEnergy() )
+						call this.vibrationalEnergyHistogram(nExp).append( react.reactives.vibrationalEnergy() )
+						call this.rotationalEnergyHistogram(nExp).append( react.reactives.rotationalEnergy() )
+						
+						sBuffer = trim(FString_fromInteger( react.reactives.nMolecules() ))
+						call this.nFragsHistogram(nExp).set( sBuffer, this.nFragsHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
 						
 						do j=1,react.reactives.nMolecules()
 							sBuffer = react.reactives.clusters(j).label( details=.false. )
@@ -818,6 +850,34 @@ module MarkovChain_
 		if( present(genEbkl) ) EffgenEbkl = genEbkl
 		
 		write(unit,"(A)") "#------------------------------------"
+		write(unit,"(A)") "# NFragments histogram"
+		write(unit,"(A)") "#------------------------------------"
+		
+		if( EffgenEbkl ) then
+			ebklFileName = "E_"//trim(adjustl(FString_fromReal(this.excitationEnergy/eV,"(F10.5)")))//".eblkN"
+			call showAverHistogram( this.nFragsHistogram, unit, ebklFileName, this.excitationEnergy/eV )
+		else
+			call showAverHistogram( this.nFragsHistogram, unit )
+		end if
+		
+		write(unit,*) ""
+		write(unit,*) ""
+		
+		write(unit,"(A)") "#------------------------------------"
+		write(unit,"(A)") "# Species histogram"
+		write(unit,"(A)") "#------------------------------------"
+		
+		if( EffgenEbkl ) then
+			ebklFileName = "E_"//trim(adjustl(FString_fromReal(this.excitationEnergy/eV,"(F10.5)")))//".eblkS"
+			call showAverHistogram( this.speciesHistogram, unit, ebklFileName, this.excitationEnergy/eV )
+		else
+			call showAverHistogram( this.speciesHistogram, unit )
+		end if
+		
+		write(unit,*) ""
+		write(unit,*) ""
+		
+		write(unit,"(A)") "#------------------------------------"
 		write(unit,"(A)") "# Channels histogram"
 		write(unit,"(A)") "#------------------------------------"
 		
@@ -836,20 +896,6 @@ module MarkovChain_
 			call showAverHistogram( this.channelDetHistogram, unit, ebklFileName, this.excitationEnergy/eV )
 		else
 			call showAverHistogram( this.channelDetHistogram, unit )
-		end if
-		
-		write(unit,*) ""
-		write(unit,*) ""
-		
-		write(unit,"(A)") "#------------------------------------"
-		write(unit,"(A)") "# Species histogram"
-		write(unit,"(A)") "#------------------------------------"
-		
-		if( EffgenEbkl ) then
-			ebklFileName = "E_"//trim(adjustl(FString_fromReal(this.excitationEnergy/eV,"(F10.5)")))//".eblkS"
-			call showAverHistogram( this.speciesHistogram, unit, ebklFileName, this.excitationEnergy/eV )
-		else
-			call showAverHistogram( this.speciesHistogram, unit )
 		end if
 		
 		write(unit,*) ""
@@ -883,7 +929,7 @@ module MarkovChain_
 			end if
 		end do
 		
-		write(unit,"(5X,2F10.3)") histBuffer.mean(), histBuffer.stdev()
+		write(unit,"(5X,2F10.3)") histBuffer.mean()/eV, histBuffer.stdev()/eV
 		
 		write(unit,*) ""
 		write(unit,*) ""
@@ -907,6 +953,71 @@ module MarkovChain_
 		end do
 		
 		write(unit,"(5X,2F10.3)") histBuffer.mean(), histBuffer.stdev()
+		
+		write(unit,*) ""
+		write(unit,*) ""
+		
+		write(unit,"(A)") "#------------------------------------"
+		write(unit,"(A)") "# Energy components (eV)"
+		write(unit,"(A)") "#------------------------------------"
+		write(unit,"(A1,9X,A5,<this.numberOfExperiments>I10,5X,2A10)") "#", "  ", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
+		write(unit,"(A1,9X,A5,<this.numberOfExperiments>A10,5X,2A10)") "#", "  ", ( "-----", i=1,this.numberOfExperiments ), "----", "----"
+		
+		call histBuffer.initRealHistogram()
+		
+		do i=1,this.numberOfExperiments
+			call histBuffer.add( this.translationalEnergyHistogram(i).mean() )
+			
+			if( i == 1 ) then
+				write(unit,"(10X,A5,F10.3)",advance="no") "trans", this.translationalEnergyHistogram(i).mean()/eV
+			else
+				write(unit,"(F10.3)",advance="no") this.translationalEnergyHistogram(i).mean()/eV
+			end if
+		end do
+		
+		write(unit,"(5X,2F10.3)") histBuffer.mean()/eV, histBuffer.stdev()/eV
+		
+		call histBuffer.initRealHistogram()
+		
+		do i=1,this.numberOfExperiments
+			call histBuffer.add( this.intermolEnergyHistogram(i).mean() )
+			
+			if( i == 1 ) then
+				write(unit,"(10X,A5,F10.3)",advance="no") "intermol", this.intermolEnergyHistogram(i).mean()/eV
+			else
+				write(unit,"(F10.3)",advance="no") this.intermolEnergyHistogram(i).mean()/eV
+			end if
+		end do
+		
+		write(unit,"(5X,2F10.3)") histBuffer.mean()/eV, histBuffer.stdev()/eV
+		
+		call histBuffer.initRealHistogram()
+		
+		do i=1,this.numberOfExperiments
+			call histBuffer.add( this.vibrationalEnergyHistogram(i).mean() )
+			
+			if( i == 1 ) then
+				write(unit,"(10X,A5,F10.3)",advance="no") "vib", this.vibrationalEnergyHistogram(i).mean()/eV
+			else
+				write(unit,"(F10.3)",advance="no") this.vibrationalEnergyHistogram(i).mean()/eV
+			end if
+		end do
+		
+		write(unit,"(5X,2F10.3)") histBuffer.mean()/eV, histBuffer.stdev()/eV
+		
+		call histBuffer.initRealHistogram()
+		
+		do i=1,this.numberOfExperiments
+			call histBuffer.add( this.rotationalEnergyHistogram(i).mean() )
+			
+			if( i == 1 ) then
+				write(unit,"(10X,A5,F10.3)",advance="no") "rot", this.rotationalEnergyHistogram(i).mean()/eV
+			else
+				write(unit,"(F10.3)",advance="no") this.rotationalEnergyHistogram(i).mean()/eV
+			end if
+		end do
+		
+		write(unit,"(5X,2F10.3)") histBuffer.mean()/eV, histBuffer.stdev()/eV
 		
 		write(unit,*) ""
 		write(unit,*) ""

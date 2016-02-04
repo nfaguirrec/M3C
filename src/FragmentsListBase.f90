@@ -91,6 +91,8 @@ module FragmentsListBase_
 			procedure, NON_OVERRIDABLE :: kineticEnergy
 			procedure, NON_OVERRIDABLE :: setReactorEnergy
 			procedure, NON_OVERRIDABLE :: reactorEnergy
+			procedure, NON_OVERRIDABLE :: vibrationalEnergy
+			procedure, NON_OVERRIDABLE :: intermolEnergy
 			
 			procedure, NON_OVERRIDABLE :: initialGuessFragmentsListBase
 			procedure, private :: randomCenters
@@ -588,7 +590,7 @@ module FragmentsListBase_
 	!>
 	!! @brief
 	!!
-	function kineticEnergy( this ) result( output )
+	pure function kineticEnergy( this ) result( output )
 		class(FragmentsListBase), intent(in) :: this
 		real(8) :: output
 		
@@ -610,12 +612,32 @@ module FragmentsListBase_
 	!>
 	!! @brief
 	!!
-	function reactorEnergy( this ) result( output )
+	pure function reactorEnergy( this ) result( output )
 		class(FragmentsListBase), intent(in) :: this
 		real(8) :: output
 		
 		output = this.reactorEnergy_
 	end function reactorEnergy
+	
+	!>
+	!! @brief
+	!!
+	pure function vibrationalEnergy( this ) result( output )
+		class(FragmentsListBase), intent(in) :: this
+		real(8) :: output
+		
+		output = this.vibrationalEnergy_
+	end function vibrationalEnergy
+	
+	!>
+	!! @brief
+	!!
+	pure function intermolEnergy( this ) result( output )
+		class(FragmentsListBase), intent(in) :: this
+		real(8) :: output
+		
+		output = this.intermolEnergy_
+	end function intermolEnergy
 	
 	!>
 	!! @brief
@@ -1239,7 +1261,7 @@ module FragmentsListBase_
 	!! @brief Return the internal energy
 	!!
 	function internalEnergy( this ) result( output )
-		class(FragmentsListBase) :: this
+		class(FragmentsListBase), intent(in) :: this
 		real(8) :: output
 		
 		call GOptions_error( &
@@ -1252,7 +1274,7 @@ module FragmentsListBase_
 	!! @brief Returns the total energy
 	!!
 	function totalEnergy( this ) result( output )
-		class(FragmentsListBase) :: this
+		class(FragmentsListBase), intent(in) :: this
 		real(8) :: output
 		
 		call GOptions_error( &
