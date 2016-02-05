@@ -1,0 +1,48 @@
+Thanks for downloading M3C (Microcanonical Metropolis Monte-Carlo)!
+
+To install just place this directory (M3C-vXX) in your prefered directory
+and simply run this command:
+
+$ XXXXX
+
+Check us out on the web at http://XXXXXX
+
+-- The M3C Team
+
+Authors:
+Dr. Néstor F. Aguirre (nestor.aguirre@uam.es)  *Current maintainer
+Dr. Sergio Díaz-Tendero (sergio.diaztendero@uam.es)
+Prof. M. Paul-Antoine Hervieux (Paul-Antoine.Hervieux@ipcms.unistra.fr)
+Prof. Dr. Manuel Alcamí (manuel.alcami@uam.es)
+Prof. Dr. Fernando Martín (fernando.martin@uam.es)
+
+Contributors:
+Juan P. Sánchez (juanp.sanchez@uam.es)  (2015-2016)
+
+
+Regarding our inclusion of scift (http://XXXXXX):
+
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!!
+	!!  This file is part of scift (Scientific Fortran Tools).
+	!!  Copyright (C) by authors (2011-2016)
+	!!  
+	!!  Authors (alphabetic order):
+	!!    * Aguirre N.F. (nfaguirrec@gmail.com)  (2011-2016)
+	!!  
+	!!  Contributors (alphabetic order):
+	!!  
+	!!  Redistribution and use in source and binary forms, with or
+	!!  without modification, are permitted provided that the
+	!!  following conditions are met:
+	!!  
+	!!   * Redistributions of binary or source code must retain
+	!!     the above copyright notice and this list of conditions
+	!!     and/or other materials provided with the distribution.
+	!!   * All advertising materials mentioning features or use of
+	!!     this software must display the following acknowledgement:
+	!!     
+	!!     This product includes software from scift
+	!!     (Scientific Fortran Tools) project and its contributors.
+	!!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
