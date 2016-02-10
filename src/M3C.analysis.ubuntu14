@@ -341,13 +341,10 @@ histogram2D()
 ####################################
 #
 ####################################
-energyCorrelationDiagramSaulo()
+energyCorrelationDiagram()
 {
 	local iFile=$1
 	local task=$2
-	
-	firstElecEnergy=`head -n7 $iFile | tail -n1 | gawk '{print $4}'`
-	nExp=`gawk 'BEGIN{n=0}($0~/^[[:blank:]]+$/){ n++ }END{print n/2}' $iFile`
 	
 	cat > .plotE-$$ << EOF
 $M3C_PLOT_TERMINAL
@@ -369,158 +366,80 @@ set cbtics font "Serif,8"
 set pointsize 0.3
 set view map
 
-EOF
+#             trans       intermol            vib            rot            tot     formula
+#               2            3                 4              5              6         7
 
+EOF
+	
 	case "$task" in
-		"Ev.vs.Et" )
-			echo "set xlabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
+		"Et.vs.U" )
+			echo "set xlabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
+			echo "set ylabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
+			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
+			histogram2D $iFile "2,3" >> .plotE-$$
+			echo "e" >> .plotE-$$
+			;;
+		"U.vs.Et" )
+			echo "set xlabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
 			echo "set ylabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
 			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "5,2" >> .plotE-$$
+			histogram2D $iFile "3,2" >> .plotE-$$
 			echo "e" >> .plotE-$$
 			;;
 		"Et.vs.Ev" )
 			echo "set xlabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
 			echo "set ylabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
 			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "2,5" >> .plotE-$$
+			histogram2D $iFile "2,4" >> .plotE-$$
 			echo "e" >> .plotE-$$
 			;;
-		"Ev.vs.Er" )
+		"Ev.vs.Et" )
 			echo "set xlabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
+			echo "set ylabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
 			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "5,6" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Er.vs.Ev" )
-			echo "set xlabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "6,5" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Ev.vs.Ee" )
-			echo "set xlabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Electronic energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "splot '-' u 1:(\$2-($firstElecEnergy)):3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "5,4" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Ee.vs.Ev" )
-			echo "set xlabel 'Electronic energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "splot '-' u (\$1-($firstElecEnergy)):2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "4,5" >> .plotE-$$
+			histogram2D $iFile "4,2" >> .plotE-$$
 			echo "e" >> .plotE-$$
 			;;
 		"Et.vs.Er" )
 			echo "set xlabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
 			echo "set ylabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
 			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "2,6" >> .plotE-$$
+			histogram2D $iFile "2,5" >> .plotE-$$
 			echo "e" >> .plotE-$$
 			;;
 		"Er.vs.Et" )
 			echo "set xlabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
 			echo "set ylabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
 			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "6,2" >> .plotE-$$
+			histogram2D $iFile "5,2" >> .plotE-$$
 			echo "e" >> .plotE-$$
 			;;
-		"Et.vs.Ee" )
-			echo "set xlabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Electronic energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "splot '-' u 1:(\$2-($firstElecEnergy)):3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "2,4" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Ee.vs.Et" )
-			echo "set xlabel 'Electronic energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "splot '-' u (\$1-($firstElecEnergy)):2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "4,2" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Er.vs.Ee" )
-			echo "set xlabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Electronic energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "splot '-' u 1:(\$2-($firstElecEnergy)):3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "6,4" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Ee.vs.Er" )
-			echo "set xlabel 'Electronic energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "splot '-' u (\$1-($firstElecEnergy)):2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "4,6" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		*)
-			echo "### ERROR ### Energy correlation diagram. Unknown option $task"
-			echo "              Available options:"
-			echo "                  Ev.vs.Et  | Et.vs.Ev"
-			echo "                  Ev.vs.Er  | Er.vs.Ev"
-			echo "                  Ev.vs.Ee  | Ee.vs.Ev"
-			echo "                  Et.vs.Er  | Er.vs.Et"
-			echo "                  Et.vs.Ee  | Ee.vs.Et"
-			echo "                  Er.vs.Ee  | Ee.vs.Er"
-			exit
-	esac
-	
-	echo "pause -1" >> .plotE-$$
-	
-	$M3C_GNUPLOT_EXEC .plotE-$$
-
-	rm .plotE-$$
-}
-
-####################################
-#
-####################################
-energyCorrelationDiagram()
-{
-	local iFile=$1
-	local task=$2
-	
-	firstElecEnergy=`head -n7 $iFile | tail -n1 | gawk '{print $4}'`
-	nExp=`gawk 'BEGIN{n=0}($0~/^[[:blank:]]+$/){ n++ }END{print n/2}' $iFile`
-	
-	cat > .plotE-$$ << EOF
-$M3C_PLOT_TERMINAL
-set termopt enhanced
-set encoding iso_8859_1
-set size $M3C_PLOT_SIZE
-set format y "%.1f"
-set format x "%.1f"
-set format cb "10^{%T}"
-
-set logscale cb
-
-unset key
-set palette defined ( 0 "white", 1 "blue", 2 "green", 3 "orange", 4 "yellow", 5 "red" )
-set pm3d implicit at s
-set xtics rotate by -45 font "Serif,8"
-set ytics font "Serif,8"
-set cbtics font "Serif,8"
-set pointsize 0.3
-set view map
-
-EOF
-	
-	case "$task" in
-		"Ev.vs.Et" )
-			echo "set xlabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "4,2" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Et.vs.Ev" )
-			echo "set xlabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
+		"U.vs.Ev" )
+			echo "set xlabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
 			echo "set ylabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
 			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "2,4" >> .plotE-$$
+			histogram2D $iFile "3,4" >> .plotE-$$
+			echo "e" >> .plotE-$$
+			;;
+		"Ev.vs.U" )
+			echo "set xlabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
+			echo "set ylabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
+			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
+			histogram2D $iFile "4,3" >> .plotE-$$
+			echo "e" >> .plotE-$$
+			;;
+		"U.vs.Er" )
+			echo "set xlabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
+			echo "set ylabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
+			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
+			histogram2D $iFile "3,5" >> .plotE-$$
+			echo "e" >> .plotE-$$
+			;;
+		"Er.vs.U" )
+			echo "set xlabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
+			echo "set ylabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
+			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
+			histogram2D $iFile "5,3" >> .plotE-$$
 			echo "e" >> .plotE-$$
 			;;
 		"Ev.vs.Er" )
@@ -538,41 +457,15 @@ EOF
 			histogram2D $iFile "5,4" >> .plotE-$$
 			echo "e" >> .plotE-$$
 			;;
-		"Et.vs.Er" )
-			echo "set xlabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "2,5" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Er.vs.Et" )
-			echo "set xlabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "5,2" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Et.vs.U" )
-			echo "set xlabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "2,3" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"U.vs.Et" )
-			echo "set xlabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "splot '-' u 1:2:3 w p ps 0" >> .plotE-$$
-			histogram2D $iFile "3,2" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
 		*)
 			echo "### ERROR ### Energy correlation diagram. Unknown option $task"
 			echo "              Available options:"
-			echo "                  Ev.vs.Et  | Et.vs.Ev"
-			echo "                  Ev.vs.Er  | Er.vs.Ev"
+			echo "                  Et.vs.U   |  U.vs.Et"
+			echo "                  Et.vs.Ev  | Ev.vs.Et"
 			echo "                  Et.vs.Er  | Er.vs.Et"
-			echo "                  Et.vs.U   | U.vs.Et"
+			echo "                   U.vs.Ev  | Ev.vs.U"
+			echo "                   U.vs.Er  | Er.vs.U"
+			echo "                  Ev.vs.Er  | Er.vs.Ev"
 			exit
 	esac
 	
@@ -1108,6 +1001,64 @@ plot \
 "" u 1:8 t "rot" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 4, \
 "" u 1:8:9 notitle w yerrorbars lt 4ps 0, \
 "" u 1:8 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white"
+
+pause -1
+EOF
+	
+	$M3C_GNUPLOT_EXEC .plotEComp-$iFile$$ 2> /dev/null
+	
+	rm $energyDir/ecompTable$$.dat
+	rm .plotEComp-$iFile$$
+}
+
+####################################
+#
+####################################
+energyComponentsPercentageDiagram()
+{
+	local iFile=$1
+	local energyDir=$2
+	
+	pushd . > /dev/null 2> /dev/null
+	cd $energyDir
+	
+	for f in `ls E_*.histogram`
+	do
+		energy=`echo ${f%.*} | sed 's/E_//g'`
+		
+		grep "Energy components (eV)" -A7 $f | tail -n4 | awk 'BEGIN{printf "%10.5f",'$energy'}{printf "%10.5f%10.5f",$(NF-1),$NF}END{print ""}'
+	
+	done | sort -k1 -n > ecompTable$$.dat
+	
+	popd > /dev/null 2> /dev/null
+	
+	cat > .plotEComp-$iFile$$ << EOF
+$M3C_PLOT_TERMINAL
+set termopt enhanced
+set encoding iso_8859_1
+
+set size $M3C_PLOT_SIZE
+set key out bottom
+
+set xlabel "Internal Energy (eV)"
+set ylabel "Percentage (%)"
+set format y "%.0f"
+
+fixValue(x) = ( 100*x<0.0 ? 0.0 : ( 100*x>100.0 ? 100.0 : 100*x ))
+
+plot [] [-2:102] \
+"$energyDir/ecompTable$$.dat" u 1:(fixValue(\$2/(\$2+\$4+\$6+\$8))) t "trans" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
+"" u 1:(fixValue(\$2/(\$2+\$4+\$6+\$8))):(fixValue(\$3/(\$2+\$4+\$6+\$8))) notitle w yerrorbars lt 1 ps 0, \
+"" u 1:(fixValue(\$2/(\$2+\$4+\$6+\$8))) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:(fixValue(\$4/(\$2+\$4+\$6+\$8))) t "inter" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 2, \
+"" u 1:(fixValue(\$4/(\$2+\$4+\$6+\$8))):(fixValue(\$5/(\$2+\$4+\$6+\$8))) notitle w yerrorbars lt 2 ps 0, \
+"" u 1:(fixValue(\$4/(\$2+\$4+\$6+\$8))) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:(fixValue(\$6/(\$2+\$4+\$6+\$8))) t "vib" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 3, \
+"" u 1:(fixValue(\$6/(\$2+\$4+\$6+\$8))):(fixValue(\$7/(\$2+\$4+\$6+\$8))) notitle w yerrorbars lt 3 ps 0, \
+"" u 1:(fixValue(\$6/(\$2+\$4+\$6+\$8))) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:(fixValue(\$8/(\$2+\$4+\$6+\$8))) t "rot" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 4, \
+"" u 1:(fixValue(\$8/(\$2+\$4+\$6+\$8))):(fixValue(\$9/(\$2+\$4+\$6+\$8))) notitle w yerrorbars lt 4ps 0, \
+"" u 1:(fixValue(\$8/(\$2+\$4+\$6+\$8))) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white"
 
 pause -1
 EOF
@@ -1833,9 +1784,15 @@ main()
 		exit
 	fi
 	
-	if [ "$2" = "ecomp" ]
+	if [ "$2" = "Ecomp" ]
 	then
 		energyComponentsDiagram ${iFile%.*}.m3c "${iFile%.*}.data/"
+		exit
+	fi
+	
+	if [ "$2" = "Ecomp%" ]
+	then
+		energyComponentsPercentageDiagram ${iFile%.*}.m3c "${iFile%.*}.data/"
 		exit
 	fi
 	
@@ -1956,41 +1913,28 @@ main()
 				JHistoryDiagram $dataFile "L"
 			fi
 			;;
-		ecorr)
+		Ecorr)
 			if [ -n "$id" ]
 			then
 				if [[ $id =~ [0-9]+ ]]
 				then
-					energyCorrelationDiagramSaulo ${iFile%.*}.data/E_${availableEnergies[$id]}.ehistory $typeEcorr #"Et.vs.Ev"
+					energyCorrelationDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.ehistory $typeEcorr #"Et.vs.Ev"
 				else
 					typeEcorr=$3
-	# 				dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:energyHistoryFile`
 					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:energyHistoryFile`
-					
-					energyCorrelationDiagramSaulo $dataFile $typeEcorr #"Er.vs.Et"
+					energyCorrelationDiagram $dataFile $typeEcorr #"Er.vs.Et"
 				fi
 			fi
 			;;
-
+# 		all)
 # 			if [ -n "$id" ]
 # 			then
-# 				energyCorrelationDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.ehistory $typeEcorr #"Et.vs.Ev"
-# 			else
-# # 				dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAINenergyHistoryFile`
-# 				dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:energyHistoryFile`
-# 				energyCorrelationDiagram $dataFile $typeEcorr #"Er.vs.Et"
+# 				historyDiagram ${iFile%.*}.data/${availableEnergies[$id]}.history
+# 				speciesDiagram ${iFile%.*}.data/${availableEnergies[$id]}.histogram
+# 				channelsDiagram ${iFile%.*}.data/${availableEnergies[$id]}.histogram
+# # 			else
 # 			fi
 # 			;;
-		all)
-			if [ -n "$id" ]
-			then
-				historyDiagram ${iFile%.*}.data/${availableEnergies[$id]}.history
-				speciesDiagram ${iFile%.*}.data/${availableEnergies[$id]}.histogram
-				channelsDiagram ${iFile%.*}.data/${availableEnergies[$id]}.histogram
-			else
-				echo "MMMM"
-			fi
-			;;
 	esac
 	
 }
