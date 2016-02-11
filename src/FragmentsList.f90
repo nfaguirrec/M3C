@@ -725,7 +725,7 @@ module FragmentsList_
 		this.LnDiagI_ = 0.0_8
 		
 		n = this.nMolecules()
-		if( n == 1 ) return
+! 		if( n == 1 ) return
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Calcula el numero efectivo de fragmentos no atomicos
@@ -1027,6 +1027,7 @@ module FragmentsList_
 					fr = fr + this.clusters( this.idSorted(i) ).fr()
 ! 				end if
 			end do
+			logMu = logMu - log( this.mass() )
 			
 			s = this.ft() + this.fl() + fr
 			
