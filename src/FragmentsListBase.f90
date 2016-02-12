@@ -43,8 +43,8 @@ module FragmentsListBase_
 		real(8), private :: reactorEnergy_    !< Total energy into the reactor which is externally chosen
 		
 		real(8) :: logGFactor_    !< Undistinguished particles factor log( 1(Na!*Nb!...*Ni!) )
-		integer :: ft_            !< Translational number of degrees of freedom
-		integer :: fl_            !< Global number of rotational degrees of freedom (rigid-body)
+		integer, private :: ft_            !< Translational number of degrees of freedom
+		integer, private :: fl_            !< Global number of rotational degrees of freedom (rigid-body)
 		real(8) :: logVfree_      !< This is calculated only for the first time
 		real(8) :: logVtheta_     !< This is calculated only for the first time
 		real(8) :: logVJ_         !< This is calculated only for the first time
@@ -106,6 +106,7 @@ module FragmentsListBase_
 			procedure :: totalEnergy
 			procedure, NON_OVERRIDABLE :: ft
 			procedure, NON_OVERRIDABLE :: fl
+			procedure, NON_OVERRIDABLE :: fr
 			
 			procedure :: energyHistoryLine
 			procedure :: weightHistoryLine
@@ -1302,6 +1303,21 @@ module FragmentsListBase_
 		
 		output = this.fl_
 	end function fl
+	
+	!>
+	!! @brief Number of rotational degrees of freedom
+	!!
+	pure function fr( this ) result( output )
+		class(FragmentsListBase), intent(in) :: this
+		integer :: output
+		
+		integer :: i
+		
+		output = 0
+		do i=1,this.nMolecules()
+			output = output + this.clusters( this.idSorted(i) ).fr()
+		end do
+	end function fr
 	
 	!>
 	!! @brief

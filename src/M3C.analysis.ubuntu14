@@ -10,7 +10,7 @@ test -z "$M3C_GNUPLOT_EXEC"  && M3C_GNUPLOT_EXEC="gnuplot"
 ####################################
 #
 ####################################
-getValueFromIFIle()
+function getValueFromIFIle()
 {
 	local iFile=$1
 	local block=`echo $2 | gawk 'BEGIN{FS=":"}{print $1}'`
@@ -28,7 +28,7 @@ getValueFromIFIle()
 ####################################
 #
 ####################################
-getTableFromIFile()
+function getTableFromIFile()
 {
 	local iFile=$1
 	local block=`echo $2 | gawk 'BEGIN{FS=":"}{print $1}'`
@@ -45,7 +45,7 @@ getTableFromIFile()
 ####################################
 #
 ####################################
-energyHistoryDiagram()
+function energyHistoryDiagram()
 {
 	local iFile=$1
 	
@@ -146,7 +146,7 @@ EOF
 ####################################
 #
 ####################################
-historyDiagram()
+function historyDiagram()
 {
 	local iFile=$1
 	
@@ -248,7 +248,7 @@ EOF
 ####################################
 #
 ####################################
-histogram2D()
+function histogram2D()
 {
 	local iFile=$1
 	local cols=$2
@@ -341,7 +341,7 @@ histogram2D()
 ####################################
 #
 ####################################
-energyCorrelationDiagram()
+function energyCorrelationDiagram()
 {
 	local iFile=$1
 	local task=$2
@@ -479,7 +479,7 @@ EOF
 ####################################
 #
 ####################################
-JHistoryDiagram()
+function JHistoryDiagram()
 {
 	local iFile=$1
 	local xLabel=$2
@@ -609,7 +609,7 @@ EOF
 ####################################
 #
 ####################################
-speciesDiagram()
+function speciesDiagram()
 {
 	local iFile=$1
 	local maxPForDetails=$2
@@ -698,7 +698,7 @@ EOF
 ####################################
 #
 ####################################
-channelsDiagram()
+function channelsDiagram()
 {
 	local iFile=$1
 	local maxPForDetails=$2
@@ -787,7 +787,110 @@ EOF
 ####################################
 #
 ####################################
-showSparseMatrix()
+function reactionsDiagram()
+{
+	local iFile=$1
+	local maxP=$2
+	
+	if [ -z "$maxP" ]
+	then
+		maxP=0.01
+	fi
+	
+	echo "### ERROR ### Reactions diagram is not implemented yet"
+	
+# ! 	subroutine graphvizHeader( this, dotFile )
+# ! 		class(Reactor), intent(in) :: this
+# ! 		type(OFStream), intent(inout) :: dotFile
+# ! 		
+# ! 		write(dotFile.unit,"(A)") "strict digraph G {"
+# ! 		write(dotFile.unit,"(A)") "   rankdir=LR"
+# ! 		write(dotFile.unit,"(A)") ""
+# ! 	end subroutine graphvizHeader
+# ! 	
+# ! 	subroutine graphvizFooter( this, dotFile )
+# ! 		class(Reactor), intent(in) :: this
+# ! 		type(OFStream), intent(inout) :: dotFile
+# ! 		
+# ! 		write(dotFile.unit,"(A)") "}"
+# ! 		write(dotFile.unit,"(A)") ""
+# ! 	end subroutine graphvizFooter
+# ! 	
+# ! 	subroutine graphvizSection( this, dotFile )
+# ! 		class(Reactor), intent(in) :: this
+# ! 		type(OFStream), intent(inout) :: dotFile
+# ! 		
+# ! 		integer :: i, j
+# ! 		integer :: nCount = 1
+# ! 		integer :: bCount = 1
+# ! 		
+# ! #define INT(i) trim(adjustl(FString_fromInteger(i)))
+# ! #define LINE write(dotFile.unit,"(A)")
+# ! #define CLINE write(dotFile.unit,"(A)",advance='no')
+# ! ! 		CLINE "   "//achar(34)//INT(this.saveStateIterator)//": "//REACTOR_LABEL(this.type)//achar(34)
+# ! 		CLINE "   "//achar(34)//trim(this.name)//achar(34)
+# ! 		LINE " [shape=Square,style=filled,fillcolor=yellow,color=black]"
+# ! 		LINE ""
+# ! ! 		LINE "   subgraph clusterList0 {"
+# ! 		LINE "      node [style=filled,fillcolor=lightgray,color=black,shape=box]"
+# ! 		
+# ! 		do i=1,this.reactives.nClusters()
+# ! ! 			LINE "      n"//INT(i)//" [label=<C<font point-size='10'>3</font><font color='#2e2e2e' point-size='11'>(2,1,3)</font>>]"
+# ! ! 			LINE "      n"//INT(nCount)//" [label="//achar(34)//trim(this.reactives.clusters(i).formula())//achar(34)//"]"
+# ! 			LINE "      "//achar(34)//trim(this.reactives.clusters(i).formula())//achar(34)
+# ! 			nCount = nCount + 1
+# ! 		end do
+# ! 		
+# ! ! 		LINE "      color=black"
+# ! ! 		LINE "      style=filled"
+# ! ! 		LINE "      fillcolor=red"
+# ! ! 		LINE "   }"
+# ! 			
+# ! 		nCount = nCount-this.reactives.nClusters()
+# ! 		do i=1,this.reactives.nClusters()
+# ! ! 			LINE "   n"//INT(nCount)//" -> R1 [shape=vee]"
+# ! 			CLINE "      "//achar(34)//trim(this.reactives.clusters(i).formula())//achar(34)
+# ! ! 			LINE  " -> "//achar(34)//INT(this.saveStateIterator)//": "//REACTOR_LABEL(this.type)//achar(34)//" [shape=vee]"
+# ! 			LINE  " -> "//achar(34)//trim(this.name)//achar(34)//" [shape=vee]"
+# ! 			nCount = nCount + 1
+# ! 		end do
+# ! 		LINE ""
+# ! 		
+# ! ! 		LINE "   subgraph clusterList"//INT(1)//" {"
+# ! 		LINE "      node [style=filled,fillcolor=lightgray,color=black,shape=box]"
+# ! 		
+# ! 		do i=1,this.products.nClusters()
+# ! ! 			LINE "      n"//INT(j)//" [label=<C<font point-size='10'>2</font><font color='#2e2e2e' point-size='11'>(2,1,3)</font>>]"
+# ! ! 			LINE "      n"//INT(nCount)//" [label="//achar(34)//trim(this.products.clusters(i).formula())//achar(34)//"]"
+# ! 			LINE "      "//achar(34)//trim(this.products.clusters(i).formula())//achar(34)
+# ! 			nCount = nCount + 1
+# ! 		end do
+# ! 		
+# ! ! 		LINE "      color=black"
+# ! ! 		LINE "      style=filled"
+# ! ! 		LINE "      fillcolor=lightblue"
+# ! ! 		LINE "   }"
+# ! 		
+# ! 		LINE ""
+# ! 		nCount = nCount-this.products.nClusters()
+# ! 		do i=1,this.products.nClusters()
+# ! ! 			LINE "   R1 -> n"//INT(nCount)
+# ! ! 			CLINE "   "//achar(34)//INT(this.saveStateIterator)//": "//REACTOR_LABEL(this.type)//achar(34)
+# ! 			CLINE "   "//achar(34)//trim(this.name)//achar(34)
+# ! 			LINE  " -> "//achar(34)//trim(this.products.clusters(i).formula())//achar(34)
+# ! 			nCount = nCount + 1
+# ! 		end do
+# ! 		LINE ""
+# ! #undef INT
+# ! #undef LINE
+# ! #undef CLINE
+# ! 	end subroutine graphvizSection
+}
+
+####################################
+#
+####################################
+function showSparseMatrix()
 {
 	local iFile=$1
 	local keys=$2
@@ -836,7 +939,7 @@ showSparseMatrix()
 ####################################
 #
 ####################################
-energyDiagram()
+function energyDiagram()
 {
 	local energyDir=$1
 	local type=$2
@@ -920,11 +1023,14 @@ set mytics 5
 set grid y
 set size $M3C_PLOT_SIZE
 
-set linestyle  2 lc rgb "forest-green"
-set linestyle  3 lc rgb "#4253BB"
-set linestyle  5 lc rgb "#8196FF"
+set linestyle  1 lc rgb "black"
+set linestyle  2 lc rgb "red"
+set linestyle  3 lc rgb "forest-green"
+set linestyle  4 lc rgb "#4253BB"
+set linestyle  5 lc rgb "orange"
+set linestyle  6 lc rgb "#8196FF"
 # set linestyle  6 lc rgb "#FBDF06"
-set linestyle  6 lc rgb "green"
+set linestyle  7 lc rgb "green"
 
 plot [$xMin-($xMax-$xMin)*0.03:$xMax+($xMax-$xMin)*0.03] [-3:103] \\
 EOF
@@ -959,7 +1065,7 @@ EOF
 ####################################
 #
 ####################################
-energyComponentsDiagram()
+function energyComponentsDiagram()
 {
 	local iFile=$1
 	local energyDir=$2
@@ -1014,7 +1120,7 @@ EOF
 ####################################
 #
 ####################################
-energyComponentsPercentageDiagram()
+function energyComponentsPercentageDiagram()
 {
 	local iFile=$1
 	local energyDir=$2
@@ -1072,7 +1178,54 @@ EOF
 ####################################
 #
 ####################################
-channelBRDiagram()
+function temperatureDiagram()
+{
+	local iFile=$1
+	local energyDir=$2
+	
+	pushd . > /dev/null 2> /dev/null
+	cd $energyDir
+	
+	for f in `ls E_*.histogram`
+	do
+		energy=`echo ${f%.*} | sed 's/E_//g'`
+		
+		grep "Temperature" -A4 $f | tail -n1 | awk 'BEGIN{printf "%10.5f",'$energy'}{printf "%10.5f%10.5f",$(NF-1),$NF}END{print ""}'
+	
+	done | sort -k1 -n > temperatureTable$$.dat
+	
+	popd > /dev/null 2> /dev/null
+	
+	cat > .plotTemperature-$iFile$$ << EOF
+$M3C_PLOT_TERMINAL
+set termopt enhanced
+set encoding iso_8859_1
+
+set size $M3C_PLOT_SIZE
+unset key
+
+set format y "%.1f"
+set xlabel "Internal Energy (eV)"
+set ylabel "Temperature (eV)"
+
+plot \
+"$energyDir/temperatureTable$$.dat" u 1:2 w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
+"" u 1:2:3 notitle w yerrorbars lt 1 ps 0, \
+"" u 1:2 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white"
+
+pause -1
+EOF
+	
+	$M3C_GNUPLOT_EXEC .plotTemperature-$iFile$$ 2> /dev/null
+	
+	rm $energyDir/temperatureTable$$.dat
+	rm .plotTemperature-$iFile$$
+}
+
+####################################
+#
+####################################
+function channelBRDiagram()
 {
 	local iFile=$1
 	local energyDir=$2
@@ -1172,7 +1325,7 @@ EOF
 ####################################
 #
 ####################################
-channelFitBRDiagram()
+function channelFitBRDiagram()
 {
 	local iFile=$1
 	local energyDir=$2
@@ -1273,7 +1426,7 @@ EOF
 ####################################
 #
 ####################################
-speciesFitBRDiagram()
+function speciesFitBRDiagram()
 {
 	local iFile=$1
 	local energyDir=$2
@@ -1401,7 +1554,7 @@ EOF
 ####################################
 #
 ####################################
-energyDistDiagram()
+function energyDistDiagram()
 {
 	local iFile=$1
 	local energyDir=$2
@@ -1493,7 +1646,7 @@ EOF
 ####################################
 #
 ####################################
-speciesEnergyDistDiagram()
+function speciesEnergyDistDiagram()
 {
 	local iFile=$1
 	local energyDir=$2
@@ -1563,7 +1716,7 @@ EOF
 ####################################
 #
 ####################################
-showAvailableEnergies()
+function showAvailableEnergies()
 {
 	local iFile=$1
 	
@@ -1602,14 +1755,14 @@ showAvailableEnergies()
 ####################################
 #
 ####################################
-textbb(){
+function textbb(){
 	echo -n `tput bold`$1`tput sgr0`
 }
 
 ####################################
 #
 ####################################
-showUsage()
+function showUsage()
 {
 cat << EOF
 `textbb NAME`
@@ -1703,7 +1856,7 @@ EOF
 ####################################
 #
 ####################################
-main()
+function main()
 {
 	# c:: esto es para argumentos cuyo valor es opcional -c2.3 y argumento largo es c-long:: para --c-long=2.3
 	TEMP=`getopt \
@@ -1796,6 +1949,12 @@ main()
 		exit
 	fi
 	
+	if [ "$2" = "T" ]
+	then
+		temperatureDiagram ${iFile%.*}.m3c "${iFile%.*}.data/"
+		exit
+	fi
+	
 	if [ "$2" = "BR" ]
 	then
 		channelBRDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" `getValueFromIFIle ${iFile%.*}.m3c "BRANCHING_RATIOS:diagram"`
@@ -1875,6 +2034,7 @@ main()
 # 				historyDiagram $dataFile
 			fi
 			;;
+			
 		species)
 			if [ -n "$id" ]
 			then
@@ -1885,6 +2045,7 @@ main()
 				speciesDiagram $dataFile
 			fi
 			;;
+			
 		channels)
 			if [ -n "$id" ]
 			then
@@ -1895,6 +2056,22 @@ main()
 				channelsDiagram $dataFile
 			fi
 			;;
+			
+		reactions)
+			if [ -n "$id" ]
+			then
+				
+				if [[ $id =~ [0-9]+ ]]
+				then
+					reactionsDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.histogram
+				else
+# 					maxP=$3
+					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:histogramFile`
+					reactionsDiagram $dataFile #$maxP
+				fi
+			fi
+			;;
+			
 		J)
 			if [ -n "$id" ]
 			then
@@ -1904,6 +2081,7 @@ main()
 				JHistoryDiagram $dataFile "J"
 			fi
 			;;
+			
 		L)
 			if [ -n "$id" ]
 			then
@@ -1913,6 +2091,7 @@ main()
 				JHistoryDiagram $dataFile "L"
 			fi
 			;;
+			
 		Ecorr)
 			if [ -n "$id" ]
 			then
