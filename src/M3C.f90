@@ -10,10 +10,6 @@ program M3C
 	use Reactor_
 	use MarkovChain_
 	
-! 	use RMoleculeListJL_
-! 	use RMJLReactor_
-! 	use RMJL_
-	
 	implicit none
 	
 	type(CommandLineParser) :: programOptions
@@ -22,9 +18,6 @@ program M3C
 	type(String) :: inputFileName
 	
 	type(FragmentsList) :: reactives
-	
-! 	type(Reactor) :: reactorJL
-! 	type(MarkovChain) :: RMJLMethod
 	
 	type(Reactor) :: reactorMethod
 	type(MarkovChain) :: MarkovChainMethod
@@ -39,18 +32,13 @@ program M3C
 	
 	!------------------------------------------------------------------------------
 	
-! 	call RigidMolecule_test()
-! 	call RMoleculeListJL_test()
-! 	call FragmentsDB_test()
-! 	call RMJLReactor_test()
-! 	stop
-
+	call programOptions.init()
+! 	status = hostnm( hostname )
+	
 	write(*,*) "--------------------------------------"
 	write(*,*) "M3C version: ", __DATE__, " - ", __TIME__
+! 	write(*,*) "   hostname: "//trim(hostname)
 	write(*,*) "--------------------------------------"
-	
-	call programOptions.init()
-! 	status = hostnm(hostname)
 	
 	inputFileName = programOptions.getString( "-i" )
 	write(*,*) "Input file = ", trim(inputFileName.fstr)
@@ -62,7 +50,6 @@ program M3C
 	call GOptions_timer.init()
 	call GOptions_timer.start()
 	write(*,*) "---------------------------------------------------------------------------"
-! 	write(*,*) "START TIME: ", trim(GOptions_timer.startDate()), "  @"//trim(hostname)
 	write(*,*) "START TIME: ", trim(GOptions_timer.startDate())
 	write(*,*) "---------------------------------------------------------------------------"
 	
@@ -73,10 +60,10 @@ program M3C
 	
 	GOptionsM3C_systemRadius = iParser.getReal( "GOPTIONS:systemRadius", def=10.0_8*angs )*angs
 	GOptionsM3C_randomWalkStepRadius = iParser.getReal( "GOPTIONS:randomWalkStepRadius", def=2.0_8*angs )*angs
+	GOptionsM3C_useRandomWalkers = iParser.getLogical( "GOPTIONS:useRandomWalkers", def=.false. )
 	GOptionsM3C_useWeightedWalkStep = iParser.getLogical( "GOPTIONS:useWeightedWalkStep", def=.false. )
 	GOptionsM3C_overlappingRadius = iParser.getReal( "GOPTIONS:overlappingRadius", def=0.0_8 )*angs
 	GOptionsM3C_useZPECorrection = iParser.getLogical( "GOPTIONS:useZPECorrection", def=.false. )
-	GOptionsM3C_useRandomWalkers = iParser.getLogical( "GOPTIONS:useRandomWalkers", def=.true. )
 	GOptionsM3C_useLCorrection = iParser.getLogical( "GOPTIONS:useLCorrection", def=.false. )
 	GOptionsM3C_useLWeightContrib = iParser.getLogical( "GOPTIONS:useLWeightContrib", def=.false. )
 	GOptionsM3C_gammaLCorrection = iParser.getReal( "GOPTIONS:gammaLCorrection", def=3.0_8 )
@@ -88,13 +75,16 @@ program M3C
 	write(*,*)
 	write(*,"(A40,E15.2)") "GOptions:zero = ", GOptions_zero
 	write(*,"(A40,F15.5,A)") "GOptions:systemRadius = ", GOptionsM3C_systemRadius/angs, " A"
+	write(*,"(A40,L5)") "GOptions:useRandomWalkers = ", GOptionsM3C_useRandomWalkers
 	write(*,"(A40,F15.5,A)") "GOptions:randomWalkStepRadius = ", GOptionsM3C_randomWalkStepRadius/angs, " A"
-	write(*,"(A40,F15.5,A)") "GOptions:overlappingRadius = ", GOptionsM3C_overlappingRadius/angs, " A"
 	write(*,"(A40,L5)") "GOptions:useWeightedWalkStep = ", GOptionsM3C_useWeightedWalkStep
+	write(*,"(A40,F15.5,A)") "GOptions:overlappingRadius = ", GOptionsM3C_overlappingRadius/angs, " A"
+	write(*,"(A40,L5)") "GOptions:useZPECorrection = ", GOptionsM3C_useZPECorrection
 	write(*,"(A40,L5)") "GOptions:useLCorrection = ", GOptionsM3C_useLCorrection
 	write(*,"(A40,L5)") "GOptions:useLWeightContrib = ", GOptionsM3C_useLWeightContrib
 	write(*,"(A40,F5.0)") "GOptions:gammaLCorrection = ", GOptionsM3C_gammaLCorrection
 	write(*,"(A40,L)") "useSpinConservationRules = ", GOptionsM3C_useSpinConservationRules
+	write(*,"(A40,A5)") "angularMomentumCouplingScheme = ", trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)
 	write(*,"(A40,I5)") "GOptions:printLevel = ", GOptions_printLevel
 	write(*,"(A40,I5)") "GOptions:debugLevel = ", GOptions_debugLevel
 	write(*,*)

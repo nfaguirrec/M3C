@@ -689,7 +689,7 @@ module FragmentsListBase_
 		integer :: i, j, n
 		logical :: overlap
 		
-		effMaxIter = 100000
+		effMaxIter = 1000000
 		if( present(maxIter) ) effMaxIter = maxIter
 		
 		if( GOptions_printLevel >= 3 ) then

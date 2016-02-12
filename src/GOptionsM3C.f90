@@ -14,7 +14,7 @@ module GOptionsM3C_
 	real(8) :: GOptionsM3C_randomWalkStepRadius = 2.0_8*angs
 	real(8) :: GOptionsM3C_overlappingRadius = 0.0_8*angs
 	logical :: GOptionsM3C_useWeightedWalkStep = .false.
-	logical :: GOptionsM3C_useRandomWalkers = .true.
+	logical :: GOptionsM3C_useRandomWalkers = .false.
 	logical :: GOptionsM3C_useZPECorrection = .false.
 	logical :: GOptionsM3C_useLCorrection = .false.
 	logical :: GOptionsM3C_useLWeightContrib = .false.
