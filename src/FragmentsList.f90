@@ -109,6 +109,10 @@ module FragmentsList_
 	subroutine initialGuessFragmentsList( this )
 		class(FragmentsList) :: this
 		
+		integer :: n
+		
+		n = this.nMolecules()
+		
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_section( "BUILDING INITIAL CONFIGURATION "//trim(this.label()), indent=2 )
 			write(STDOUT,*) ""
@@ -138,7 +142,6 @@ module FragmentsList_
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_section( "END BUILDING INITIAL CONFIGURATION "//trim(this.label()), indent=2 )
 		end if
-		
 	end subroutine initialGuessFragmentsList
 	
 	!>
@@ -610,7 +613,7 @@ module FragmentsList_
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							! Se obtiene la matriz inversa del tensor
 							! de inercia efectivo.
-							invIt =  invIi + RotMu.transpose()*invIn*RotMu
+							invIt =  invIi + RotMu*invIn*RotMu.transpose()
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							
 							if( GOptions_debugLevel >= 3 ) then
@@ -629,7 +632,7 @@ module FragmentsList_
 						
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							! Se obtiene la matriz de acoplamieto
-							invIt =  RotMu.transpose()*invIn*RotNu
+							invIt =  RotMu*invIn*RotNu.transpose()
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							
 							if( GOptions_debugLevel >= 3 ) then
@@ -665,10 +668,7 @@ module FragmentsList_
 		
 		call invBigI.eigen( eVals=invBi, eVecs=Ui )
 		
-		fr_sf = 0
-		do i=1,n-1
-			fr_sf = fr_sf + this.clusters( this.idSorted(i) ).fr()
-		end do
+		fr_sf = this.fr() - this.clusters( this.idSorted(n) ).fr()
 		
 		if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
 			write(*,*) "effective fr = ", fr_sf
@@ -715,7 +715,6 @@ module FragmentsList_
 		
 		type(Matrix) :: Ui
 		type(Matrix) :: invBi
-		integer :: fr_sf
 		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsList()
@@ -818,7 +817,7 @@ module FragmentsList_
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							! Se obtiene la matriz inversa del tensor
 							! de inercia efectivo.
-							invIt =  invIi + RotMu.transpose()*invIn*RotMu
+							invIt =  invIi + RotMu*invIn*RotMu.transpose()
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							
 							if( GOptions_debugLevel >= 3 ) then
@@ -837,7 +836,7 @@ module FragmentsList_
 						
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							! Se obtiene la matriz de acoplamieto
-							invIt =  RotMu.transpose()*invIn*RotNu
+							invIt =  RotMu*invIn*RotNu.transpose()
 							!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							
 							if( GOptions_debugLevel >= 3 ) then
@@ -873,13 +872,8 @@ module FragmentsList_
 		
 		call invBigI.eigen( eVals=invBi, eVecs=Ui )
 		
-		fr_sf = 0
-		do i=1,n
-			fr_sf = fr_sf + this.clusters( this.idSorted(i) ).fr()
-		end do
-		
 		if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
-			write(*,*) "effective fr = ", fr_sf
+			write(*,*) "fr = ", this.fr()
 			write(*,*) ""
 			write(*,*) "Total diag(invI) matrix"
 			call invBi.show( formatted=.true., precision=10 )
@@ -890,7 +884,7 @@ module FragmentsList_
 		end if
 			
 		this.LnDiagI_ = 0.0_8
-		do effMu=invBi.nRows,invBi.nRows-fr_sf+1,-1
+		do effMu=invBi.nRows,invBi.nRows-this.fr()+1,-1
 			if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
 				write(*,"(10X,I5,F20.8,F20.5)") effMu, invBi.get(effMu,effMu), -log(invBi.get(effMu,effMu))
 			end if
@@ -1006,37 +1000,42 @@ module FragmentsList_
 		integer :: i, n, s
 		real(8) :: logMu, Et
 		
-		integer :: fr
-		
 		n = this.nMolecules()
 		
 		Et = this.kineticEnergy()
 		
 		if( Et < 0.0_8 ) then
 			this.LnLambda = 0.0_8
-		else if( this.nMolecules() == 1 ) then
-! 			this.LnLambda = this.logVfree_ + this.logVtheta_
-			this.LnLambda = 0.0_8
+! 		else if( this.nMolecules() == 1 ) then
+! ! 			this.LnLambda = this.logVfree_ + this.logVtheta_
+! 			this.LnLambda = 0.0_8
 		else
+			select case( trim(GOptionsM3C_angularMomentumCouplingScheme.fstr) )
+				case( "JJ" )
+					s = this.ft() + this.fl() + this.fr() - this.clusters( this.idSorted(n) ).fr()
+! 					s = this.ft() + this.fr() - this.clusters( this.idSorted(n) ).fr()
+				case( "JJL" )
+					s = this.ft() + this.fl() + this.fr()
+! 					s = this.ft() + this.fr()
+				case default
+					call GOptions_error( &
+						"Unknown angular momentum coupling scheme"//" ("//trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)//")", &
+						"FragmentsListBase.updateLambda()", &
+						"Posible implemented values: JJ, JL" &
+						)
+			end select
+			
 			logMu = 0.0_8
-			fr = 0
 			do i=1,n
 				logMu = logMu + log(this.clusters(i).mass())
-				
-! 				if( i /= n ) then
-					fr = fr + this.clusters( this.idSorted(i) ).fr()
-! 				end if
 			end do
 			logMu = logMu - log( this.mass() )
-			
-			s = this.ft() + this.fl() + fr
-			
+				
 			this.LnLambda = \
 				0.5_8*s*log(2.0_8*Math_PI) &
 				- log( Gamma(0.5_8*s) ) &
 				+ 1.5*logMu &
 				+ this.logVfree_ + this.logVtheta_ &
-				+ 0.5_8*fr*log(2.0_8) &
 				+ 0.5_8*this.LnDiagI_ &
 				+ (0.5_8*s-1.0_8)*log(Et)
 				
@@ -1065,20 +1064,22 @@ module FragmentsList_
 		class(FragmentsList), intent(in) :: this
 		real(8) :: output
 		
-		real(8) :: Et, Ed
+		integer :: s
 		
-		integer :: fr, i
+		select case( trim(GOptionsM3C_angularMomentumCouplingScheme.fstr) )
+			case( "JJ" )
+				s = this.ft() + this.fl() + this.fr() - this.clusters( this.idSorted(this.nMolecules()) ).fr()
+			case( "JJL" )
+				s = this.ft() + this.fl() + this.fr()
+			case default
+				call GOptions_error( &
+					"Unknown angular momentum coupling scheme"//" ("//trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)//")", &
+					"FragmentsListBase.updateLambda()", &
+					"Posible implemented values: JJ, JL" &
+					)
+		end select
 		
-		! @todo Hay que hacer una función que mantenga fr en memoria, lo importante es
-		!       aclarar que solo tiene n-1 contribuciones
-		fr = 0
-		do i=1,this.nMolecules()-1
-			fr = fr + this.clusters( this.idSorted(i) ).fr()
-		end do
-		
-		Et = this.kineticEnergy()
-		
-		output = 0.5_8*( real( 3*this.nMolecules()-3-2 , 8 )/Et + fr/Ed  )
+		output = (0.5_8*s-1.0_8)/this.kineticEnergy()
 	end function iTemperature
 
 	!>
