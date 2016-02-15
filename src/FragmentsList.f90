@@ -109,10 +109,6 @@ module FragmentsList_
 	subroutine initialGuessFragmentsList( this )
 		class(FragmentsList) :: this
 		
-		integer :: n
-		
-		n = this.nMolecules()
-		
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_section( "BUILDING INITIAL CONFIGURATION "//trim(this.label()), indent=2 )
 			write(STDOUT,*) ""
@@ -1012,11 +1008,11 @@ module FragmentsList_
 		else
 			select case( trim(GOptionsM3C_angularMomentumCouplingScheme.fstr) )
 				case( "JJ" )
-					s = this.ft() + this.fl() + this.fr() - this.clusters( this.idSorted(n) ).fr()
-! 					s = this.ft() + this.fr() - this.clusters( this.idSorted(n) ).fr()
+! 					s = this.ft() + this.fl() + this.fr() - this.clusters( this.idSorted(n) ).fr()
+					s = this.ft() + this.fr() - this.clusters( this.idSorted(n) ).fr()
 				case( "JJL" )
-					s = this.ft() + this.fl() + this.fr()
-! 					s = this.ft() + this.fr()
+! 					s = this.ft() + this.fl() + this.fr()
+					s = this.ft() + this.fr()
 				case default
 					call GOptions_error( &
 						"Unknown angular momentum coupling scheme"//" ("//trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)//")", &
@@ -1029,7 +1025,7 @@ module FragmentsList_
 			do i=1,n
 				logMu = logMu + log(this.clusters(i).mass())
 			end do
-			logMu = logMu - log( this.mass() )
+			!logMu = logMu - log( this.mass() )
 				
 			this.LnLambda = \
 				0.5_8*s*log(2.0_8*Math_PI) &
