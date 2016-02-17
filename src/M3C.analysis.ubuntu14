@@ -797,7 +797,48 @@ function reactionsDiagram()
 		maxP=0.01
 	fi
 	
-	echo "### ERROR ### Reactions diagram is not implemented yet"
+	echo "strict digraph G {" > .dataReac-$$.dot
+	echo "	rankdir=LR" >> .dataReac-$$.dot
+	echo "	node [shape=box,style=filled,fillcolor=yellow,color=black]" >> .dataReac-$$.dot
+	
+	gawk '
+		BEGIN{
+			loc=0
+		}
+		{
+			if($0~/Transition statistics/)
+				loc=1
+				
+			if($0~/^[[:blank:]]+$/)
+				loc=0
+				
+			if($1!~/#/ && loc==1)
+				print $0
+		}
+	' $iFile | sed 's/-->/"->"/g' \
+	| gawk '
+		{
+			print "\""$1"\"", "[label="$2",fontcolor=blue]"
+		}
+	' >> .dataReac-$$.dot
+	
+	echo "}" >> .dataReac-$$.dot
+	
+	if [ -n "`which dot`" ]
+	then
+		dot -Tpng .dataReac-$$.dot > reactions.png
+	else
+		echo "### ERROR ### dot command is not available. Please install graphviz"
+		echo "              apt-get install graphviz"
+		exit
+	fi
+	
+	rm .dataReac-$$.dot
+	
+	if [ -n "$DISPLAY" ]
+	then
+		gwenview reactions.png > /dev/null 2>&1 &
+	fi
 	
 # ! 	subroutine graphvizHeader( this, dotFile )
 # ! 		class(Reactor), intent(in) :: this
@@ -2060,7 +2101,6 @@ function main()
 		reactions)
 			if [ -n "$id" ]
 			then
-				
 				if [[ $id =~ [0-9]+ ]]
 				then
 					reactionsDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.histogram
