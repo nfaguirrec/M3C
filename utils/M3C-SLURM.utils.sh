@@ -2,10 +2,10 @@
 ##################################################################
 #
 #  This file is part of M3C
-#  Copyright (C) by authors (2013-2015)
+#  Copyright (C) by authors (2013-2016)
 #  
 #  Authors:
-#    * Dr. Néstor F. Aguirre (2013-2015)
+#    * Dr. Néstor F. Aguirre (2013-2016)
 #          nestor.aguirre@uam.es
 #    * Dr. Sergio Díaz-Tendero (2015-2015)
 #          sergio.diaztendero@uam.es
@@ -48,6 +48,7 @@ function SLURM.buildHead()
 	local nTask=`echo $queueParams | awk 'BEGIN{FS=","}{ print $2 }'`
 	local account=`echo $queueParams | awk 'BEGIN{FS=","}{ print $3 }'`
 	local ttime=`echo $queueParams | awk 'BEGIN{FS=","}{ print $4 }'`
+	local qos=`echo $queueParams | awk 'BEGIN{FS=","}{ print $5 }'`
 	
 	if [ -z "$partition" ]
 	then
@@ -71,6 +72,9 @@ function SLURM.buildHead()
 	[ -z "$nTask" ]     && nTask=`echo $values | awk '{print $2}'`
 	[ -z "$account" ]   && account=`echo $values | awk '{print $3}'`
 	[ -z "$ttime" ]     && ttime=`echo $values | awk '{print $4}'`
+	[ -z "$qos" ]       && qos=`echo $values | awk '{print $5}'`
+
+	[ -z "$qos" ] && qos=$partition
 	
 	local jobdir=`echo $PWD | sed s/.*$USER/~/`
 	
@@ -82,6 +86,7 @@ function SLURM.buildHead()
 #SBATCH --ntasks=$nTask
 #SBATCH --account=$account
 #SBATCH --time=$ttime
+#SBATCH --qos=$qos
 #SBATCH --job-name=$jobdir/$name
 #SBATCH -o log/$name.slurm.log
 #SBATCH -e log/$name.slurm.err
