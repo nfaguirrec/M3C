@@ -759,7 +759,7 @@ module FragmentsList_
 		! de inercia de n. Es diagonal en body fix
 		call invIn.init( 3, 3, 0.0_8 )
 		do j=3,4-this.fl(),-1
-				invIn.data( j, j ) = 1.0_8/this.diagInertiaTensor( j )
+			invIn.data( j, j ) = 1.0_8/this.diagInertiaTensor( j )
 		end do
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		
@@ -1008,10 +1008,8 @@ module FragmentsList_
 		else
 			select case( trim(GOptionsM3C_angularMomentumCouplingScheme.fstr) )
 				case( "JJ" )
-! 					s = this.ft() + this.fl() + this.fr() - this.clusters( this.idSorted(n) ).fr()
 					s = this.ft() + this.fr() - this.clusters( this.idSorted(n) ).fr()
 				case( "JJL" )
-! 					s = this.ft() + this.fl() + this.fr()
 					s = this.ft() + this.fr()
 				case default
 					call GOptions_error( &
@@ -1061,12 +1059,15 @@ module FragmentsList_
 		real(8) :: output
 		
 		integer :: s
+		integer :: n
+		
+		n = this.nMolecules()
 		
 		select case( trim(GOptionsM3C_angularMomentumCouplingScheme.fstr) )
 			case( "JJ" )
-				s = this.ft() + this.fl() + this.fr() - this.clusters( this.idSorted(this.nMolecules()) ).fr()
+				s = this.ft() + this.fr() - this.clusters( this.idSorted(n) ).fr()
 			case( "JJL" )
-				s = this.ft() + this.fl() + this.fr()
+				s = this.ft() + this.fr()
 			case default
 				call GOptions_error( &
 					"Unknown angular momentum coupling scheme"//" ("//trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)//")", &
