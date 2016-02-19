@@ -63,27 +63,27 @@ main(){
 # 	local scratch=""
 # 	local work=""
 	local iFileEff=""
-
-    if [ -n "$SLURM_NTASKS" ]
-    then
-            nThreads=$SLURM_NTASKS
-    else
-            nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
-    fi
-
+	
+	if [ -n "$SLURM_NTASKS" ]
+	then
+		nThreads=$SLURM_NTASKS
+	else
+		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
+	fi
+	
 	while getopts "i:n:" OPTNAME
 	do
-			case $OPTNAME in
-					"i" )
-							iFile=$OPTARG
-							;;
-					"n" )
-							nThreads=$OPTARG
-							;;
-					* )
-							exit
-							;;
-			esac
+		case $OPTNAME in
+				"i" )
+						iFile=$OPTARG
+						;;
+				"n" )
+						nThreads=$OPTARG
+						;;
+				* )
+						exit
+						;;
+		esac
 	done
 	
 	if [ -z "$iFile" ]

@@ -702,15 +702,20 @@ module FragmentsList_
 		class(FragmentsList) :: this
 		
 		integer :: i, j, n
-		integer :: mu, nu, effMu, effNu
+		integer :: mu, nu, effMu, effNu, nMu, nNu
 		type(Matrix) :: invIn    !< Tensor de inercia de N proyectado sobre los ejes de i y su inversa
 		type(Matrix) :: invIi    !< Tensor de inercia de i proyectado sobre los ejes de i (diagonal) y su inversa
 		type(Matrix) :: invIt    !< Tensor de inercia de i proyectado sobre los ejes de i (diagonal) y su inversa
 		type(Matrix) :: RotMu, RotNu      !< Matrices de rotación
 		type(Matrix) :: invBigI
 		
-		type(Matrix) :: Ui
+		type(Matrix) :: Ui, Jprime
 		type(Matrix) :: invBi
+		
+		real(8) :: randNumber
+		integer :: randDirection
+		real(8) :: maxErot
+		type(Matrix) :: Jmu, vecL
 		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsList()
@@ -720,7 +725,6 @@ module FragmentsList_
 		this.LnDiagI_ = 0.0_8
 		
 		n = this.nMolecules()
-! 		if( n == 1 ) return
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Calcula el numero efectivo de fragmentos no atomicos
@@ -739,20 +743,23 @@ module FragmentsList_
 			end if
 		end do
 		
+		nMu = effMu
+		nNu = effNu
+		
 		if( GOptions_debugLevel >= 3 ) then
 			call GOptions_subsection( "Angular momentum coupling JJL --> "//trim(this.label()), indent=2 )
 		end if
 		
 		if( GOptionsM3C_useLCorrection ) call this.N2LCorrection()
 		
-		if( effNu > 1 .and. effMu /= effNu ) then
-			write(*,"(A,2I8)") "FragmentsList.updateDiagInertiaTensorJJL(). effMu /= effNu, ", effMu, effNu
+		if( nNu > 1 .and. nMu /= nNu ) then
+			write(*,"(A,2I8)") "FragmentsList.updateDiagInertiaTensorJJL(). nMu /= nNu, ", nMu, nNu
 			stop 
 		end if
 		
-		if( effMu < 1 ) return
+		if( nMu < 1 ) return
 		
-		call invBigI.init( 3*effMu, 3*effNu, 0.0_8 )
+		call invBigI.init( 3*nMu, 3*nNu, 0.0_8 )
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Se obtiene la matriz inversa del tensor
@@ -894,6 +901,57 @@ module FragmentsList_
 			write(*,*) ""
 		end if
 		
+		maxErot = this.kineticEnergy()
+		call Jprime.columnVector( 3*nMu )
+		
+		do while( .true. )
+			
+			this.rotationalEnergy_ = 0.0_8
+			do i=1,3*nMu
+				call random_number( randNumber ) ! [0-1]
+				randDirection = merge( 1, 0, randNumber>0.5_8 )  ! [0,1]
+				
+				call random_number( randNumber ) ! [0-1]
+				
+				call Jprime.set( i, 1, (-1.0_8)**randDirection*randNumber*sqrt( 2.0_8*maxErot/abs( invBi.get( i, i ) ) ) )
+				
+				this.rotationalEnergy_ = this.rotationalEnergy_ + 0.5_8*Jprime.get( i, i )**2*invBi.get( i, i )
+			end do
+			
+			if( this.rotationalEnergy_ < maxErot ) exit
+			
+		end do
+		
+		Jprime = Ui.transpose()*Jprime
+		
+		call vecL.columnVector( 3 )
+		effMu = 1
+		do mu=1,n
+			if( this.clusters( this.idSorted(mu) ).fr() /= 0 ) then
+				
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				! Matriz de rotación que permite transformar a los ejes
+				! de N en los ejes de i, pasando por el sistem fix
+				! RotMu = R_n^T*R_mu
+				RotMu = SpecialMatrix_rotationTransform( &
+					this.clusters( this.idSorted(mu) ).inertiaAxes(), &
+					this.inertiaAxes )
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				
+				call Jmu.columnVector( 3 )
+				do i=3,4-this.clusters( this.idSorted(mu) ).fr(),-1
+					call Jmu.set( i, 1, Jprime.get( 3*(effMu-1)+i, 1 ) )
+				end do
+				
+				! Contribución a L
+				this.clusters( this.idSorted(mu) ).J_ = Jmu.data(:,1)
+				vecL = vecL - RotMu.transpose()*Jmu
+						
+				effMu = effMu + 1
+			end if
+		end do
+		
+		this.L_ = vecL.data(:,1)
 	end subroutine updateDiagInertiaTensorJJL
 	
 	!>
