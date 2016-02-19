@@ -915,10 +915,10 @@ module FragmentsList_
 				
 				call Jprime.set( i, 1, (-1.0_8)**randDirection*randNumber*sqrt( 2.0_8*maxErot/abs( invBi.get( i, i ) ) ) )
 				
-				this.rotationalEnergy_ = this.rotationalEnergy_ + 0.5_8*Jprime.get( i, i )**2*invBi.get( i, i )
+				this.rotationalEnergy_ = this.rotationalEnergy_ + 0.5_8*Jprime.get( i, 1 )**2*invBi.get( i, i )
 			end do
 			
-			if( this.rotationalEnergy_ < maxErot ) exit
+			if( this.rotationalEnergy_ <= maxErot ) exit
 			
 		end do
 		
