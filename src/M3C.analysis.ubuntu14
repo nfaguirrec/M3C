@@ -790,11 +790,21 @@ EOF
 function reactionsDiagram()
 {
 	local iFile=$1
-	local maxP=$2
+	local withDetails=$2
+	local maxP=$3
 	
 	if [ -z "$maxP" ]
 	then
-		maxP=0.01
+		maxP=0.0
+	fi
+	
+	local targetBlock=0
+	if [ "$withDetails" = "FALSE" ]
+	then
+		targetBlock=0
+	elif [ "$withDetails" = "TRUE" ]
+	then
+		targetBlock=2
 	fi
 	
 	echo "strict digraph G {" > .dataReac-$$.dot
@@ -804,21 +814,26 @@ function reactionsDiagram()
 	gawk '
 		BEGIN{
 			loc=0
+			nBlock=0
+			targetBlock='$targetBlock'   # @todo El primer bloque es 0 y el segundo 2. Este algoritmo funciona, pero posiblemente hay que repensarlo
 		}
 		{
 			if($0~/Transition statistics/)
 				loc=1
 				
-			if($0~/^[[:blank:]]+$/)
+			if($0~/^[[:blank:]]+$/ && nBlock>=targetBlock)
 				loc=0
 				
-			if($1!~/#/ && loc==1)
+			if($1!~/#/ && loc==1 && nBlock==targetBlock && $1>'$maxP')
 				print $0
+				
+			if(loc==1 && $0~/^[[:blank:]]+$/)
+				nBlock+=1
 		}
 	' $iFile | sed 's/-->/"->"/g' \
 	| gawk '
 		{
-			print "\""$1"\"", "[label="$2",fontcolor=blue]"
+			print "\""$2"\"", "[label="$1",fontcolor=blue]"
 		}
 	' >> .dataReac-$$.dot
 	
@@ -829,7 +844,7 @@ function reactionsDiagram()
 		dot -Tpng .dataReac-$$.dot > reactions.png
 	else
 		echo "### ERROR ### dot command is not available. Please install graphviz"
-		echo "              apt-get install graphviz"
+		echo "              sudo apt-get install graphviz"
 		exit
 	fi
 	
@@ -839,93 +854,6 @@ function reactionsDiagram()
 	then
 		gwenview reactions.png > /dev/null 2>&1 &
 	fi
-	
-# ! 	subroutine graphvizHeader( this, dotFile )
-# ! 		class(Reactor), intent(in) :: this
-# ! 		type(OFStream), intent(inout) :: dotFile
-# ! 		
-# ! 		write(dotFile.unit,"(A)") "strict digraph G {"
-# ! 		write(dotFile.unit,"(A)") "   rankdir=LR"
-# ! 		write(dotFile.unit,"(A)") ""
-# ! 	end subroutine graphvizHeader
-# ! 	
-# ! 	subroutine graphvizFooter( this, dotFile )
-# ! 		class(Reactor), intent(in) :: this
-# ! 		type(OFStream), intent(inout) :: dotFile
-# ! 		
-# ! 		write(dotFile.unit,"(A)") "}"
-# ! 		write(dotFile.unit,"(A)") ""
-# ! 	end subroutine graphvizFooter
-# ! 	
-# ! 	subroutine graphvizSection( this, dotFile )
-# ! 		class(Reactor), intent(in) :: this
-# ! 		type(OFStream), intent(inout) :: dotFile
-# ! 		
-# ! 		integer :: i, j
-# ! 		integer :: nCount = 1
-# ! 		integer :: bCount = 1
-# ! 		
-# ! #define INT(i) trim(adjustl(FString_fromInteger(i)))
-# ! #define LINE write(dotFile.unit,"(A)")
-# ! #define CLINE write(dotFile.unit,"(A)",advance='no')
-# ! ! 		CLINE "   "//achar(34)//INT(this.saveStateIterator)//": "//REACTOR_LABEL(this.type)//achar(34)
-# ! 		CLINE "   "//achar(34)//trim(this.name)//achar(34)
-# ! 		LINE " [shape=Square,style=filled,fillcolor=yellow,color=black]"
-# ! 		LINE ""
-# ! ! 		LINE "   subgraph clusterList0 {"
-# ! 		LINE "      node [style=filled,fillcolor=lightgray,color=black,shape=box]"
-# ! 		
-# ! 		do i=1,this.reactives.nClusters()
-# ! ! 			LINE "      n"//INT(i)//" [label=<C<font point-size='10'>3</font><font color='#2e2e2e' point-size='11'>(2,1,3)</font>>]"
-# ! ! 			LINE "      n"//INT(nCount)//" [label="//achar(34)//trim(this.reactives.clusters(i).formula())//achar(34)//"]"
-# ! 			LINE "      "//achar(34)//trim(this.reactives.clusters(i).formula())//achar(34)
-# ! 			nCount = nCount + 1
-# ! 		end do
-# ! 		
-# ! ! 		LINE "      color=black"
-# ! ! 		LINE "      style=filled"
-# ! ! 		LINE "      fillcolor=red"
-# ! ! 		LINE "   }"
-# ! 			
-# ! 		nCount = nCount-this.reactives.nClusters()
-# ! 		do i=1,this.reactives.nClusters()
-# ! ! 			LINE "   n"//INT(nCount)//" -> R1 [shape=vee]"
-# ! 			CLINE "      "//achar(34)//trim(this.reactives.clusters(i).formula())//achar(34)
-# ! ! 			LINE  " -> "//achar(34)//INT(this.saveStateIterator)//": "//REACTOR_LABEL(this.type)//achar(34)//" [shape=vee]"
-# ! 			LINE  " -> "//achar(34)//trim(this.name)//achar(34)//" [shape=vee]"
-# ! 			nCount = nCount + 1
-# ! 		end do
-# ! 		LINE ""
-# ! 		
-# ! ! 		LINE "   subgraph clusterList"//INT(1)//" {"
-# ! 		LINE "      node [style=filled,fillcolor=lightgray,color=black,shape=box]"
-# ! 		
-# ! 		do i=1,this.products.nClusters()
-# ! ! 			LINE "      n"//INT(j)//" [label=<C<font point-size='10'>2</font><font color='#2e2e2e' point-size='11'>(2,1,3)</font>>]"
-# ! ! 			LINE "      n"//INT(nCount)//" [label="//achar(34)//trim(this.products.clusters(i).formula())//achar(34)//"]"
-# ! 			LINE "      "//achar(34)//trim(this.products.clusters(i).formula())//achar(34)
-# ! 			nCount = nCount + 1
-# ! 		end do
-# ! 		
-# ! ! 		LINE "      color=black"
-# ! ! 		LINE "      style=filled"
-# ! ! 		LINE "      fillcolor=lightblue"
-# ! ! 		LINE "   }"
-# ! 		
-# ! 		LINE ""
-# ! 		nCount = nCount-this.products.nClusters()
-# ! 		do i=1,this.products.nClusters()
-# ! ! 			LINE "   R1 -> n"//INT(nCount)
-# ! ! 			CLINE "   "//achar(34)//INT(this.saveStateIterator)//": "//REACTOR_LABEL(this.type)//achar(34)
-# ! 			CLINE "   "//achar(34)//trim(this.name)//achar(34)
-# ! 			LINE  " -> "//achar(34)//trim(this.products.clusters(i).formula())//achar(34)
-# ! 			nCount = nCount + 1
-# ! 		end do
-# ! 		LINE ""
-# ! #undef INT
-# ! #undef LINE
-# ! #undef CLINE
-# ! 	end subroutine graphvizSection
 }
 
 ####################################
@@ -2103,11 +2031,27 @@ function main()
 			then
 				if [[ $id =~ [0-9]+ ]]
 				then
-					reactionsDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.histogram
+					maxP=$4
+					reactionsDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.histogram FALSE $maxP
 				else
-# 					maxP=$3
+					maxP=$4
 					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:histogramFile`
-					reactionsDiagram $dataFile #$maxP
+					reactionsDiagram $dataFile FALSE $maxP
+				fi
+			fi
+			;;
+			
+		reactionsd)
+			if [ -n "$id" ]
+			then
+				if [[ $id =~ [0-9]+ ]]
+				then
+					maxP=$4
+					reactionsDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.histogram TRUE $maxP
+				else
+					maxP=$4
+					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:histogramFile`
+					reactionsDiagram $dataFile TRUE $maxP
 				fi
 			fi
 			;;

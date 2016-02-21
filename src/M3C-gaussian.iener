@@ -39,21 +39,21 @@ else
 	source $M3C_HOME/src/gaussianDriver.sh
 fi
 
-function optgeom()
+function iener()
 {
-	local iFileXYZ=$1
+	local iFileRXYZ=$1
 	local charge=$2
 	local mult=$3
 	
-	cp $iFileXYZ ${iFileXYZ%.*}.xyz0
-	optgGAUSSIANTemplate $GAUSSIAN_TEMPLATE ${iFileXYZ%.*}.xyz0 $charge $mult > ${iFileXYZ%.*}.xyz
-	mv ${iFileXYZ%.*}.out history.optg/ 2> /dev/null
-	mv ${iFileXYZ%.*}.com history.optg/ 2> /dev/null
+	cp $iFileRXYZ ${iFileRXYZ%.*}.rxyz0
+	ienerGAUSSIANTemplate $GAUSSIAN_TEMPLATE ${iFileRXYZ%.*}.rxyz0 $charge $mult > ${iFileRXYZ%.*}.rxyz
+	mv ${iFileRXYZ%.*}.out history.iener/ 2> /dev/null
+	mv ${iFileRXYZ%.*}.com history.iener/ 2> /dev/null
 }
 
 function main()
 {
-	local xyzFile=""
+	local rxyzFile=""
 	local charge=""
 	local mult=""
 	
@@ -68,23 +68,23 @@ function main()
 		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
 	
-	if [ -d "history.optg" ]
+	if [ -d "history.iener" ]
 	then
-		echo "@@@ WARNING @@@ There is already a history directory (history.optg). Backup copy will be generated"
-		mv history.optg history.optg.backup
+		echo "@@@ WARNING @@@ There is already a history directory (history.iener). Backup copy will be generated"
+		mv history.iener history.iener.backup
 	fi
-	mkdir history.optg
+	mkdir history.iener
 	
-	xyzFile=( `ls *.xyz` )
-	charge=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'` )
-	mult=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'` )
+	rxyzFile=( `ls *.rxyz` )
+	charge=( `ls *.rxyz | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'` )
+	mult=( `ls *.rxyz | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'` )
 	
 	#-----------------------------------------------------------------------
 	
 	startTime=`date "+%s"`
 	
 	ij=-1
-	for (( i=0; i<=$(( ${#xyzFile[@]}/$nThreads-1 )); i++ ))
+	for (( i=0; i<=$(( ${#rxyzFile[@]}/$nThreads-1 )); i++ ))
 	do
 		iStartTime=`date "+%s"`
 		
@@ -96,12 +96,12 @@ function main()
 			
 			if (( j != $nThreads ))
 			then
-				printf "%15s," "${xyzFile[$ij]%.*}"
+				printf "%15s," "${rxyzFile[$ij]%.*}"
 			else
-				printf "%15s" "${xyzFile[$ij]%.*}"
+				printf "%15s" "${rxyzFile[$ij]%.*}"
 			fi
 			
-			optgeom ${xyzFile[$ij]} ${charge[$ij]} ${mult[$ij]} &
+			iener ${rxyzFile[$ij]} ${charge[$ij]} ${mult[$ij]} &
 		done
 		
 		echo -n " ... "
@@ -113,23 +113,23 @@ function main()
 		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
 	done
 
-	if (( $ij < ${#xyzFile[@]} ))
+	if (( $ij < ${#rxyzFile[@]} ))
 	then
 		iStartTime=`date "+%s"`
 		
 		echo -n "Running: "
 		
 		k=1
-		for (( i=$(( $ij+1 )); i<${#xyzFile[@]}; i++ ))
+		for (( i=$(( $ij+1 )); i<${#rxyzFile[@]}; i++ ))
 		do
-			if (( $i != $(( ${#xyzFile[@]} - 1 )) ))
+			if (( $i != $(( ${#rxyzFile[@]} - 1 )) ))
 			then
-				printf "%15s," "${xyzFile[$i]%.*}"
+				printf "%15s," "${rxyzFile[$i]%.*}"
 			else
-				printf "%15s " "${xyzFile[$i]%.*}"
+				printf "%15s " "${rxyzFile[$i]%.*}"
 			fi
 			
-			optgeom ${xyzFile[$i]} ${charge[$i]} ${mult[$i]} &
+			iener ${rxyzFile[$i]} ${charge[$i]} ${mult[$i]} &
 			
 			k=$(( $k+1 ))
 		done
