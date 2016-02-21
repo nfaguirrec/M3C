@@ -498,6 +498,7 @@ module FragmentsList_
 		
 		type(Matrix) :: Ui
 		type(Matrix) :: invBi
+		real(8) :: maxErot
 		integer :: fr_sf
 		integer :: molRef
 		
@@ -505,6 +506,9 @@ module FragmentsList_
 			call this.initialGuessFragmentsList()
 ! 			return
 		end if
+		
+		maxErot = this.kineticEnergy()
+		if( maxErot < 0.0_8 ) return
 		
 		this.LnDiagI_ = 0.0_8
 		
@@ -712,15 +716,19 @@ module FragmentsList_
 		type(Matrix) :: Ui, Jprime
 		type(Matrix) :: invBi
 		
+		real(8) :: maxErot
+		
 		real(8) :: randNumber
 		integer :: randDirection
-		real(8) :: maxErot
 		type(Matrix) :: Jmu, vecL
 		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsList()
 ! 			return
 		end if
+		
+		maxErot = this.kineticEnergy()
+		if( maxErot < 0.0_8 ) return
 		
 		this.LnDiagI_ = 0.0_8
 		
@@ -901,57 +909,119 @@ module FragmentsList_
 			write(*,*) ""
 		end if
 		
-		maxErot = this.kineticEnergy()
-		call Jprime.columnVector( 3*nMu )
-		
+		!--------------------------------------------------------------
+		! Muestreo de la energía rotacional
+		! Este codigo no necesita la dirección ni identidad de los Jmu
+		!--------------------------------------------------------------
 		do while( .true. )
 			
 			this.rotationalEnergy_ = 0.0_8
-			do i=1,3*nMu
-				call random_number( randNumber ) ! [0-1]
-				randDirection = merge( 1, 0, randNumber>0.5_8 )  ! [0,1]
-				
+			
+			do effMu=invBi.nRows,invBi.nRows-this.fr()+1,-1
 				call random_number( randNumber ) ! [0-1]
 				
-				call Jprime.set( i, 1, (-1.0_8)**randDirection*randNumber*sqrt( 2.0_8*maxErot/abs( invBi.get( i, i ) ) ) )
-				
-				this.rotationalEnergy_ = this.rotationalEnergy_ + 0.5_8*Jprime.get( i, 1 )**2*invBi.get( i, i )
+				this.rotationalEnergy_ = this.rotationalEnergy_ + randNumber**2*maxErot
 			end do
 			
 			if( this.rotationalEnergy_ <= maxErot ) exit
+		end do
+		
+! 		call invBigI.eigenNotSorted( eVals=invBi, eVecs=Ui )  ! Este era un intento de diagonalizar la matriz sin ordenar los valores ni vectores propios
+! 		call Jprime.columnVector( 3*nMu )
+! 		
+! 		do while( .true. )
+! 			
+! 			this.rotationalEnergy_ = 0.0_8
+! 			
+! 			do i=1,3*nMu
+! 			
+! 				if( .not. Math_isInf( 1.0_8/invBi.get(i,i) ) ) then
+! 					call random_number( randNumber ) ! [0-1]
+! 					randDirection = merge( 1, 0, randNumber>0.5_8 )  ! [0,1]
+! 					
+! 					call random_number( randNumber ) ! [0-1]
+! 					
+! 					call Jprime.set( i, 1, (-1.0_8)**randDirection*randNumber*sqrt( 2.0_8*maxErot/invBi.get( i, i ) ) )
+! 					
+! 					this.rotationalEnergy_ = this.rotationalEnergy_ + 0.5_8*Jprime.get( i, 1 )**2*invBi.get( i, i )
+! 					
+! 					write(*,"(I3,3F15.7)") i, invBi.get( i, i ), Jprime.get( i, 1 ), this.rotationalEnergy_
+! 				end if
+! 				write(*,*) ">>"
+! 			end do
 			
-		end do
-		
-		Jprime = Ui.transpose()*Jprime
-		
-		call vecL.columnVector( 3 )
-		effMu = 1
-		do mu=1,n
-			if( this.clusters( this.idSorted(mu) ).fr() /= 0 ) then
-				
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				! Matriz de rotación que permite transformar a los ejes
-				! de N en los ejes de i, pasando por el sistem fix
-				! RotMu = R_n^T*R_mu
-				RotMu = SpecialMatrix_rotationTransform( &
-					this.clusters( this.idSorted(mu) ).inertiaAxes(), &
-					this.inertiaAxes )
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				
-				call Jmu.columnVector( 3 )
-				do i=3,4-this.clusters( this.idSorted(mu) ).fr(),-1
-					call Jmu.set( i, 1, Jprime.get( 3*(effMu-1)+i, 1 ) )
-				end do
-				
-				! Contribución a L
-				this.clusters( this.idSorted(mu) ).J_ = Jmu.data(:,1)
-				vecL = vecL - RotMu.transpose()*Jmu
-						
-				effMu = effMu + 1
-			end if
-		end do
-		
-		this.L_ = vecL.data(:,1)
+! 			El problema que hay es que despues de la diagonalización
+! 			no hay forma de saber que vector de momento angular o porción
+! 			de la matriz invBi, pertenece a que molécula, ya que esta
+! 			información se pierde durante la diagonalización
+! 			write(*,*) "Total diag(invI) matrix (non-sort)"
+! 			call invBi.show( formatted=.true., precision=10 )
+! 			write(*,*) "MMMM0", this.rotationalEnergy_, maxErot, trim(this.label()), nMu
+! 			
+! 			effMu = 1
+! 			do mu=1,n
+! 				if( this.clusters( this.idSorted(mu) ).fr() /= 0 ) then
+! 					
+! 					call random_number( randNumber ) ! [0-1]
+! 					randDirection = merge( 1, 0, randNumber>0.5_8 )  ! [0,1]
+! 					
+! 					call random_number( randNumber ) ! [0-1]
+! 					
+! 					do i=3,4-this.clusters( this.idSorted(mu) ).fr(),-1
+! 						call Jprime.set( 3*(effMu-1)+i, 1, (-1.0_8)**randDirection*randNumber*sqrt( 2.0_8*maxErot/invBi.get( 3*(effMu-1)+i, 3*(effMu-1)+i ) ) )
+! 						this.rotationalEnergy_ = this.rotationalEnergy_ + 0.5_8*Jprime.get( 3*(effMu-1)+i, 1 )**2*invBi.get( 3*(effMu-1)+i, 3*(effMu-1)+i )
+! 						
+! 						write(*,"(3I3,3F15.7)") mu, i, 3*(effMu-1)+i, invBi.get( 3*(effMu-1)+i, 3*(effMu-1)+i ), Jprime.get( 3*(effMu-1)+i, 1 ), this.rotationalEnergy_
+! 					end do
+! 							
+! 					effMu = effMu + 1
+! 				end if
+! 			end do
+! 
+! 			write(*,*) "MMMM1", this.rotationalEnergy_, maxErot, trim(this.label()), nMu
+! 			if( this.rotationalEnergy_ <= maxErot ) exit
+! 			
+! 		end do
+! 		
+! 		write(*,*) "Jprime"
+! 		call Jprime.show( formatted=.true. )
+! 		
+! 		Jprime = Ui.transpose()*Jprime
+! 		
+! 		write(*,*) "Jprime2"
+! 		call Jprime.show( formatted=.true. )
+! 		
+! 		call vecL.columnVector( 3 )
+! 		effMu = 1
+! 		do mu=1,n
+! 			if( this.clusters( this.idSorted(mu) ).fr() /= 0 ) then
+! 				
+! 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 				! Matriz de rotación que permite transformar a los ejes
+! 				! de N en los ejes de i, pasando por el sistem fix
+! 				! RotMu = R_n^T*R_mu
+! 				RotMu = SpecialMatrix_rotationTransform( &
+! 					this.clusters( this.idSorted(mu) ).inertiaAxes(), &
+! 					this.inertiaAxes )
+! 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 				
+! 				call Jmu.columnVector( 3 )
+! 				do i=3,4-this.clusters( this.idSorted(mu) ).fr(),-1
+! 					call Jmu.set( i, 1, Jprime.get( 3*(effMu-1)+i, 1 ) )
+! 				end do
+! 				
+! 				! Contribución a L
+! 				this.clusters( this.idSorted(mu) ).J_ = Jmu.data(:,1)
+! 				vecL = vecL - RotMu.transpose()*Jmu
+! 				
+! 				write(*,"(A,I2,3F10.5)") "Jmu ", mu, this.clusters( this.idSorted(mu) ).J_
+! 						
+! 				effMu = effMu + 1
+! 			end if
+! 		end do
+! 		
+! 		this.L_ = vecL.data(:,1)
+! 		write(*,"(A,3F10.5)")  "L ", this.L_
 	end subroutine updateDiagInertiaTensorJJL
 	
 	!>

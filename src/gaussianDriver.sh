@@ -1,4 +1,34 @@
 #!/bin/bash
+##################################################################
+#
+#  This file is part of M3C
+#  Copyright (C) by authors (2012-2016)
+#  
+#  Authors:
+#    * Dr. Néstor F. Aguirre (2012-2016)
+#          nestor.aguirre@uam.es
+#    * Dr. Sergio Díaz-Tendero (2012-2015)
+#          sergio.diaztendero@uam.es
+#    * Prof. M. Paul-Antoine Hervieux (2012-2015)
+#          Paul-Antoine.Hervieux@ipcms.unistra.fr
+#    * Prof. Fernando Martín (2012-2015)
+#          fernando.martin@uam.es
+#    * Prof. Manuel Alcamí (2012-2015)
+#          manuel.alcami@uam.es
+#  
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the
+#  following conditions are met:
+#  
+#   * Redistributions of binary or source code must retain
+#     the above copyright notice and this list of conditions
+#     and/or other materials provided with the distribution.
+#   * All advertising materials mentioning features or use of
+#     this software must display the following acknowledgement:
+#     
+#     This product includes software from M3C project.
+#
+##################################################################
 
 ATOMIC_SYMBOL[1]="H" 
 ATOMIC_SYMBOL[2]="He"
@@ -57,6 +87,16 @@ function geom2xyz()
 	do
 		echo ${ATOMIC_SYMBOL[$a2]} $a4 $a5 $a6
 	done
+}
+
+##
+# @brief
+##
+function rxyz2xyz()
+{
+	local iFile=$1
+	
+	gawk 'BEGIN{ n=1 }(NR==1){nAtoms=$1}(NR==2){title=$0; print nAtoms; print title;}( NR>2 && n<=nAtoms ){ print $0; n++ }' $iFile
 }
 
 ##
@@ -124,11 +164,14 @@ function optgGAUSSIANTemplate()
 			
 		runGAUSSIAN input$SID.com > input$SID.out 2>&1
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
+		cp input$SID.com ${xyzFile%.*}.com 2> /dev/null
 		
 		if grep "Normal termination" input$SID.out > /dev/null
 		then
 			grep -A$(( $nAtoms+4 )) "Standard orientation:" input$SID.out | tail -n$nAtoms > .finalGeom$SID
 			geom2xyz .finalGeom$SID
+		else
+			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
 		fi
 	else
 		cat $xyzFile
@@ -161,6 +204,7 @@ function freqsGAUSSIANTemplate()
 		
 		runGAUSSIAN input$SID.com > input$SID.out 2>&1
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
+		cp input$SID.com ${xyzFile%.*}.com #2> /dev/null
 		
 		energy=`grep "SCF Done" input$SID.out | tail -n 1 | cut -d "=" -f 2 | cut -d "A" -f 1`
 		
@@ -199,50 +243,38 @@ function freqsGAUSSIANTemplate()
 ##
 # @brief
 ##
-function GAMESSTemplate_fixEnergyInRXYZ()
+function ienerGAUSSIANTemplate()
 {
 	local template=$1
 	local rxyzFile=$2
 	local charge=$3
 	local mult=$4
 	
-# 	local SID="-$rxyzFile$RANDOM"
-# 	
-# 	local nAtoms=""
-# 	local energy=""
-# 	
-# 	if [ -z "$charge" ]
-# 	then
-# 		charge="0"
-# 	fi
-# 	
-# 	if [ -z "$mult" ]
-# 	then
-# 		mult="1"
-# 	fi
-# 	
-# 	nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' $rxyzFile`
-# 	
-# 	if [ "$nAtoms" -gt 0  ]
-# 	then
-# 		rm -rf input$SID.dat
-# 		
-# 		rxyz2xyz $rxyzFile > .xyzFile$SID
-# 		fillTemplate $template .xyzFile$SID $charge $mult > input$SID.com
-# 		rm .xyzFile$SID
-# 		
-# 		rungms input$SID.com > input$SID.out 2>&1
-# 		
-# 		energy=`grep "FINAL .* ENERGY IS" input$SID.out | gawk '{print $5}'`
-# 		
-# 		sed 's/Energy = .*/Energy = '$energy'/g' $rxyzFile
-# 	fi
-# 	
-# 	if [ "$debug" == "debug" ]
-# 	then
-# 		mv input$SID.out ${rxyzFile%.*}.out
-# 		rm -rf .finalGeom$SID input$SID.dat input$SID.com input$SID.rst .finalGeom$SID
-# 	else
-# 		rm -rf .finalGeom$SID input$SID.dat input$SID.com input$SID.out input$SID.rst .finalGeom$SID
-# 	fi
+	local SID="-$rxyzFile$RANDOM"
+	
+	local nAtoms=""
+	
+	nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' $rxyzFile`
+	
+	if [ "$nAtoms" -gt 0  ]
+	then
+		rxyz2xyz $rxyzFile > .xyzFile$SID
+		fillTemplate $template .xyzFile$SID $charge $mult > input$SID.com
+		rm .xyzFile$SID
+			
+		runGAUSSIAN input$SID.com > input$SID.out 2>&1
+		cp input$SID.out ${rxyzFile%.*}.out 2> /dev/null
+		cp input$SID.com ${rxyzFile%.*}.com 2> /dev/null
+		
+		if grep "Normal termination" input$SID.out > /dev/null
+		then
+			energy=`grep -E "^[[:blank:]]+CCSD\(T\)= " input$SID.out | sed 's/D/E/g' | gawk '{printf "%.10f\n", $2}'`
+			
+			sed 's/Energy = .*/Energy = '$energy'/g' $rxyzFile
+		else
+			echo "***** FAILURE CONVERGE *****"
+		fi
+	fi
+	
+	rm -rf .finalGeom$SID input$SID.com input$SID.out .finalGeom$SID
 }

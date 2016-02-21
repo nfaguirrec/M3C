@@ -1067,13 +1067,13 @@ module MarkovChain_
 		write(unit,"(A)") "# Transition statistics"
 		write(unit,"(A)") "#------------------------------------"
 		
-		write(unit,"(A1,A49,A15)") "#", "reaction", "prob."
-		write(unit,"(A1,A49,A15)") "#", "--------", "-----"
+		write(unit,"(A1,A15,5X,A)") "#", "prob.", "reaction"
+		write(unit,"(A1,A15,5X,A)") "#", "-----", "--------"
 		call this.transitionHistogram.build()
 		call this.transitionHistogram.densityBegin( simIter )
 		do while( associated(simIter) )
 			srPair = this.transitionHistogram.pair( simIter )
-			write(unit,"(A50,F15.5)") srPair.first.fstr, srPair.second
+			write(unit,"(1X,F15.5,5X,A)") srPair.second, srPair.first.fstr
 			
 			simIter => simIter.next
 		end do
@@ -1081,13 +1081,13 @@ module MarkovChain_
 		write(unit,*) ""
 		write(unit,*) ""
 		
-		write(unit,"(A1,A49,A15)") "#", "reaction", "prob."
-		write(unit,"(A1,A49,A15)") "#", "--------", "-----"
+		write(unit,"(A1,A15,5X,A)") "#", "prob.", "reaction"
+		write(unit,"(A1,A15,5X,A)") "#", "-----", "--------"
 		call this.transitionDetHistogram.build()
 		call this.transitionDetHistogram.densityBegin( simIter )
 		do while( associated(simIter) )
 			srPair = this.transitionDetHistogram.pair( simIter )
-			write(unit,"(A50,F15.5)") srPair.first.fstr, srPair.second
+			write(unit,"(1X,F15.5,5X,A)") srPair.second, srPair.first.fstr
 			
 			simIter => simIter.next
 		end do
