@@ -64,13 +64,13 @@ function filterIsomers()
 				nAtoms2=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$j]}`
 				
 				valueF=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Chemical"`
-				valueC=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Connectivity"`
+				valueR=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Radius"`
 				valueI=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Inertia"`
 				
 				if [ "$nAtoms1" -ge 2 -a "$nAtoms1" -ge 2 ]
 				then
 					
-					if [ "$valueF" = "Chemical formula ...  OK" -a "$valueC" = "Connectivity ...  OK" ]
+					if [ "$valueF" = "Chemical formula ...  OK" -a "$valueR" = "Radius ...  OK" ]
 					then
 						if [[ "$valueI" =~ "Inertia moment ...  OK" ]]
 						then

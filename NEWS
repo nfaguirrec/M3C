@@ -1,0 +1,9 @@
+--------------
+ VERSION 1.8
+--------------
+* Sampling of rotational energy is now included.
+* Fixed a bug in format for large names of fragmentation channels in M3C.makeDB
+* Comparison of molecules in M3C-gamess.geniso and M3C-gaussian.geniso has been improved.
+* Fixes to make M3C-gaussian.optg compatible with M3C-gamess.optg.
+* M3C-gaussian.iener in now available.
+* Reaction plots are now available through M3C.analysis tool (depend on graphviz www.graphviz.org). Options "reactions" and "reactionsd"

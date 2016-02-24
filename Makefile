@@ -17,6 +17,7 @@ binary:
 	mkdir M3C-v${VERSION}
 	mkdir M3C-v${VERSION}/doc
 	cp README M3C-v${VERSION}/
+	cp NEWS M3C-v${VERSION}/
 	cp doc/tutorial/M3C-tutorial.pdf M3C-v${VERSION}/doc/
 #	cp -r examples M3C-v${VERSION}
 	cp -r utils M3C-v${VERSION}
