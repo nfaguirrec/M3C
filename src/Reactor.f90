@@ -721,9 +721,9 @@ module Reactor_
 		
 		call reactives.init( 1 )
 		
-		write(*,"(A60,A60,A10)") "reactive", "channel", "energy"
-		write(*,"(A60,A60,A10)") "", "", "eV"
-		write(*,"(A60,A60,A10)") "--------", "-------", "------"
+		write(*,"(A10,A30,5X,A)") "energy", "reactive", "channel"
+		write(*,"(A10,A30,5X,A)")     "eV", "", ""
+		write(*,"(A10,A30,5X,A)") "------", "--------", "-------"
 		
 		do id=1,size(FragmentsDB_instance.clusters)
 			if( FragmentsDB_instance.clusters(id).nAtoms() == 1 ) cycle
@@ -759,7 +759,7 @@ module Reactor_
 					energy = ( FragmentsDB_instance.getEelecFromName(pair.first.fstr)-FragmentsDB_instance.getEelecFromName(reactives.label()) )/eV
 					
 					if( detailed ) &
-						write(*,"(A60,F10.4)") trim(adjustl(pair.first.fstr)), energy
+						write(*,"(F10.4,5X,A)") energy, trim(adjustl(pair.first.fstr))
 					
 					if( energy < minValue ) then
 						if( energy < 0.0_8 ) then
@@ -786,11 +786,11 @@ module Reactor_
 			if( detailed ) &
 				write(*,*) ""
 				
+			write(*,"(F10.5,A30,5X,A)",advance="no") minValue, trim(adjustl(reactives.label())), trim(adjustl(labelMinEnergy.fstr))
 			if( .not. warningNegativeEnergy ) then
-				write(*,"(A60,A60,F10.5)") trim(adjustl(reactives.label())), trim(adjustl(labelMinEnergy.fstr)), minValue
+				write(*,*) ""
 			else
-				write(*,"(A60,A60,F10.5,A,A30,F10.5,A)") trim(adjustl(reactives.label())), trim(adjustl(labelMinEnergy.fstr)), minValue, &
-										   "   ==> ( ", trim(adjustl(labelMinNegativeEnergy.fstr)), minNegativeValue, " )"
+				write(*,"(A,F10.5,A)") " ==> "//trim(adjustl(labelMinNegativeEnergy.fstr))//" (", minNegativeValue, ")"
 			end if
 			
 			if( detailed ) then

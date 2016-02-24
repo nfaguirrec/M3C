@@ -243,6 +243,7 @@ moveto 0 1 0 0 -90
 zoom $ZOOM
 write image $effSize $effSize ${iFile%.*}.gif
 EOF
+		
 		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1
 		rm geom$sID.jmol
 		
