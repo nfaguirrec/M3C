@@ -24,11 +24,11 @@
 #
 ##################################################################
 
-export M3CSLURM_GAUSSIAN_HOME=/usr/local/gaussian/gaussian09.c1-AMD-SSE4a/g09/
-export M3CSLURM_GAUSSIAN_SCRATCH=/scratch/$USER/gaussian
+test -z "$M3CSLURM_GAUSSIAN_HOME"     && M3CSLURM_GAUSSIAN_HOME=$HOME/.gaussian
+test -z "$M3CSLURM_GAUSSIAN_SCRATCH"  && M3CSLURM_GAUSSIAN_SCRATCH=/scratch/$USER/gaussian
 
-export M3CSLURM_GAMESS_HOME=$HOME/.gamess
-export M3CSLURM_GAMESS_SCRATCH=/scratch/$USER/gamess
+test -z "$M3CSLURM_GAMESS_HOME"       && M3CSLURM_GAMESS_HOME=$HOME/.gamess
+test -z "$M3CSLURM_GAMESS_SCRATCH"    && M3CSLURM_GAMESS_SCRATCH=/scratch/$USER/gamess
 
 ##
 # BASIC CONFIGURATION
