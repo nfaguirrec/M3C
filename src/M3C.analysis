@@ -7,6 +7,8 @@ test -z "$M3C_PLOT_LW"       && M3C_PLOT_LW="2.0"
 test -z "$M3C_PLOT_TERMINAL" && M3C_PLOT_TERMINAL="set terminal wxt size 800,400"
 test -z "$M3C_GNUPLOT_EXEC"  && M3C_GNUPLOT_EXEC="gnuplot"
 
+LOCAL_DIR=$PWD  # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+
 ####################################
 #
 ####################################
@@ -113,7 +115,7 @@ EOF
 	do
 		echo "'' i $(($i-1)) u :5 t 'vibrational' w l lw 0.6 lt $i, \\" >> .plotE-$$
 	done
-
+	
 	cat >> .plotE-$$ << EOF
 "" u :(\$7-($firstElecEnergy)) t "total" w l lt 0 lw 1.5
 
@@ -138,6 +140,7 @@ unset multiplot
 pause -1
 EOF
 	
+	cp $iFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotE-$$
 
 	rm .plotE-$$
@@ -240,6 +243,7 @@ unset multiplot
 pause -1
 EOF
 	
+	cp $iFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotE-$$
 
 	rm .plotE-$$
@@ -471,6 +475,7 @@ EOF
 	
 	echo "pause -1" >> .plotE-$$
 	
+	cp $iFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotE-$$
 
 	rm .plotE-$$
@@ -600,7 +605,8 @@ EOF
 			echo "'.rawData-$$' i $i u 1:2:(1e-3) smooth acsplines w l lw 2.5" >> .plotJ-$$
 			echo "pause -1" >> .plotJ-$$
 	done
-
+	
+	cp .rawData-$$ $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotJ-$$
 	
 	rm .rawData-$$ .plotJ-$$
@@ -654,6 +660,8 @@ plot [] [0:] \
 
 pause -1
 EOF
+	
+	cp .dataC-$$ $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotC-$$
 	
 	############################################
@@ -690,6 +698,8 @@ plot [] [0:] \
 
 pause -1
 EOF
+	
+	cp .dataC-$$ $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotC-$$
 	
 	rm .dataC-$$ .plotC-$$
@@ -743,6 +753,8 @@ plot [] [0:] \
 
 pause -1
 EOF
+	
+	cp .dataC-$$ $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotC-$$
 	
 	############################################
@@ -779,6 +791,8 @@ plot [] [0:] \
 
 pause -1
 EOF
+	
+	cp .dataC-$$ $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotC-$$
 	
 	rm .dataC-$$ .plotC-$$
@@ -1025,6 +1039,7 @@ EOF
 	
 	echo "pause -1" >> .plotMtj-$iFile$$
 	
+	cp matrix.data $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotMtj-$iFile$$
 	
 	rm .plotMtj-$iFile$$ matrix.data
@@ -1081,6 +1096,7 @@ plot \
 pause -1
 EOF
 	
+	cp $energyDir/ecompTable$$.dat $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotEComp-$iFile$$ 2> /dev/null
 	
 	rm $energyDir/ecompTable$$.dat
@@ -1139,6 +1155,7 @@ plot [] [-2:102] \
 pause -1
 EOF
 	
+	cp $energyDir/ecompTable$$.dat $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotEComp-$iFile$$ 2> /dev/null
 	
 	rm $energyDir/ecompTable$$.dat
@@ -1186,6 +1203,7 @@ plot \
 pause -1
 EOF
 	
+	cp $energyDir/temperatureTable$$.dat $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotTemperature-$iFile$$ 2> /dev/null
 	
 	rm $energyDir/temperatureTable$$.dat
@@ -1288,6 +1306,7 @@ plot [-$nChannels*0.1:$nChannels*1.1] [-$yMax*0.1:$yMax*1.1] \
 pause -1
 EOF
 	
+	cp $BRFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotBR-$iFile$$ 2> /dev/null
 	
 	rm .plotBR-$iFile$$
@@ -1390,6 +1409,7 @@ plot [-$nChannels*0.1:$nChannels*1.1] [-$yMax*0.1:$yMax*1.1] \
 pause -1
 EOF
 	
+	cp $BRFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotBR-$iFile$$
 	
 	rm .plotBR-$iFile$$
@@ -1471,6 +1491,7 @@ plot [-$nSpecies*0.1:$nSpecies*1.1] [-$yMax*0.1:$yMax*1.1] \
 pause -1
 EOF
 	
+	cp $BRFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotBR-$iFile$$
 	rm .plotBR-$iFile$$
 	
@@ -1519,6 +1540,8 @@ plot [0:] [-5:125] \
 
 pause -1
 EOF
+	
+	cp .$BRFile-tmp$$ $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotmqBR-$iFile$$
 	rm .plotmqBR-$iFile$$
 	rm .$BRFile-tmp$$
@@ -1611,6 +1634,7 @@ plot [-$xMax*0.04:$xMax*1.04] [-$yMax*0.04:$yMax*1.04] \
 pause -1
 EOF
 	
+	cp $eDistFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotED-$iFile$$
 	
 	rm .plotED-$iFile$$
@@ -1681,6 +1705,7 @@ plot [-$xMax*0.04:$xMax*1.04] [-$yMax*0.04:$yMax*1.04] \
 pause -1
 EOF
 	
+	cp $eDistFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotED-$iFile$$
 	
 	rm .plotED-$iFile$$
