@@ -205,7 +205,7 @@ function freqsGAUSSIANTemplate()
 		
 		runGAUSSIAN input$SID.com > input$SID.out 2>&1
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
-		cp input$SID.com ${xyzFile%.*}.com #2> /dev/null
+		cp input$SID.com ${xyzFile%.*}.com 2> /dev/null
 		
 		energy=`grep "SCF Done" input$SID.out | tail -n 1 | cut -d "=" -f 2 | cut -d "A" -f 1`
 		
