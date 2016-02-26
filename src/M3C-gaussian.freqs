@@ -47,6 +47,7 @@ frequencies()
 	
 	freqsGAUSSIANTemplate $GAUSSIAN_TEMPLATE $iFileXYZ $charge $mult $DEBUG > ${iFileXYZ%.*}.rxyz
 	mv ${iFileXYZ%.*}.out history.freqs/ 2> /dev/null
+	mv ${iFileXYZ%.*}.com history.freqs/ 2> /dev/null
 }
 
 main()
