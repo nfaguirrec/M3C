@@ -85,7 +85,7 @@ function geom2xyz()
 	
 	cat $iFile | while read a1 a2 a3 a4 a5 a6
 	do
-		echo ${ATOMIC_SYMBOL[$a2]} $a4 $a5 $a6
+		printf "%5s%12.6f%12.6f%12.6f\n" ${ATOMIC_SYMBOL[$a2]} $a4 $a5 $a6
 	done
 }
 
@@ -168,7 +168,8 @@ function optgGAUSSIANTemplate()
 		
 		if grep "Normal termination" input$SID.out > /dev/null
 		then
-			grep -A$(( $nAtoms+4 )) "Standard orientation:" input$SID.out | tail -n$nAtoms > .finalGeom$SID
+# 			grep -A$(( $nAtoms+4 )) "Standard orientation:" input$SID.out | tail -n$nAtoms > .finalGeom$SID
+			grep -A$(( $nAtoms+4 )) "Input orientation:" input$SID.out | tail -n$nAtoms > .finalGeom$SID
 			geom2xyz .finalGeom$SID
 		else
 			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
