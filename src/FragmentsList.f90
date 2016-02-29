@@ -773,9 +773,15 @@ module FragmentsList_
 		! Se obtiene la matriz inversa del tensor
 		! de inercia de n. Es diagonal en body fix
 		call invIn.init( 3, 3, 0.0_8 )
-		do j=3,4-this.fl(),-1
-			invIn.data( j, j ) = 1.0_8/this.diagInertiaTensor( j )
-		end do
+		if ( n == 1 ) then
+			do j=3,4-this.clusters(1).fr(),-1
+				invIn.data( j, j ) = 1.0_8/this.clusters(1).diagInertiaTensor.get( j, j )
+			end do
+		else
+			do j=3,4-this.fl(),-1
+				invIn.data( j, j ) = 1.0_8/this.diagInertiaTensor( j )
+			end do
+		end if
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1152,14 +1158,22 @@ module FragmentsList_
 				logMu = logMu + log(this.clusters(i).mass())
 			end do
 			!logMu = logMu - log( this.mass() )
-				
-			this.LnLambda = \
-				0.5_8*s*log(2.0_8*Math_PI) &
-				- log( Gamma(0.5_8*s) ) &
-				+ 1.5*logMu &
-				+ this.logVfree_ + this.logVtheta_ &
-				+ 0.5_8*this.LnDiagI_ &
-				+ (0.5_8*s-1.0_8)*log(Et)
+			
+			if ( n == 1 ) then	
+				this.LnLambda = \
+					0.5_8*this.clusters(1).fr()*log(2.0_8*Math_PI) &
+					- log( Gamma(0.5_8*this.clusters(1).fr()) ) &
+					+ this.logVtheta_ &
+					+ 0.5_8*this.LnDiagI_ 
+			else
+				this.LnLambda = \
+					0.5_8*s*log(2.0_8*Math_PI) &
+					- log( Gamma(0.5_8*s) ) &
+					+ 1.5*logMu &
+					+ this.logVfree_ + this.logVtheta_ &
+					+ 0.5_8*this.LnDiagI_ &
+					+ (0.5_8*s-1.0_8)*log(Et)
+			end if
 				
 		end if
 		
