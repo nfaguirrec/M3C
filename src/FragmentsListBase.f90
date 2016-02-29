@@ -1946,6 +1946,11 @@ module FragmentsListBase_
 		effCenter = 0.0_8
 		if( present(center) ) effCenter = center
 		
+		if ( this.nMolecules() == 1 ) then
+			Im = this.clusters(1).inertiaTensor( center )
+			return
+		end if
+		
 		allocate( X(this.nMolecules()) )
 		allocate( Y(this.nMolecules()) )
 		allocate( Z(this.nMolecules()) )
