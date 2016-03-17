@@ -877,6 +877,16 @@ module MarkovChain_
 		write(unit,*) ""
 		write(unit,*) ""
 		
+		if( EffgenEbkl ) then
+			ebklFileName = "E_"//trim(adjustl(FString_fromReal(this.excitationEnergy/eV,"(F10.5)")))//".eblkSd"
+			call showAverHistogram( this.speciesDetHistogram, unit, ebklFileName, this.excitationEnergy/eV )
+		else
+			call showAverHistogram( this.speciesDetHistogram, unit )
+		end if
+		
+		write(unit,*) ""
+		write(unit,*) ""
+		
 		write(unit,"(A)") "#------------------------------------"
 		write(unit,"(A)") "# Channels histogram"
 		write(unit,"(A)") "#------------------------------------"
@@ -896,16 +906,6 @@ module MarkovChain_
 			call showAverHistogram( this.channelDetHistogram, unit, ebklFileName, this.excitationEnergy/eV )
 		else
 			call showAverHistogram( this.channelDetHistogram, unit )
-		end if
-		
-		write(unit,*) ""
-		write(unit,*) ""
-		
-		if( EffgenEbkl ) then
-			ebklFileName = "E_"//trim(adjustl(FString_fromReal(this.excitationEnergy/eV,"(F10.5)")))//".eblkSd"
-			call showAverHistogram( this.speciesDetHistogram, unit, ebklFileName, this.excitationEnergy/eV )
-		else
-			call showAverHistogram( this.speciesDetHistogram, unit )
 		end if
 		
 		write(unit,*) ""

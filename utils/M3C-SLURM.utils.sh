@@ -24,11 +24,12 @@
 #
 ##################################################################
 
-test -z "$M3CSLURM_GAUSSIAN_HOME"     && M3CSLURM_GAUSSIAN_HOME=$HOME/.gaussian
-test -z "$M3CSLURM_GAUSSIAN_SCRATCH"  && M3CSLURM_GAUSSIAN_SCRATCH=/scratch/$USER/gaussian
-
-test -z "$M3CSLURM_GAMESS_HOME"       && M3CSLURM_GAMESS_HOME=$HOME/.gamess
-test -z "$M3CSLURM_GAMESS_SCRATCH"    && M3CSLURM_GAMESS_SCRATCH=/scratch/$USER/gamess
+#############################
+# M3C_GAUSSIAN_HOME
+# M3C_GAUSSIAN_SCRATCH
+# M3C_GAMESS_HOME
+# M3C_GAMESS_SCRATCH
+#############################
 
 ##
 # BASIC CONFIGURATION
@@ -110,7 +111,7 @@ function SLURM.M3C-gamess.geniso()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-export PATH=$M3CSLURM_GAMESS_HOME:\$PATH
+#export PATH=$M3C_GAMESS_HOME:\$PATH
 
 M3C-gamess.geniso $* > SLURM.log 2> SLURM.err
 EOF
@@ -135,7 +136,7 @@ function SLURM.M3C-gamess.optg()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-export PATH=$M3CSLURM_GAMESS_HOME:\$PATH
+#export PATH=$M3C_GAMESS_HOME:\$PATH
 
 M3C-gamess.optg $* > SLURM.log 2> SLURM.err
 EOF
@@ -160,9 +161,32 @@ function SLURM.M3C-gamess.freqs()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-export PATH=$M3CSLURM_GAMESS_HOME:\$PATH
+#export PATH=$M3C_GAMESS_HOME:\$PATH
 
 M3C-gamess.freqs $* > SLURM.log 2> SLURM.err
+EOF
+	
+	sbatch run$$.slurm
+	
+	cp run$$.slurm log/
+	rm run$$.slurm
+}
+
+##
+# M3C-gamess.iener CONFIGURATION
+#
+function SLURM.M3C-gamess.iener()
+{
+	local queueParams=$1
+	local name=""
+	
+	SLURM.buildHead $queueParams $name > run$$.slurm
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.slurm << EOF
+M3C-gamess.iener $* > SLURM.log 2> SLURM.err
 EOF
 	
 	sbatch run$$.slurm
@@ -185,13 +209,13 @@ function SLURM.M3C-gaussian.geniso()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-export GAUSS_EXEDIR=$M3CSLURM_GAUSSIAN_HOME
-export PATH=\$GAUSS_EXEDIR:\$PATH
-export GAUSS_SCRDIR=$M3CSLURM_GAUSSIAN_SCRATCH
-if [ ! -d  "\$GAUSS_SCRDIR" ]
-then
-        mkdir -p \$GAUSS_SCRDIR
-fi
+#export GAUSS_EXEDIR=$M3C_GAUSSIAN_HOME
+#export PATH=\$GAUSS_EXEDIR:\$PATH
+#export GAUSS_SCRDIR=$M3C_GAUSSIAN_SCRATCH
+#if [ ! -d  "\$GAUSS_SCRDIR" ]
+#then
+#        mkdir -p \$GAUSS_SCRDIR
+#fi
 
 M3C-gaussian.geniso $* > SLURM.log 2> SLURM.err
 EOF
@@ -216,13 +240,13 @@ function SLURM.M3C-gaussian.optg()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-export GAUSS_EXEDIR=$M3CSLURM_GAUSSIAN_HOME
-export PATH=\$GAUSS_EXEDIR:\$PATH
-export GAUSS_SCRDIR=$M3CSLURM_GAUSSIAN_SCRATCH
-if [ ! -d  "\$GAUSS_SCRDIR" ]
-then
-        mkdir -p \$GAUSS_SCRDIR
-fi
+#export GAUSS_EXEDIR=$M3C_GAUSSIAN_HOME
+#export PATH=\$GAUSS_EXEDIR:\$PATH
+#export GAUSS_SCRDIR=$M3C_GAUSSIAN_SCRATCH
+#if [ ! -d  "\$GAUSS_SCRDIR" ]
+#then
+#        mkdir -p \$GAUSS_SCRDIR
+#fi
 
 M3C-gaussian.optg $* > SLURM.log 2> SLURM.err
 EOF
@@ -247,15 +271,46 @@ function SLURM.M3C-gaussian.freqs()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-export GAUSS_EXEDIR=$M3CSLURM_GAUSSIAN_HOME
-export PATH=\$GAUSS_EXEDIR:\$PATH
-export GAUSS_SCRDIR=$M3CSLURM_GAUSSIAN_SCRATCH
-if [ ! -d  "\$GAUSS_SCRDIR" ]
-then
-        mkdir -p \$GAUSS_SCRDIR
-fi
+#export GAUSS_EXEDIR=$M3C_GAUSSIAN_HOME
+#export PATH=\$GAUSS_EXEDIR:\$PATH
+#export GAUSS_SCRDIR=$M3C_GAUSSIAN_SCRATCH
+#if [ ! -d  "\$GAUSS_SCRDIR" ]
+#then
+#        mkdir -p \$GAUSS_SCRDIR
+#fi
 
 M3C-gaussian.freqs $* > SLURM.log 2> SLURM.err
+EOF
+	
+	sbatch run$$.slurm
+	
+	cp run$$.slurm log/
+	rm run$$.slurm
+}
+
+##
+# M3C-gaussian.iener CONFIGURATION
+#
+function SLURM.M3C-gaussian.iener()
+{
+	local queueParams=$1
+	local name=""
+	
+	SLURM.buildHead $queueParams $name > run$$.slurm
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.slurm << EOF
+#export GAUSS_EXEDIR=$M3C_GAUSSIAN_HOME
+#export PATH=\$GAUSS_EXEDIR:\$PATH
+#export GAUSS_SCRDIR=$M3C_GAUSSIAN_SCRATCH
+#if [ ! -d  "\$GAUSS_SCRDIR" ]
+#then
+#        mkdir -p \$GAUSS_SCRDIR
+#fi
+
+M3C-gaussian.iener $* > SLURM.log 2> SLURM.err
 EOF
 	
 	sbatch run$$.slurm

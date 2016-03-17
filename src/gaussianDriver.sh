@@ -56,7 +56,14 @@ function runGAUSSIAN()
 {
 	local iFile=$1
 	
-	g09  < $iFile
+	export GAUSS_EXEDIR=$M3C_GAUSSIAN_HOME
+	export GAUSS_SCRDIR=$M3C_GAUSSIAN_SCRATCH
+	if [ ! -d  "$GAUSS_SCRDIR" ]
+	then
+        	mkdir -p $GAUSS_SCRDIR
+	fi
+	
+	$M3C_GAUSSIAN_HOME/g09  < $iFile
 }
 
 ##

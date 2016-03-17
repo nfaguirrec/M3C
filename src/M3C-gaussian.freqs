@@ -59,6 +59,7 @@ main()
 	if [ -n "$SLURM_NTASKS" ]
 	then
 		nThreads=$SLURM_NTASKS
+#		nThreads=$(( $SLURM_NTASKS/4 ))
 	else
 		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
