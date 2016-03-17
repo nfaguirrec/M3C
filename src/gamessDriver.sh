@@ -77,7 +77,7 @@ function runGAMESS()
 {
 	local iFile=$1
 	
-	rungms $iFile 01 1
+	$M3C_GAMESS_HOME/rungms $iFile 01 1
 }
 
 ##
