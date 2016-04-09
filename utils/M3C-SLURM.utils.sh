@@ -111,9 +111,7 @@ function SLURM.M3C-gamess.geniso()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-#export PATH=$M3C_GAMESS_HOME:\$PATH
-
-M3C-gamess.geniso $* > SLURM.log 2> SLURM.err
+M3C-gamess.geniso $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
@@ -136,9 +134,7 @@ function SLURM.M3C-gamess.optg()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-#export PATH=$M3C_GAMESS_HOME:\$PATH
-
-M3C-gamess.optg $* > SLURM.log 2> SLURM.err
+M3C-gamess.optg $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
@@ -161,9 +157,7 @@ function SLURM.M3C-gamess.freqs()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-#export PATH=$M3C_GAMESS_HOME:\$PATH
-
-M3C-gamess.freqs $* > SLURM.log 2> SLURM.err
+M3C-gamess.freqs $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
@@ -186,7 +180,7 @@ function SLURM.M3C-gamess.iener()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-M3C-gamess.iener $* > SLURM.log 2> SLURM.err
+M3C-gamess.iener $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
@@ -209,15 +203,7 @@ function SLURM.M3C-gaussian.geniso()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-#export GAUSS_EXEDIR=$M3C_GAUSSIAN_HOME
-#export PATH=\$GAUSS_EXEDIR:\$PATH
-#export GAUSS_SCRDIR=$M3C_GAUSSIAN_SCRATCH
-#if [ ! -d  "\$GAUSS_SCRDIR" ]
-#then
-#        mkdir -p \$GAUSS_SCRDIR
-#fi
-
-M3C-gaussian.geniso $* > SLURM.log 2> SLURM.err
+M3C-gaussian.geniso $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
@@ -240,15 +226,7 @@ function SLURM.M3C-gaussian.optg()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-#export GAUSS_EXEDIR=$M3C_GAUSSIAN_HOME
-#export PATH=\$GAUSS_EXEDIR:\$PATH
-#export GAUSS_SCRDIR=$M3C_GAUSSIAN_SCRATCH
-#if [ ! -d  "\$GAUSS_SCRDIR" ]
-#then
-#        mkdir -p \$GAUSS_SCRDIR
-#fi
-
-M3C-gaussian.optg $* > SLURM.log 2> SLURM.err
+M3C-gaussian.optg $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
@@ -271,15 +249,7 @@ function SLURM.M3C-gaussian.freqs()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-#export GAUSS_EXEDIR=$M3C_GAUSSIAN_HOME
-#export PATH=\$GAUSS_EXEDIR:\$PATH
-#export GAUSS_SCRDIR=$M3C_GAUSSIAN_SCRATCH
-#if [ ! -d  "\$GAUSS_SCRDIR" ]
-#then
-#        mkdir -p \$GAUSS_SCRDIR
-#fi
-
-M3C-gaussian.freqs $* > SLURM.log 2> SLURM.err
+M3C-gaussian.freqs $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
@@ -302,15 +272,30 @@ function SLURM.M3C-gaussian.iener()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-#export GAUSS_EXEDIR=$M3C_GAUSSIAN_HOME
-#export PATH=\$GAUSS_EXEDIR:\$PATH
-#export GAUSS_SCRDIR=$M3C_GAUSSIAN_SCRATCH
-#if [ ! -d  "\$GAUSS_SCRDIR" ]
-#then
-#        mkdir -p \$GAUSS_SCRDIR
-#fi
+M3C-gaussian.iener $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
+EOF
+	
+	sbatch run$$.slurm
+	
+	cp run$$.slurm log/
+	rm run$$.slurm
+}
 
-M3C-gaussian.iener $* > SLURM.log 2> SLURM.err
+##
+# M3C-gaussian.genpot CONFIGURATION
+#
+function SLURM.M3C-gaussian.genpot()
+{
+	local queueParams=$1
+	local name=""
+	
+	SLURM.buildHead $queueParams $name > run$$.slurm
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.slurm << EOF
+M3C-gaussian.genpot $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
@@ -333,7 +318,7 @@ function SLURM.M3C()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-M3C $* > SLURM.log 2> SLURM.err
+M3C $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
@@ -356,7 +341,7 @@ function SLURM.M3C.p()
 	shift # $1 will be discarded
 	
 	cat >> run$$.slurm << EOF
-M3C.p $* > SLURM.log 2> SLURM.err
+M3C.p $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm

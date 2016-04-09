@@ -31,6 +31,20 @@
 ##################################################################
 
 GAUSSIAN_TEMPLATE=$1
+NPROCSHARED=$2
+
+##############################
+# Default options
+##############################
+if [ -z "$GAUSSIAN_TEMPLATE" ]
+then
+	echo "usage: M3C-gaussian.optg gaussianTemplate [ nProcShared ]"
+	echo "                                                 1       "
+	exit
+fi
+
+[ -z "$NPROCSHARED" ] && NPROCSHARED=1
+##############################
 
 if [ -f "$M3C_HOME/bin/gaussianDriver.sh" ]
 then
@@ -46,7 +60,7 @@ function optgeom()
 	local mult=$3
 	
 	cp $iFileXYZ ${iFileXYZ%.*}.xyz0
-	optgGAUSSIANTemplate $GAUSSIAN_TEMPLATE ${iFileXYZ%.*}.xyz0 $charge $mult > ${iFileXYZ%.*}.xyz
+	optgGAUSSIANTemplate $GAUSSIAN_TEMPLATE $NPROCSHARED ${iFileXYZ%.*}.xyz0 $charge $mult > ${iFileXYZ%.*}.xyz
 	mv ${iFileXYZ%.*}.out history.optg/ 2> /dev/null
 	mv ${iFileXYZ%.*}.com history.optg/ 2> /dev/null
 }
@@ -67,11 +81,12 @@ function main()
 	else
 		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
+	nThreads=$(( $nThreads/$NPROCSHARED ))
 	
 	if [ -d "history.optg" ]
 	then
 		echo "@@@ WARNING @@@ There is already a history directory (history.optg). Backup copy will be generated"
-		mv history.optg history.optg.backup
+		mv history.optg history.optg.backup-`date +%Y%m%d`
 	fi
 	mkdir history.optg
 	

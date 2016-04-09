@@ -20,6 +20,8 @@ module MarkovChain_
 	use FragmentsDB_
 	use Reactor_
 	
+	use GOptionsM3C_
+	
 	implicit none
 	private
 	
@@ -237,9 +239,11 @@ module MarkovChain_
 		integer :: nTimesBlocked ! si se bloquea 2 veces consecutivas fuerza a random
 		integer :: historyFrequency
 		character(10), allocatable :: taskTokens(:)
+		character(10), allocatable :: bufferTokens(:)
 		character(10) :: currentTask
+		integer :: taskMult
 		real(8) :: p, Pi
-		integer :: n, i, j, nExp, iBuffer
+		integer :: n, i, j, k, nExp, iBuffer
 		type(String) :: sBuffer
 		character(100) :: geometryFileName
 		character(2) :: origin
@@ -304,75 +308,73 @@ module MarkovChain_
 				do i=1,size(taskTokens)
 					if( n == this.numberOfEvents+1 ) exit
 					
-					currentTask = trim(adjustl(taskTokens(i)))
+					call FString_split( taskTokens(i), bufferTokens, "*" )
+					
+					if( FString_isNumeric( bufferTokens(1) ) ) then
+						taskMult = FString_toInteger( bufferTokens(1) )
+						currentTask = trim(adjustl( bufferTokens(2) ))
+					else
+						taskMult = 1
+						currentTask = trim(adjustl( bufferTokens(1) ))
+					end if
+					
+! 					currentTask = trim(adjustl(taskTokens(i)))
 					call react.setType( currentTask )
 					
-! 					if( n==1 ) then
-! 						if( this.tracking == "energy" ) then
-! 							sBuffer = react.reactives.energyHistoryLine( origin )
-! 						else if( this.tracking == "weight" ) then
-! 							sBuffer = react.reactives.weightHistoryLine( origin )
-! 						end if
-! 					end if
+					do k=1,taskMult
+						if( n == this.numberOfEvents+1 ) exit
+						
+	! 					if( n==1 ) then
+	! 						if( this.tracking == "energy" ) then
+	! 							sBuffer = react.reactives.energyHistoryLine( origin )
+	! 						else if( this.tracking == "weight" ) then
+	! 							sBuffer = react.reactives.weightHistoryLine( origin )
+	! 						end if
+	! 					end if
 
-					call react.run()
-					
-					! Si la energía cinetica es negativa
-					if( .not. react.state ) then
+						call react.run()
 						
-! 						if( n == 1 ) then
-! 							call react.reactives.initialGuessFragmentsList()
-! 							write(*,*) "Trying another initial guess"
-! 							cycle
-! 						end if
-						
-						! Se fuerza el uso de RigidMoleculeList.randomCenters() solo para la siguiente llamada
-						! a RigidMoleculeList.changeGeometry()
-						if( nTimesBlocked == this.freqBlockingCheck ) then
-							call GOptions_info( "Blocked. Forcing centers completely random", "MarkovChain" )
+						! Si la energía cinetica es negativa
+						if( .not. react.state ) then
 							
-							react.reactives.forceRandomCenters = .true.
-							nTimesBlocked = 0
-						else
-							nTimesBlocked = nTimesBlocked + 1
-						end if
+	! 						if( n == 1 ) then
+	! 							call react.reactives.initialGuessFragmentsList()
+	! 							write(*,*) "Trying another initial guess"
+	! 							cycle
+	! 						end if
 							
-						call GOptions_info( "Step rejected ( Negative energy )", "MarkovChain" )
-						
-						origin = "e"//trim(currentTask)
-						
-						call this.reactorRejectedHistogram.append( FString_toString( trim(currentTask) ) )
-						call this.reactorStatusHistogram.append( FString_toString( "e.REJECTED(E<0) " ) )
-					else
-					
-						nTimesBlocked = 0  ! El bloqueo debe ser consecutivo, así que si no pasa por negative energy se cuenta nuevamente
-						
-						Pi = react.products.LnW()-react.reactives.LnW()
-						
-						if( Pi > 0.0_8 ) then
-							if( trim(react.reactives.label( details=.false. )) /= trim(react.products.label( details=.false. )) ) then
-								sBuffer = trim(react.reactives.label( details=.false. ))//"-->"//trim(react.products.label( details=.false. ))
-								call this.transitionHistogram.add( sBuffer )
+							! Se fuerza el uso de RigidMoleculeList.randomCenters() solo para la siguiente llamada
+							! a RigidMoleculeList.changeGeometry()
+							if( nTimesBlocked == this.freqBlockingCheck ) then
+								
+								if( GOptionsM3C_useRandomWalkers ) then
+									GOptionsM3C_randomWalkStepRadius = GOptionsM3C_randomWalkStepRadius*0.9_8
+									call GOptions_info( &
+										"Blocked. Reducing randomWalkStepRadius in 1% ("//FString_fromReal(GOptionsM3C_randomWalkStepRadius/angs)//" A)", &
+										"MarkovChain" )
+								else
+									call GOptions_info( "Blocked. Forcing centers completely random", "MarkovChain" )
+									react.reactives.forceRandomCenters = .true.
+								end if
+								
+								nTimesBlocked = 0
+							else
+								nTimesBlocked = nTimesBlocked + 1
 							end if
-						
-							if( trim(react.reactives.label( details=.true. )) /= trim(react.products.label( details=.true. )) ) then
-								sBuffer = trim(react.reactives.label( details=.true. ))//"-->"//trim(react.products.label( details=.true. ))
-								call this.transitionDetHistogram.add( sBuffer )
-							end if
+								
+							call GOptions_info( "Step rejected ( Negative energy )", "MarkovChain" )
 							
-							react.reactives = react.products
+							origin = "e"//trim(currentTask)
 							
-							call GOptions_info( &
-							  "Step accepted logPi="//trim(adjustl(FString_fromReal(Pi,"(F10.3)")))//"  ( logPi > 0 )", "MarkovChain" )
-							
-							origin = "a"//trim(currentTask)
-							
-							call this.reactorAcceptedHistogram.append( FString_toString( trim(currentTask) ) )
-							call this.reactorStatusHistogram.append( FString_toString( "a.ACCEPTED      " ) )
+							call this.reactorRejectedHistogram.append( FString_toString( trim(currentTask) ) )
+							call this.reactorStatusHistogram.append( FString_toString( "e.REJECTED(E<0) " ) )
 						else
-							p = log( RandomUtils_uniform( [0.0_8, 1.0_8] ) )
+						
+							nTimesBlocked = 0  ! El bloqueo debe ser consecutivo, así que si no pasa por negative energy se cuenta nuevamente
 							
-							if( p <= Pi ) then
+							Pi = react.products.LnW()-react.reactives.LnW()
+							
+							if( Pi > 0.0_8 ) then
 								if( trim(react.reactives.label( details=.false. )) /= trim(react.products.label( details=.false. )) ) then
 									sBuffer = trim(react.reactives.label( details=.false. ))//"-->"//trim(react.products.label( details=.false. ))
 									call this.transitionHistogram.add( sBuffer )
@@ -382,87 +384,111 @@ module MarkovChain_
 									sBuffer = trim(react.reactives.label( details=.true. ))//"-->"//trim(react.products.label( details=.true. ))
 									call this.transitionDetHistogram.add( sBuffer )
 								end if
-
+								
 								react.reactives = react.products
 								
 								call GOptions_info( &
-								  "Step accepted logP="//trim(adjustl(FString_fromReal(p,"(F10.3)")))// &
-								  ",logPi="//trim(adjustl(FString_fromReal(Pi,"(F10.3)")))//"  ( logP <= logPi )", "MarkovChain" )
+								"Step accepted logPi="//trim(adjustl(FString_fromReal(Pi,"(F10.3)")))//"  ( logPi > 0 )", "MarkovChain" )
 								
-								origin = "p"//trim(currentTask)
+								origin = "a"//trim(currentTask)
 								
 								call this.reactorAcceptedHistogram.append( FString_toString( trim(currentTask) ) )
-								call this.reactorStatusHistogram.append( FString_toString( "p.ACCEPTED(p<PI)" ) )
+								call this.reactorStatusHistogram.append( FString_toString( "a.ACCEPTED      " ) )
 							else
-								call GOptions_info( &
-								  "Step rejected logP="//trim(adjustl(FString_fromReal(p,"(F10.3)")))// &
-								  ",logPi="//trim(adjustl(FString_fromReal(Pi,"(F10.3)")))//"  ( logP > logPi )", "MarkovChain" )
+								p = log( RandomUtils_uniform( [0.0_8, 1.0_8] ) )
 								
-								origin = "r"//trim(currentTask)
+								if( p <= Pi ) then
+									if( trim(react.reactives.label( details=.false. )) /= trim(react.products.label( details=.false. )) ) then
+										sBuffer = trim(react.reactives.label( details=.false. ))//"-->"//trim(react.products.label( details=.false. ))
+										call this.transitionHistogram.add( sBuffer )
+									end if
 								
-								call this.reactorRejectedHistogram.append( FString_toString( trim(currentTask) ) )
-								call this.reactorStatusHistogram.append( FString_toString( "r.REJECTED      " ) )
+									if( trim(react.reactives.label( details=.true. )) /= trim(react.products.label( details=.true. )) ) then
+										sBuffer = trim(react.reactives.label( details=.true. ))//"-->"//trim(react.products.label( details=.true. ))
+										call this.transitionDetHistogram.add( sBuffer )
+									end if
+
+									react.reactives = react.products
+									
+									call GOptions_info( &
+									"Step accepted logP="//trim(adjustl(FString_fromReal(p,"(F10.3)")))// &
+									",logPi="//trim(adjustl(FString_fromReal(Pi,"(F10.3)")))//"  ( logP <= logPi )", "MarkovChain" )
+									
+									origin = "p"//trim(currentTask)
+									
+									call this.reactorAcceptedHistogram.append( FString_toString( trim(currentTask) ) )
+									call this.reactorStatusHistogram.append( FString_toString( "p.ACCEPTED(p<PI)" ) )
+								else
+									call GOptions_info( &
+									"Step rejected logP="//trim(adjustl(FString_fromReal(p,"(F10.3)")))// &
+									",logPi="//trim(adjustl(FString_fromReal(Pi,"(F10.3)")))//"  ( logP > logPi )", "MarkovChain" )
+									
+									origin = "r"//trim(currentTask)
+									
+									call this.reactorRejectedHistogram.append( FString_toString( trim(currentTask) ) )
+									call this.reactorStatusHistogram.append( FString_toString( "r.REJECTED      " ) )
+								end if
+								
 							end if
 							
 						end if
 						
-					end if
-					
+							
+						if( n > this.burnInFraction*this.numberOfEvents ) then
 						
-					if( n > this.burnInFraction*this.numberOfEvents ) then
-					
-						if( mod(n,historyFrequency) == 0 ) then
-						
-							if( this.tracking == "energy" ) then
-								sBuffer = react.reactives.energyHistoryLine( origin )
-							else if( this.tracking == "weight" ) then
-								sBuffer = react.reactives.weightHistoryLine( origin )
-							end if
+							if( mod(n,historyFrequency) == 0 ) then
+							
+								if( this.tracking == "energy" ) then
+									sBuffer = react.reactives.energyHistoryLine( origin )
+								else if( this.tracking == "weight" ) then
+									sBuffer = react.reactives.weightHistoryLine( origin )
+								end if
+									
+								if( this.tracking /= "none" ) then
+									write(6,"(A)") trim(sBuffer.fstr)
+								end if
 								
-							if( this.tracking /= "none" ) then
-								write(6,"(A)") trim(sBuffer.fstr)
+								call this.weightHistory.append( react.reactives.weightHistoryLine( origin ) )
+								call this.energyHistory.append( react.reactives.energyHistoryLine( origin ) )
+								
+								if( .not. this.geometryHistoryFilePrefix.isEmpty() ) then
+									geometryFileName = trim(this.geometryHistoryFilePrefix.fstr)//"-"//trim(FString_fromInteger(nExp))//".xyz"
+									call react.reactives.save(geometryFileName, append=.true.)
+								end if
+								
 							end if
+						
+							call this.iTemperatureHistogram(nExp).append( react.reactives.iTemperature() )
+							call this.entropyHistogram(nExp).append( react.reactives.LnW() )
+							call this.translationalEnergyHistogram(nExp).append( react.reactives.translationalEnergy() )
+							call this.intermolEnergyHistogram(nExp).append( react.reactives.intermolEnergy() )
+							call this.vibrationalEnergyHistogram(nExp).append( react.reactives.vibrationalEnergy() )
+							call this.rotationalEnergyHistogram(nExp).append( react.reactives.rotationalEnergy() )
 							
-							call this.weightHistory.append( react.reactives.weightHistoryLine( origin ) )
-							call this.energyHistory.append( react.reactives.energyHistoryLine( origin ) )
+							sBuffer = trim(FString_fromInteger( react.reactives.nMolecules() ))
+							call this.nFragsHistogram(nExp).set( sBuffer, this.nFragsHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
 							
-							if( .not. this.geometryHistoryFilePrefix.isEmpty() ) then
-								geometryFileName = trim(this.geometryHistoryFilePrefix.fstr)//"-"//trim(FString_fromInteger(nExp))//".xyz"
-								call react.reactives.save(geometryFileName, append=.true.)
-							end if
+							do j=1,react.reactives.nMolecules()
+								sBuffer = react.reactives.clusters(j).label( details=.false. )
+								call this.speciesHistogram(nExp).set( sBuffer, this.speciesHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
+								
+								sBuffer = react.reactives.clusters(j).label( details=.true. )
+								call this.speciesDetHistogram(nExp).set( sBuffer, this.speciesDetHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
+							end do
+							
+							call this.JHistory.append( react.reactives.JHistoryLine() )
+							call this.LHistory.append( react.reactives.LHistoryLine() )
+							
+							sBuffer = react.reactives.label( details=.false. )
+							call this.channelHistogram(nExp).set( sBuffer, this.channelHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
+							
+							sBuffer = react.reactives.label( details=.true. )
+							call this.channelDetHistogram(nExp).set( sBuffer, this.channelDetHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
 							
 						end if
-					
-						call this.iTemperatureHistogram(nExp).append( react.reactives.iTemperature() )
-						call this.entropyHistogram(nExp).append( react.reactives.LnW() )
-						call this.translationalEnergyHistogram(nExp).append( react.reactives.translationalEnergy() )
-						call this.intermolEnergyHistogram(nExp).append( react.reactives.intermolEnergy() )
-						call this.vibrationalEnergyHistogram(nExp).append( react.reactives.vibrationalEnergy() )
-						call this.rotationalEnergyHistogram(nExp).append( react.reactives.rotationalEnergy() )
 						
-						sBuffer = trim(FString_fromInteger( react.reactives.nMolecules() ))
-						call this.nFragsHistogram(nExp).set( sBuffer, this.nFragsHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
-						
-						do j=1,react.reactives.nMolecules()
-							sBuffer = react.reactives.clusters(j).label( details=.false. )
-							call this.speciesHistogram(nExp).set( sBuffer, this.speciesHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
-							
-							sBuffer = react.reactives.clusters(j).label( details=.true. )
-							call this.speciesDetHistogram(nExp).set( sBuffer, this.speciesDetHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
-						end do
-						
-						call this.JHistory.append( react.reactives.JHistoryLine() )
-						call this.LHistory.append( react.reactives.LHistoryLine() )
-						
-						sBuffer = react.reactives.label( details=.false. )
-						call this.channelHistogram(nExp).set( sBuffer, this.channelHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
-						
-						sBuffer = react.reactives.label( details=.true. )
-						call this.channelDetHistogram(nExp).set( sBuffer, this.channelDetHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
-						
-					end if
-					
-					n = n+1
+						n = n+1
+					end do
 				end do
 			end do
 			
@@ -500,6 +526,8 @@ module MarkovChain_
 			
 		call this.saveHistograms()
 		
+		if( allocated(taskTokens) ) deallocate( taskTokens )
+		if( allocated(bufferTokens) ) deallocate( bufferTokens )
 	end subroutine run
 	
 	!>
@@ -914,8 +942,8 @@ module MarkovChain_
 		write(unit,"(A)") "#------------------------------------"
 		write(unit,"(A)") "# Temperature (eV)"
 		write(unit,"(A)") "#------------------------------------"
-		write(unit,"(A1,9X,<this.numberOfExperiments>I10,5X,2A10)") "#", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
-		write(unit,"(A1,9X,<this.numberOfExperiments>A10,5X,2A10)") "#", ( "-----", i=1,this.numberOfExperiments ), "----", "----"
+		write(unit,"(A1,9X,<this.numberOfExperiments>I15,5X,2A15)") "#", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
+		write(unit,"(A1,9X,<this.numberOfExperiments>A15,5X,2A15)") "#", ( "-----", i=1,this.numberOfExperiments ), "----", "----"
 		
 		call histBuffer.initRealHistogram()
 		
@@ -923,13 +951,13 @@ module MarkovChain_
 			call histBuffer.add( 1.0_8/this.iTemperatureHistogram(i).mean() )
 			
 			if( i == 1 ) then
-				write(unit,"(10X,F10.3)",advance="no") 1.0_8/this.iTemperatureHistogram(i).mean()/eV
+				write(unit,"(10X,F15.5)",advance="no") 1.0_8/this.iTemperatureHistogram(i).mean()/eV
 			else
-				write(unit,"(F10.3)",advance="no") 1.0_8/this.iTemperatureHistogram(i).mean()/eV
+				write(unit,"(F15.5)",advance="no") 1.0_8/this.iTemperatureHistogram(i).mean()/eV
 			end if
 		end do
 		
-		write(unit,"(5X,2F10.3)") histBuffer.mean()/eV, histBuffer.stdev()/eV
+		write(unit,"(5X,2F15.5)") histBuffer.mean()/eV, histBuffer.stdev()/eV
 		
 		write(unit,*) ""
 		write(unit,*) ""
@@ -937,8 +965,8 @@ module MarkovChain_
 		write(unit,"(A)") "#------------------------------------"
 		write(unit,"(A)") "# Entropy"
 		write(unit,"(A)") "#------------------------------------"
-		write(unit,"(A1,9X,<this.numberOfExperiments>I10,5X,2A10)") "#", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
-		write(unit,"(A1,9X,<this.numberOfExperiments>A10,5X,2A10)") "#", ( "-----", i=1,this.numberOfExperiments ), "----", "----"
+		write(unit,"(A1,9X,<this.numberOfExperiments>I15,5X,2A15)") "#", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
+		write(unit,"(A1,9X,<this.numberOfExperiments>A15,5X,2A15)") "#", ( "-----", i=1,this.numberOfExperiments ), "----", "----"
 		
 		call histBuffer.initRealHistogram()
 		
@@ -946,13 +974,13 @@ module MarkovChain_
 			call histBuffer.add( this.entropyHistogram(i).mean() )
 			
 			if( i == 1 ) then
-				write(unit,"(10X,F10.3)",advance="no") this.entropyHistogram(i).mean()
+				write(unit,"(10X,F15.5)",advance="no") this.entropyHistogram(i).mean()
 			else
-				write(unit,"(F10.3)",advance="no") this.entropyHistogram(i).mean()
+				write(unit,"(F15.5)",advance="no") this.entropyHistogram(i).mean()
 			end if
 		end do
 		
-		write(unit,"(5X,2F10.3)") histBuffer.mean(), histBuffer.stdev()
+		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
 		
 		write(unit,*) ""
 		write(unit,*) ""
@@ -960,8 +988,8 @@ module MarkovChain_
 		write(unit,"(A)") "#------------------------------------"
 		write(unit,"(A)") "# Energy components (eV)"
 		write(unit,"(A)") "#------------------------------------"
-		write(unit,"(A1,9X,A5,<this.numberOfExperiments>I10,5X,2A10)") "#", "  ", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
-		write(unit,"(A1,9X,A5,<this.numberOfExperiments>A10,5X,2A10)") "#", "  ", ( "-----", i=1,this.numberOfExperiments ), "----", "----"
+		write(unit,"(A1,9X,A5,<this.numberOfExperiments>I15,5X,2A15)") "#", "  ", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
+		write(unit,"(A1,9X,A5,<this.numberOfExperiments>A15,5X,2A15)") "#", "  ", ( "-----", i=1,this.numberOfExperiments ), "----", "----"
 		
 		call histBuffer.initRealHistogram()
 		
@@ -969,13 +997,13 @@ module MarkovChain_
 			call histBuffer.add( this.translationalEnergyHistogram(i).mean() )
 			
 			if( i == 1 ) then
-				write(unit,"(10X,A5,F10.3)",advance="no") "trans", this.translationalEnergyHistogram(i).mean()/eV
+				write(unit,"(10X,A5,F15.5)",advance="no") "trans", this.translationalEnergyHistogram(i).mean()/eV
 			else
-				write(unit,"(F10.3)",advance="no") this.translationalEnergyHistogram(i).mean()/eV
+				write(unit,"(F15.5)",advance="no") this.translationalEnergyHistogram(i).mean()/eV
 			end if
 		end do
 		
-		write(unit,"(5X,2F10.3)") histBuffer.mean()/eV, histBuffer.stdev()/eV
+		write(unit,"(5X,2F15.5)") histBuffer.mean()/eV, histBuffer.stdev()/eV
 		
 		call histBuffer.initRealHistogram()
 		
@@ -983,13 +1011,13 @@ module MarkovChain_
 			call histBuffer.add( this.intermolEnergyHistogram(i).mean() )
 			
 			if( i == 1 ) then
-				write(unit,"(10X,A5,F10.3)",advance="no") "intermol", this.intermolEnergyHistogram(i).mean()/eV
+				write(unit,"(10X,A5,F15.5)",advance="no") "intermol", this.intermolEnergyHistogram(i).mean()/eV
 			else
-				write(unit,"(F10.3)",advance="no") this.intermolEnergyHistogram(i).mean()/eV
+				write(unit,"(F15.5)",advance="no") this.intermolEnergyHistogram(i).mean()/eV
 			end if
 		end do
 		
-		write(unit,"(5X,2F10.3)") histBuffer.mean()/eV, histBuffer.stdev()/eV
+		write(unit,"(5X,2F15.5)") histBuffer.mean()/eV, histBuffer.stdev()/eV
 		
 		call histBuffer.initRealHistogram()
 		
@@ -997,13 +1025,13 @@ module MarkovChain_
 			call histBuffer.add( this.vibrationalEnergyHistogram(i).mean() )
 			
 			if( i == 1 ) then
-				write(unit,"(10X,A5,F10.3)",advance="no") "vib", this.vibrationalEnergyHistogram(i).mean()/eV
+				write(unit,"(10X,A5,F15.5)",advance="no") "vib", this.vibrationalEnergyHistogram(i).mean()/eV
 			else
-				write(unit,"(F10.3)",advance="no") this.vibrationalEnergyHistogram(i).mean()/eV
+				write(unit,"(F15.5)",advance="no") this.vibrationalEnergyHistogram(i).mean()/eV
 			end if
 		end do
 		
-		write(unit,"(5X,2F10.3)") histBuffer.mean()/eV, histBuffer.stdev()/eV
+		write(unit,"(5X,2F15.5)") histBuffer.mean()/eV, histBuffer.stdev()/eV
 		
 		call histBuffer.initRealHistogram()
 		
@@ -1011,13 +1039,13 @@ module MarkovChain_
 			call histBuffer.add( this.rotationalEnergyHistogram(i).mean() )
 			
 			if( i == 1 ) then
-				write(unit,"(10X,A5,F10.3)",advance="no") "rot", this.rotationalEnergyHistogram(i).mean()/eV
+				write(unit,"(10X,A5,F15.5)",advance="no") "rot", this.rotationalEnergyHistogram(i).mean()/eV
 			else
-				write(unit,"(F10.3)",advance="no") this.rotationalEnergyHistogram(i).mean()/eV
+				write(unit,"(F15.5)",advance="no") this.rotationalEnergyHistogram(i).mean()/eV
 			end if
 		end do
 		
-		write(unit,"(5X,2F10.3)") histBuffer.mean()/eV, histBuffer.stdev()/eV
+		write(unit,"(5X,2F15.5)") histBuffer.mean()/eV, histBuffer.stdev()/eV
 		
 		write(unit,*) ""
 		write(unit,*) ""

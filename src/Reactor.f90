@@ -372,6 +372,8 @@ module Reactor_
 		integer :: nProducts ! number of products in one channel
 		integer :: i
 		
+		logical :: successFrag
+		
 		nProducts = reactives.nMolecules() + dNfrag
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -439,9 +441,24 @@ module Reactor_
 			ids(i) = i
 		end do
 		
-		call RandomUtils_randomMultiset( ids, nProducts, channelInfo, reactorConstraint )
+		call RandomUtils_randomMultiset( ids, nProducts, channelInfo, reactorConstraint, success=successFrag )
 		deallocate(ids)
 		call internalReactivesSpinAvail.clear()
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Si los clusters no pueden satisfacer el constrain, se mantienen los rectivos
+		if( .not. successFrag ) then
+			if( GOptions_printLevel >= 2 ) then
+				call GOptions_info( &
+					"Impossible to satisfy the constrain during fragmentation", &
+					"Reactor.changeAllComposition()", &
+					"The reactives composition is kept." &
+				)
+			end if
+			
+			products = reactives
+			return
+		end if
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Se muestran lo valores importantes

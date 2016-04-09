@@ -31,6 +31,20 @@
 ##################################################################
 
 GAUSSIAN_TEMPLATE=$1
+NPROCSHARED=$2
+
+##############################
+# Default options
+##############################
+if [ -z "$GAUSSIAN_TEMPLATE" ]
+then
+	echo "usage: M3C-gaussian.iener gaussianTemplate [ nProcShared ]"
+	echo "                                                  1       "
+	exit
+fi
+
+[ -z "$NPROCSHARED" ] && NPROCSHARED=1
+##############################
 
 if [ -f "$M3C_HOME/bin/gaussianDriver.sh" ]
 then
@@ -46,7 +60,7 @@ function iener()
 	local mult=$3
 	
 	cp $iFileRXYZ ${iFileRXYZ%.*}.rxyz0
-	ienerGAUSSIANTemplate $GAUSSIAN_TEMPLATE ${iFileRXYZ%.*}.rxyz0 $charge $mult > ${iFileRXYZ%.*}.rxyz
+	ienerGAUSSIANTemplate $GAUSSIAN_TEMPLATE $NPROCSHARED ${iFileRXYZ%.*}.rxyz0 $charge $mult > ${iFileRXYZ%.*}.rxyz
 	mv ${iFileRXYZ%.*}.out history.iener/ 2> /dev/null
 	mv ${iFileRXYZ%.*}.com history.iener/ 2> /dev/null
 }
@@ -63,16 +77,16 @@ function main()
 	
 	if [ -n "$SLURM_NTASKS" ]
 	then
-#		nThreads=$SLURM_NTASKS
-		nThreads=$(( $SLURM_NTASKS/8 ))
+		nThreads=$SLURM_NTASKS
 	else
 		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
+	nThreads=$(( $nThreads/$NPROCSHARED ))
 	
 	if [ -d "history.iener" ]
 	then
 		echo "@@@ WARNING @@@ There is already a history directory (history.iener). Backup copy will be generated"
-		mv history.iener history.iener.backup
+		mv history.iener history.iener.backup-`date +%Y%m%d`
 	fi
 	mkdir history.iener
 	

@@ -21,6 +21,7 @@ module FragmentsList_
 	
 	type, public, extends( FragmentsListBase ) :: FragmentsList
 		real(8) :: rotationalEnergy_      !< It is calculated into updateRotationalEnergy procedure
+		real(8) :: E_totJ                !< Experimental en versión 1.9
 		
 		real(8), private :: LnLambda     !< Translational weight
 		real(8), private :: LnDiagI_     !< Contiene el log del producto de la diagonal de los tensores de inercia efectivos
@@ -50,7 +51,6 @@ module FragmentsList_
 			procedure, private :: updateLambda
 ! 			procedure :: showLnWComponents
 			
-			procedure, private :: N2LCorrection
 			procedure, private :: updateDiagInertiaTensor
 			procedure, private :: updateDiagInertiaTensorJJ
 			procedure, private :: updateDiagInertiaTensorJJL
@@ -76,6 +76,7 @@ module FragmentsList_
 		call this.initFragmentsListBase( nMolecules )
 		
 		this.rotationalEnergy_ = 0.0_8
+		this.E_totJ = 0.0_8
 		this.LnLambda = 0.0_8
 		this.LnDiagI_ = 0.0_8
 	end subroutine initFragmentsList
@@ -90,6 +91,7 @@ module FragmentsList_
 		call this.copyFragmentsListBase( other )
 		
 		this.rotationalEnergy_ = other.rotationalEnergy_
+		this.E_totJ = other.E_totJ
 		this.LnLambda = other.LnLambda
 		this.LnDiagI_ = other.LnDiagI_
 	end subroutine copyFragmentsList
@@ -146,6 +148,8 @@ module FragmentsList_
 	subroutine changeGeometry( this )
 		class(FragmentsList) :: this
 		
+		integer :: j
+		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsList()
 			return
@@ -157,6 +161,20 @@ module FragmentsList_
 		end if
 
 		call this.changeGeometryFragmentsListBase()
+		
+		!-----------------------------------------------------------------------------------------
+		! @todo Probablemente este bloque debería ir dentro de changeGeometryFragmentsListBase
+		!       ya que es un potencial centrifugo. Al igula habría que cambiar V(r) --> V(r)+E_totJ
+		if( norm2(GOptionsM3C_totalJ(:)) > 1d-5 ) then
+			this.E_totJ = 0.0_8
+			do j=3,4-this.fl(),-1
+				this.E_totJ = this.E_totJ + 0.5_8*GOptionsM3C_totalJ(j)**2/this.diagInertiaTensor( j )
+			end do
+			
+! 			write(*,*) this.E_totJ
+		end if
+		!-----------------------------------------------------------------------------------------
+		
 		call this.updateKineticEnergy()
 		call this.updateLambda()
 		
@@ -246,7 +264,7 @@ module FragmentsList_
 		class(FragmentsList), intent(in) :: this
 		real(8) :: output
 		
-		output = this.kineticEnergy() + this.vibrationalEnergy_ + this.intermolEnergy_
+		output = this.kineticEnergy() + this.vibrationalEnergy_ + this.intermolEnergy_ + this.E_totJ
 	end function totalEnergy
 	
 	!>
@@ -256,7 +274,7 @@ module FragmentsList_
 		class(FragmentsList), intent(in) :: this
 		real(8) :: output
 		
-		output = this.vibrationalEnergy_  + this.intermolEnergy_
+		output = this.vibrationalEnergy_  + this.intermolEnergy_ + this.E_totJ
 	end function internalEnergy
 	
 	!>
@@ -347,140 +365,8 @@ module FragmentsList_
 					"Posible implemented values: JJ, JL" &
 					)
 		end select
-
-		! Lo he probado en varios sistemas y no funciona. No se si
-		! al cambiar el radio del sistema tenga algún efecto
-		if( GOptionsM3C_useLWeightContrib ) then
-			do j=3,4-this.fl(),-1
-				this.LnDiagI_ = this.LnDiagI_ - log(this.diagInertiaTensor( j ))
-			end do
-		end if
+		
 	end subroutine updateDiagInertiaTensor
-	
-	!>
-	!! @brief Actualiza la energía rotacional
-	!!
-	subroutine N2LCorrection( this )
-		class(FragmentsList) :: this
-		
-		integer :: n
-		real(8) :: valI_L, Re, mu, r, m, m_1, m_2
-		
-		type(Matrix) :: invIi, invBi, Ui, I_L
-		real(8) :: Il, molRef
-		integer :: j
-		type(Matrix) :: RotMu
-		
-		n = this.nMolecules()
-	
-		! Contribución orbital para el caso de 1 atomo y una molecula lineal
-		if( n==2 ) then
-! 			if( this.clusters( this.idSorted(1) ).fr() == 0 .and. this.clusters( this.idSorted(2) ).fr() /= 0 ) then
-! 				if( this.clusters( this.idSorted(1) ).fr() == 0 .and. this.clusters( this.idSorted(2) ).nAtoms() == 2 ) then
-! 				
-! 	!                               Re = 0.5*this.clusters( this.idSorted(2) ).radius()  ! El valor exacto es radius-rcov(1)-rcov(n), el valor que está es para una diatómica
-! 	!                               mu = this.clusters( this.idSorted(2) ).mass()
-! 						Re = norm2(this.clusters( this.idSorted(2) ).atoms(1).r-this.clusters( this.idSorted(2) ).atoms(2).r)
-! 						
-! 						m_1 = AtomicElementsDB_instance.atomicMass( this.clusters( this.idSorted(2) ).atoms(1).symbol )
-! 						m_2 = AtomicElementsDB_instance.atomicMass( this.clusters( this.idSorted(2) ).atoms(2).symbol )
-! 						mu = m_1*m_2/(m_1+m_2)
-! 						
-! 						m = this.clusters( this.idSorted(1) ).mass()
-! 						r = norm2(this.clusters(1).center()-this.clusters(2).center())
-! 												
-! 						valI_L = 1.0_8/( 1.0_8/( 2.0_8*mu*Re**2  ) + 1.0_8/( 2.0_8*m*r**2 ) )
-! 												
-! 						this.LnDiagI_ = this.LnDiagI_ + 1.0_8*log(sqrt(2.0_8*valI_L))
-
-! 				Re = 0.5*this.clusters( this.idSorted(2) ).radius()  ! El valor exacto es radius-rcov(1)-rcov(n), el valor que está es para una diatómica
-! 				mu = this.clusters( this.idSorted(2) ).mass()
-! 
-! 				r = norm2(this.clusters(1).center()-this.clusters(2).center())
-! 				m = this.clusters( this.idSorted(1) ).mass()*this.clusters( this.idSorted(2) ).mass()/this.mass()
-! 				
-! 				valI_L = ( mu*Re**2 * m*r**2 )/( mu*Re**2  + m*r**2 )
-! 				
-! 				this.LnDiagI_ = this.LnDiagI_ + log(valI_L)
-
-				!--------------------------------------
-				
-				! mu es el que está rotando y molRef el que está en el centro
-! 				if( this.clusters( this.idSorted(1) ).fr() > this.clusters( this.idSorted(2) ).fr() ) then
-! 				      mu = 2
-! 				      molRef = 1
-! 				else
-				      mu = 1
-				      molRef = 2
-! 				end if
-
-				r = norm2(this.clusters(mu).center()-this.clusters(molRef).center())
-				Il = this.clusters( this.idSorted(mu) ).mass()*this.clusters( this.idSorted(molRef) ).mass()*r**2/this.mass()
-				
-! 				! El valor que sale para valIl es el mismo que con el tensor de inercia
-! ! 				call this.buildInertiaTensor( I_L, this.clusters( this.idSorted(molRef) ).center() )
-! ! ! 				call this.buildInertiaTensor( I_L )
-! ! 				write(*,*) "Il = ", log(Il)
-! ! 				write(*,*) "I_L = "
-! ! 				call I_L.show( formatted=.true. )
-! ! 				I_L.data = log(I_L.data)
-! ! 				write(*,*) "log(I_L) = "
-! ! 				call I_L.show( formatted=.true. )
-! ! 				stop
-				
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				! Calculo del tensor de inerciaq que está en el centro
-				call invIi.init( 3, 3, 0.0_8 )
-				do j=3,4-this.clusters( this.idSorted(molRef) ).fr(),-1
-				      invIi.data( j, j ) = 1.0_8/this.clusters( this.idSorted(molRef) ).diagInertiaTensor.data( j, j )
-				end do
-
-				call invIi.eigen( eVals=invBi, eVecs=Ui )
-! 				
-! 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! 				! Matriz de rotación que permite transformar a los ejes
-! 				! de N en los ejes de i, pasando por el sistem fix
-! 				! RotMu = R_n^T*R_mu
-! 				RotMu = SpecialMatrix_rotationTransform( &
-! 					this.inertiaAxes(), &
-! 					this.clusters( this.idSorted(molRef) ).inertiaAxes() )
-! 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! 				
-! 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! 				! Se obtiene la matriz inversa del tensor
-! 				! de inercia efectivo.
-! 				invIt =  invIi + RotMu*invIn*RotMu.transpose()
-! 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				        
-! 				this.LnIm_ = 0.0_8
-! 				do j=3,4-this.clusters( this.idSorted(mu) ).fr(),-1
-! 				      this.LnDiagI_ = this.LnDiagI_ - log(2.0_8*invBi.get(j,j))
-! 				end do
-! 				this.LnDiagI_ = this.LnDiagI_ + log(Math_PI**(this.clusters( this.idSorted(mu) ).fr()/2.0)) - log(gamma(this.clusters( this.idSorted(mu) ).fr()/2.0))
-
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				! Calculo de la corrección
-				valI_L = 0.0_8
-				do j=3,4-this.clusters( this.idSorted(molRef) ).fr(),-1
-				      valI_L = valI_L + (- log( 1.0_8 + 1.0_8/( invBi.get(j,j)*Il ) ) - log(invBi.get(j,j)))/3.0_8
-				end do
-! 				valI_L = - log( 1.0_8 + 1.0_8/( invBi.get(3,3)*Il ) ) - log(invBi.get(3,3))
-				
-				this.LnDiagI_ = this.LnDiagI_ + valI_L
-				
-				if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
-					write(*,*) ""
-					write(*,*) trim(this.label())
-					write(*,*) mu, molRef, this.clusters( this.idSorted(molRef) ).fr(), invBi.get(1,1), invBi.get(2,2), invBi.get(3,3), Il
-					write(*,*) log( 1.0_8 + 1.0_8/( invBi.get(1,1)*Il ) ), log( 1.0_8 + 1.0_8/( invBi.get(2,2)*Il ) ), log( 1.0_8 + 1.0_8/( invBi.get(3,3)*Il ) )
-					write(*,*) log(invBi.get(1,1)), log(invBi.get(2,2)), log(invBi.get(3,3))
-					write(*,"(5X,A10,20X,F20.5)") "L-corr", valI_L
-					write(*,*) ""
-				end if
-! 			end if
-		end if
-		
-	end subroutine N2LCorrection
 	
 	!>
 	!! @brief Actualiza la energía rotacional
@@ -535,8 +421,6 @@ module FragmentsList_
 		if( GOptions_debugLevel >= 3 ) then
 			call GOptions_subsection( "Angular momentum coupling JJ --> "//trim(this.label()), indent=2 )
 		end if
-		
-		if( GOptionsM3C_useLCorrection ) call this.N2LCorrection()
 		
 		if( effNu > 1 .and. effMu /= effNu ) then
 			write(*,"(A,2I8)") "FragmentsList.updateDiagInertiaTensorJJ(). effMu /= effNu, ", effMu, effNu
@@ -757,8 +641,6 @@ module FragmentsList_
 		if( GOptions_debugLevel >= 3 ) then
 			call GOptions_subsection( "Angular momentum coupling JJL --> "//trim(this.label()), indent=2 )
 		end if
-		
-		if( GOptionsM3C_useLCorrection ) call this.N2LCorrection()
 		
 		if( nNu > 1 .and. nMu /= nNu ) then
 			write(*,"(A,2I8)") "FragmentsList.updateDiagInertiaTensorJJL(). nMu /= nNu, ", nMu, nNu
@@ -1129,6 +1011,7 @@ module FragmentsList_
 		
 		integer :: i, n, s
 		real(8) :: logMu, Et
+		integer :: j
 		
 		n = this.nMolecules()
 		
@@ -1164,7 +1047,7 @@ module FragmentsList_
 					0.5_8*this.clusters(1).fr()*log(2.0_8*Math_PI) &
 					- log( Gamma(0.5_8*this.clusters(1).fr()) ) &
 					+ this.logVtheta_ &
-					+ 0.5_8*this.LnDiagI_ 
+					+ 0.5_8*this.LnDiagI_
 			else
 				this.LnLambda = \
 					0.5_8*s*log(2.0_8*Math_PI) &
@@ -1241,7 +1124,7 @@ module FragmentsList_
 ! 		
 ! 		call cluster.init( fstr, 1 )
 ! 		call cluster.show()
-! 		write(*,*) "radius = ", cluster.radius()
+! 		write(*,*) "radius = ", cluster.radius( type=GOptionsM3C_radiusType )
 ! 		call clist.set( 1, cluster )
 ! 		
 ! 		write(*,*) "================================"
@@ -1249,21 +1132,21 @@ module FragmentsList_
 ! 		
 ! 		call cluster.init( fstr, 2 )
 ! 		call cluster.show()
-! 		write(*,*) "radius = ", cluster.radius()
+! 		write(*,*) "radius = ", cluster.radius( type=GOptionsM3C_radiusType )
 ! 		call clist.set( 2, cluster )
 ! 		write(*,*) "================================"
 ! 		fstr = "    tcC4    0  F    3  0    4   C4T-cyclic.xyz     -4129.378872  0.089866    tC1,slC3    300"
 ! 		
 ! 		call cluster.init( fstr, 3 )
 ! 		call cluster.show()
-! 		write(*,*) "radius = ", cluster.radius()
+! 		write(*,*) "radius = ", cluster.radius( type=GOptionsM3C_radiusType )
 ! 		call clist.set( 3, cluster )
 ! 		write(*,*) "================================"
 ! 		fstr = "    tcC5    0  F    3  0    1   C5T-cyclic.xyz     -5162.267819  0.093690   slC2,slC3    300"
 ! 		
 ! 		call cluster.init( fstr, 4 )
 ! 		call cluster.show()
-! 		write(*,*) "radius = ", cluster.radius()
+! 		write(*,*) "radius = ", cluster.radius( type=GOptionsM3C_radiusType )
 ! 		call clist.set( 4, cluster )
 ! 		write(*,*) "================================"
 ! 		write(*,*) ""

@@ -2,10 +2,10 @@
 ##################################################################
 #
 #  This file is part of M3C
-#  Copyright (C) by authors (2012-2015)
+#  Copyright (C) by authors (2012-2016)
 #  
 #  Authors:
-#    * Dr. Néstor F. Aguirre (2012-2015)
+#    * Dr. Néstor F. Aguirre (2012-2016)
 #          nestor.aguirre@uam.es
 #    * Dr. Sergio Díaz-Tendero (2012-2015)
 #          sergio.diaztendero@uam.es
@@ -31,6 +31,20 @@
 ##################################################################
 
 GAUSSIAN_TEMPLATE=$1
+NPROCSHARED=$2
+
+##############################
+# Default options
+##############################
+if [ -z "$GAUSSIAN_TEMPLATE" ]
+then
+	echo "usage: M3C-gaussian.freqs gaussianTemplate [ nProcShared ]"
+	echo "                                                  1       "
+	exit
+fi
+
+[ -z "$NPROCSHARED" ] && NPROCSHARED=1
+##############################
 
 if [ -f "$M3C_HOME/bin/gaussianDriver.sh" ]
 then
@@ -45,7 +59,7 @@ frequencies()
 	local charge=$2
 	local mult=$3
 	
-	freqsGAUSSIANTemplate $GAUSSIAN_TEMPLATE $iFileXYZ $charge $mult $DEBUG > ${iFileXYZ%.*}.rxyz
+	freqsGAUSSIANTemplate $GAUSSIAN_TEMPLATE $NPROCSHARED $iFileXYZ $charge $mult $DEBUG > ${iFileXYZ%.*}.rxyz
 	mv ${iFileXYZ%.*}.out history.freqs/ 2> /dev/null
 	mv ${iFileXYZ%.*}.com history.freqs/ 2> /dev/null
 }
@@ -59,15 +73,15 @@ main()
 	if [ -n "$SLURM_NTASKS" ]
 	then
 		nThreads=$SLURM_NTASKS
-#		nThreads=$(( $SLURM_NTASKS/4 ))
 	else
 		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
+	nThreads=$(( $nThreads/$NPROCSHARED ))
 	
 	if [ -d "history.freqs" ]
 	then
 		echo "@@@ WARNING @@@ There is already a history directory (history.freqs). Backup copy will be generated"
-		mv history.freqs history.freqs.backup
+		mv history.freqs history.freqs.backup-`date +%Y%m%d`
 	fi
 	mkdir history.freqs
 
@@ -79,7 +93,7 @@ main()
 	
 	startTime=`date "+%s"`
 	
-	ij=0
+	ij=-1
 	for (( i=0; i<=$(( ${#xyzFile[@]}/$nThreads-1 )); i++ ))
 	do
 		iStartTime=`date "+%s"`

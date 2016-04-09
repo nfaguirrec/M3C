@@ -55,12 +55,32 @@ ATOMIC_SYMBOL[18]="Ar"
 function runGAUSSIAN()
 {
 	local iFile=$1
+	local nProcShared=$2
 	
 	export GAUSS_EXEDIR=$M3C_GAUSSIAN_HOME
 	export GAUSS_SCRDIR=$M3C_GAUSSIAN_SCRATCH
 	if [ ! -d  "$GAUSS_SCRDIR" ]
 	then
-        	mkdir -p $GAUSS_SCRDIR
+		mkdir -p $GAUSS_SCRDIR
+	fi
+	
+	if [ -n "$nProcShared" ]
+	then
+		awk '
+		BEGIN{
+			line=1
+		}
+		($1!~/NProcShared/){
+			map[line]=$0
+			line++
+		}
+		END{
+			print "%NProcShared='$nProcShared'"
+			for(i=1;i<line;i+=1)
+				print map[i]
+		}
+		' $iFile > .$$tmp-$iFile
+		mv .$$tmp-$iFile $iFile
 	fi
 	
 	$M3C_GAUSSIAN_HOME/g09  < $iFile
@@ -155,9 +175,10 @@ function fillTemplate()
 function optgGAUSSIANTemplate()
 {
 	local template=$1
-	local xyzFile=$2
-	local charge=$3
-	local mult=$4
+	local nProcShared=$2
+	local xyzFile=$3
+	local charge=$4
+	local mult=$5
 	
 	local SID="-$xyzFile$RANDOM"
 	
@@ -169,7 +190,7 @@ function optgGAUSSIANTemplate()
 	then
 		fillTemplate $template $xyzFile $charge $mult > input$SID.com
 			
-		runGAUSSIAN input$SID.com > input$SID.out 2>&1
+		runGAUSSIAN input$SID.com $nProcShared > input$SID.out 2>&1
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.com ${xyzFile%.*}.com 2> /dev/null
 		
@@ -194,9 +215,10 @@ function optgGAUSSIANTemplate()
 function freqsGAUSSIANTemplate()
 {
 	local template=$1
-	local xyzFile=$2
-	local charge=$3
-	local mult=$4
+	local nProcShared=$2
+	local xyzFile=$3
+	local charge=$4
+	local mult=$5
 	
 	local SID="-$xyzFile$RANDOM"
 	
@@ -210,7 +232,7 @@ function freqsGAUSSIANTemplate()
 	then
 		fillTemplate $template $xyzFile $charge $mult > input$SID.com
 		
-		runGAUSSIAN input$SID.com > input$SID.out 2>&1
+		runGAUSSIAN input$SID.com $nProcShared > input$SID.out 2>&1
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.com ${xyzFile%.*}.com 2> /dev/null
 		
@@ -254,9 +276,10 @@ function freqsGAUSSIANTemplate()
 function ienerGAUSSIANTemplate()
 {
 	local template=$1
-	local rxyzFile=$2
-	local charge=$3
-	local mult=$4
+	local nProcShared=$2
+	local rxyzFile=$3
+	local charge=$4
+	local mult=$5
 	
 	local SID="-$rxyzFile$RANDOM"
 	
@@ -270,7 +293,7 @@ function ienerGAUSSIANTemplate()
 		fillTemplate $template .xyzFile$SID $charge $mult > input$SID.com
 		rm .xyzFile$SID
 			
-		runGAUSSIAN input$SID.com > input$SID.out 2>&1
+		runGAUSSIAN input$SID.com $nProcShared > input$SID.out 2>&1
 		cp input$SID.out ${rxyzFile%.*}.out 2> /dev/null
 		cp input$SID.com ${rxyzFile%.*}.com 2> /dev/null
 		

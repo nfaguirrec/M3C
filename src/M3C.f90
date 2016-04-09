@@ -63,30 +63,45 @@ program M3C
 	GOptionsM3C_useRandomWalkers = iParser.getLogical( "GOPTIONS:useRandomWalkers", def=.false. )
 	GOptionsM3C_useWeightedWalkStep = iParser.getLogical( "GOPTIONS:useWeightedWalkStep", def=.false. )
 	GOptionsM3C_overlappingRadius = iParser.getReal( "GOPTIONS:overlappingRadius", def=0.0_8 )*angs
+	
+	sBuffer = iParser.getString( "GOPTIONS:radiusType", def="COVALENT" )
+	select case( trim(sBuffer.fstr) )
+		case( "COVALENT" )
+			GOptionsM3C_radiusType = AtomicElementsDB_COVALENT_RADIUS
+		case( "VAN_DER_WAALS" )
+			GOptionsM3C_radiusType = AtomicElementsDB_VANDERWAALS_RADIUS
+		case default
+			call GOptions_error( "GOPTIONS:radiusType = "//trim(sBuffer.fstr)//" is not implemented. Available values: COVALENT, VAN_DER_WAALS", "M3C.main()" )
+	end select
+	
 	GOptionsM3C_useZPECorrection = iParser.getLogical( "GOPTIONS:useZPECorrection", def=.false. )
-	GOptionsM3C_useLCorrection = iParser.getLogical( "GOPTIONS:useLCorrection", def=.false. )
-	GOptionsM3C_useLWeightContrib = iParser.getLogical( "GOPTIONS:useLWeightContrib", def=.false. )
-	GOptionsM3C_gammaLCorrection = iParser.getReal( "GOPTIONS:gammaLCorrection", def=3.0_8 )
 	GOptionsM3C_useSpinConservationRules = iParser.getLogical( "GOPTIONS:useSpinConservationRules", def=.false. )
 	GOptionsM3C_angularMomentumCouplingScheme = iParser.getString( "GOPTIONS:angularMomentumCouplingScheme", def="JJ" )
+	GOptionsM3C_totalJ(3) = iParser.getReal( "GOPTIONS:totalJ", def=0.0_8 )
 	GOptions_printLevel = iParser.getInteger( "GOPTIONS:printLevel", def=1 )
 	GOptions_debugLevel = iParser.getInteger( "GOPTIONS:debugLevel", def=1 )
 	
 	write(*,*)
-	write(*,"(A40,E15.2)") "GOptions:zero = ", GOptions_zero
-	write(*,"(A40,F15.5,A)") "GOptions:systemRadius = ", GOptionsM3C_systemRadius/angs, " A"
-	write(*,"(A40,L5)") "GOptions:useRandomWalkers = ", GOptionsM3C_useRandomWalkers
-	write(*,"(A40,F15.5,A)") "GOptions:randomWalkStepRadius = ", GOptionsM3C_randomWalkStepRadius/angs, " A"
-	write(*,"(A40,L5)") "GOptions:useWeightedWalkStep = ", GOptionsM3C_useWeightedWalkStep
-	write(*,"(A40,F15.5,A)") "GOptions:overlappingRadius = ", GOptionsM3C_overlappingRadius/angs, " A"
-	write(*,"(A40,L5)") "GOptions:useZPECorrection = ", GOptionsM3C_useZPECorrection
-	write(*,"(A40,L5)") "GOptions:useLCorrection = ", GOptionsM3C_useLCorrection
-	write(*,"(A40,L5)") "GOptions:useLWeightContrib = ", GOptionsM3C_useLWeightContrib
-	write(*,"(A40,F5.0)") "GOptions:gammaLCorrection = ", GOptionsM3C_gammaLCorrection
+	write(*,"(A40,E15.2)") "zero = ", GOptions_zero
+	write(*,"(A40,F15.5,A)") "systemRadius = ", GOptionsM3C_systemRadius/angs, " A"
+	write(*,"(A40,L5)") "useRandomWalkers = ", GOptionsM3C_useRandomWalkers
+	write(*,"(A40,F15.5,A)") "randomWalkStepRadius = ", GOptionsM3C_randomWalkStepRadius/angs, " A"
+	write(*,"(A40,L5)") "useWeightedWalkStep = ", GOptionsM3C_useWeightedWalkStep
+	write(*,"(A40,F15.5,A)") "overlappingRadius = ", GOptionsM3C_overlappingRadius/angs, " A"
+	
+	select case( GOptionsM3C_radiusType )
+		case( AtomicElementsDB_COVALENT_RADIUS )
+			write(*,"(A40,A15)") "radiusType = ", "COVALENT"
+		case( AtomicElementsDB_VANDERWAALS_RADIUS )
+			write(*,"(A40,A15)") "radiusType = ", "VAN_DER_WAALS"
+	end select
+	
+	write(*,"(A40,L5)") "useZPECorrection = ", GOptionsM3C_useZPECorrection
 	write(*,"(A40,L)") "useSpinConservationRules = ", GOptionsM3C_useSpinConservationRules
 	write(*,"(A40,A5)") "angularMomentumCouplingScheme = ", trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)
-	write(*,"(A40,I5)") "GOptions:printLevel = ", GOptions_printLevel
-	write(*,"(A40,I5)") "GOptions:debugLevel = ", GOptions_debugLevel
+	write(*,"(A40,3F15.5,A)") "totalJ = ", GOptionsM3C_totalJ, " a.u."
+	write(*,"(A40,I5)") "printLevel = ", GOptions_printLevel
+	write(*,"(A40,I5)") "debugLevel = ", GOptions_debugLevel
 	write(*,*)
 	
 	calculateMaxVib = iParser.getLogical( "FRAGMENTS_DATABASE"//":maxVib", def=.false. )

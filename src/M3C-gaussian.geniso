@@ -2,10 +2,10 @@
 ##################################################################
 #
 #  This file is part of M3C
-#  Copyright (C) by authors (2012-2015)
+#  Copyright (C) by authors (2012-2016)
 #  
 #  Authors:
-#    * Dr. Néstor F. Aguirre (2012-2015)
+#    * Dr. Néstor F. Aguirre (2012-2016)
 #          nestor.aguirre@uam.es
 #    * Dr. Sergio Díaz-Tendero (2012-2015)
 #          sergio.diaztendero@uam.es
@@ -130,7 +130,7 @@ function generateIsomers()
 		j=1
 		for i in `seq 1 $NSTEPS`
 		do
-			optgGAUSSIANTemplate ../$GAUSSIAN_TEMPLATE products.xyz $charge $mult > output.xyz
+			optgGAUSSIANTemplate ../$GAUSSIAN_TEMPLATE $NPROCSHARED products.xyz $charge $mult > output.xyz
 			
 			cp products.out history-$label/$label-$j.out
 			
@@ -199,6 +199,7 @@ function main()
 	NSTEPS=$4
 	INIT_GEOM_DIR=$5
 	FINAL_GEOM_DIR=$6
+	NPROCSHARED=$7
 	
 	WORK_DIR=tmp
 	
@@ -208,12 +209,31 @@ function main()
 	local mult=""
 	local oshell=""
 	
+	##############################
+	# Default options
+	##############################
+	if [ -z "$DATABASE" -o \
+		 -z "$GAUSSIAN_TEMPLATE" -o \
+		 -z "$M3C_TEMPLATE" -o \
+		 -z "$NSTEPS" -o \
+		 -z "$INIT_GEOM_DIR" -o \
+		 -z "$FINAL_GEOM_DIR" ]
+	then
+		echo "usage: M3C-gaussian.geniso database gamessTemplate M3CTemplate nSteps initGeomDir resultsGeomDir [ nProcShared ]"
+		echo "                                                                                                        1       "
+		exit
+	fi
+	
+	[ -z "$NPROCSHARED" ] && NPROCSHARED=1
+	##############################
+	
 	if [ -n "$SLURM_NTASKS" ]
 	then
 		nThreads=$SLURM_NTASKS
 	else
 		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
+	nThreads=$(( $nThreads/$NPROCSHARED ))
 	
 	xyzFile=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $1 }' $DATABASE` )
 	charge=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $2 }' $DATABASE` )
@@ -226,7 +246,7 @@ function main()
 	if [ -d "$FINAL_GEOM_DIR" ]
 	then
 		echo "@@@ WARNING @@@ There is already an output directory ($FINAL_GEOM_DIR). Backup copy will be generated"
-		mv $FINAL_GEOM_DIR $FINAL_GEOM_DIR.backup
+		mv $FINAL_GEOM_DIR $FINAL_GEOM_DIR.backup-`date +%Y%m%d`
 	fi
 	mkdir $FINAL_GEOM_DIR
 

@@ -76,8 +76,9 @@ ATOMIC_NUMBER["AR"]=18
 function runGAMESS()
 {
 	local iFile=$1
+	local nProcShared=$2
 	
-	$M3C_GAMESS_HOME/rungms $iFile 01 1
+	$M3C_GAMESS_HOME/rungms $iFile 01 $nProcShared
 }
 
 ##
@@ -197,10 +198,11 @@ function fillTemplate()
 function optgGAMESSTemplate()
 {
 	local template=$1
-	local xyzFile=$2
-	local charge=$3
-	local mult=$4
-	local oshell=$5
+	local nProcShared=$2
+	local xyzFile=$3
+	local charge=$4
+	local mult=$5
+	local oshell=$6
 	
 	local SID="-$xyzFile$RANDOM"
 	
@@ -213,7 +215,7 @@ function optgGAMESSTemplate()
 		rm -rf input$SID.dat 2> /dev/null
 		fillTemplate $template $xyzFile $charge $mult $oshell > input$SID.inp
 		
-		runGAMESS input$SID.inp > input$SID.out 2>&1
+		runGAMESS input$SID.inp $nProcShared > input$SID.out 2>&1
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.inp ${xyzFile%.*}.inp 2> /dev/null
 		
@@ -239,9 +241,10 @@ function optgGAMESSTemplate()
 function freqsGAMESSTemplate()
 {
 	local template=$1
-	local xyzFile=$2
-	local charge=$3
-	local mult=$4
+	local nProcShared=$2
+	local xyzFile=$3
+	local charge=$4
+	local mult=$5
 	
 	local SID="-$xyzFile$RANDOM"
 	
@@ -256,7 +259,7 @@ function freqsGAMESSTemplate()
 		rm -rf input$SID.dat
 		fillTemplate $template $xyzFile $charge $mult > input$SID.inp
 		
-		runGAMESS input$SID.inp > input$SID.out 2>&1
+		runGAMESS input$SID.inp $nProcShared > input$SID.out 2>&1
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.inp ${xyzFile%.*}.inp 2> /dev/null
 		
@@ -287,9 +290,10 @@ function freqsGAMESSTemplate()
 function ienerGAMESSTemplate()
 {
 	local template=$1
-	local rxyzFile=$2
-	local charge=$3
-	local mult=$4
+	local nProcShared=$2
+	local rxyzFile=$3
+	local charge=$4
+	local mult=$5
 	
 	local SID="-$rxyzFile$RANDOM"
 	
@@ -306,7 +310,7 @@ function ienerGAMESSTemplate()
 		fillTemplate $template .xyzFile$SID $charge $mult rohf > input$SID.inp
 		rm .xyzFile$SID
 		
-		runGAMESS input$SID.inp > input$SID.out 2>&1
+		runGAMESS input$SID.inp $nProcShared > input$SID.out 2>&1
 		cp input$SID.out ${rxyzFile%.*}.out 2> /dev/null
 		cp input$SID.inp ${rxyzFile%.*}.inp 2> /dev/null
 		

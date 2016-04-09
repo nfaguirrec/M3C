@@ -2,10 +2,10 @@
 ##################################################################
 #
 #  This file is part of M3C
-#  Copyright (C) by authors (2012-2015)
+#  Copyright (C) by authors (2012-2016)
 #  
 #  Authors:
-#    * Dr. Néstor F. Aguirre (2012-2015)
+#    * Dr. Néstor F. Aguirre (2012-2016)
 #          nestor.aguirre@uam.es
 #    * Dr. Sergio Díaz-Tendero (2012-2015)
 #          sergio.diaztendero@uam.es
@@ -30,6 +30,8 @@
 #
 ##################################################################
 
+FILTER="xyz"
+
 ##
 # @brief
 ##
@@ -45,7 +47,7 @@ function filterIsomers()
 	
 	cd $resultsDir
 	
-	local list=(`ls *.xyz 2> /dev/null`)
+	local list=(`ls *.$FILTER 2> /dev/null`)
 	
 	for i in `seq 0 $(( ${#list[@]}-2 ))`
 	do
@@ -58,38 +60,47 @@ function filterIsomers()
 			then
 				continue
 			fi
-			
-			if [ -f "${list[$i]}" -a -f "${list[$j]}" ]
+
+			# Check that target file has not been removed yet
+			if [ ! -f "${list[$i]}" -o ! -f "${list[$j]}" ]
 			then
-				nAtoms1=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$i]}`
-				nAtoms2=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$j]}`
+				continue
+			fi
+			
+			nAtoms1=`gawk 'BEGIN{i=0;nb=0}(NR>2 && $0~/^[[:blank:]]*$/){nb++}(NR>2 && nb<1){i++}END{print i}' ${list[$i]}`
+			nAtoms2=`gawk 'BEGIN{i=0;nb=0}(NR>2 && $0~/^[[:blank:]]*$/){nb++}(NR>2 && nb<1){i++}END{print i}' ${list[$j]}`
+
+			if [ "$nAtoms1" -ne "$nAtoms2" ]
+			then
+				echo "### ERROR ### Files ${list[$i]} and ${list[$j]} have not the same number of atoms"
+				exit
+			fi
+			
+			valueF=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Chemical"`
+			valueR=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Radius"`
+			valueI=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Inertia"`
+			
+			if [ "$nAtoms1" -ge 2 ]
+			then
 				
-				valueF=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Chemical"`
-				valueR=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Radius"`
-				valueI=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Inertia"`
-				
-				if [ "$nAtoms1" -ge 2 -a "$nAtoms1" -ge 2 ]
+				if [ "$valueF" = "Chemical formula ...  OK" ]
 				then
-					
-					if [ "$valueF" = "Chemical formula ...  OK" -a "$valueR" = "Radius ...  OK" ]
+					if [[ "$valueR" =~ "Radius ...  OK" ]]
 					then
 						if [[ "$valueI" =~ "Inertia moment ...  OK" ]]
 						then
 							rm "${list[$j]}"
 						fi
 					fi
-					
-				else
-				
-					if [ "$valueF" = "Chemical formula ...  OK" ]
-					then
-						if [[ "$valueI" =~ "Inertia moment ...  OK" ]]
-						then
-							rm "${list[$j]}"
-						fi
-					fi
-					
 				fi
+				
+			else # single atoms
+			
+				if [ "$valueF" = "Chemical formula ...  OK" ]
+				then
+					rm "${list[$j]}"
+				fi
+				
 			fi
 		done
 	done
@@ -102,38 +113,53 @@ function filterIsomers()
 ##
 function main()
 {
-	local listDir=$*
+	if [ "$1" = "xyz" -o "$1" = "rxyz" -o "$1" = "rxyz0" ]
+	then
+		FILTER=$1
+		shift # $1 will be discarded
+		local listDir=$*
+	else
+		local listDir=$*
+	fi
 	
 	if [ -z "$listDir" ]
 	then
 		echo "usage:"
-		echo "    M3C.mergeResults dir1 dir2 dir3 ... "
-		echo "    M3C.mergeResults results* "
+		echo "    M3C.mergeResults [xyz|rxyz|rxyz0] dir1 dir2 dir3 ... "
+		echo "                           xyz                       "
+		echo "    M3C.mergeResults [xyz|rxyz|rxyz0] results* "
+		echo "                           xyz                       "
 		exit
 	fi
 	
-	categories=`ls $listDir | awk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | awk '{map[$1]=1}END{for(key in map) print key}'`
+	categories=`ls $listDir | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
 	
-	if [ ! -d merge ]
+	if [ -d "merge" ]
 	then
-		mkdir merge
-	else
-		rm merge/* 2> /dev/null
+		echo "@@@ WARNING @@@ There is already a merge directory (merge). Backup copy will be generated"
+		mv merge merge.backup-`date +%Y%m%d`
 	fi
+	mkdir merge
 	
 	for category in $categories
 	do
 		i=1
 		for dirName in $listDir
 		do
-			targetFiles=`ls $dirName/$category*.xyz 2> /dev/null`
+			targetFiles=`ls $dirName/$category*.$FILTER 2> /dev/null`
 			
 			if [ -n "$targetFiles" ]
 			then
 				for target in $targetFiles
 				do
-					printf "%60s%10s%40s\n" "$target"  "---->"  "merge/$category-$i.xyz"
-					cp $target merge/$category-$i.xyz
+					if [ "$FILTER" != "rxyz0" ]
+					then
+						printf "%60s%10s%40s\n" "$target"  "---->"  "merge/$category-$i.$FILTER"
+						cp $target merge/$category-$i.$FILTER
+					else
+						printf "%60s%10s%40s\n" "$target"  "---->"  "merge/$category-$i.rxyz"
+						cp $target merge/$category-$i.rxyz
+					fi
 					
 					i=$(( i+1 ))
 				done
@@ -142,6 +168,11 @@ function main()
 		echo ""
 		echo ""
 	done
+	
+	if [ "$FILTER" = "rxyz0" ]
+	then
+		FILTER="rxyz"
+	fi
 	
 	echo -n "Filtering of repeated isomers ... "
 	filterIsomers merge
