@@ -1,9 +1,40 @@
---------------
+==============
+ VERSION 1.9
+==============
+
+Improvements and New Features
+-----------------------------
+* It is possible to use the operator * in the Markov chain design option (e.g. task=5*T,10*R,5*S:0)
+* New option in MOLECULE DATABASE "store", allows to centralize the geometry files. M3C.makeDB has been updated accordingly.
+* New option in GOPTIONS block. radiusType = COVALENT | VAN_DER_WAALS. Radii of fragments are calculated using the type selected.
+  In the previous version it was  only used covalent radius (default=COVALENT). To study floppy systems like argon clusters it is a crucial enhancement.
+  Summary of available atoms:
+     COVALENT ==> H-Ar
+     VAN_DER_WAALS ==> H,Li,Na,K,Rb,Cs, Be,Mg,Ca,Sr,Ba, Sc,Y,La, Ti,Zr,Hf, V,Nb,Ta, Cr,Mo,W, He,Ne,Ar,Kr,Xe
+* Following commands now include the possibility to use several SMP processors per task:
+    M3C-gamess.freqs, M3C-gamess.geniso, M3C-gamess.iener, M3C-gamess.optg
+    M3C-gaussian.freqs, M3C-gaussian.geniso, M3C-gaussian.iener, M3C-gaussian.optg
+* The option gammaLCorrection is not supported anymore.
+
+Fixes
+-----
+* The M3C-* commands now have a brief usage message when they are executed with an incomplete number of parameters.
+* Backup directories now include generating date.
+* MOLPRO support will be deprecated in next version.
+
+==============
  VERSION 1.8
---------------
+==============
+
+Improvements and New Features
+-----------------------------
 * Sampling of rotational energy is now included.
-* Fixed a bug in format for large names of fragmentation channels in M3C.makeDB
 * Comparison of molecules in M3C-gamess.geniso and M3C-gaussian.geniso has been improved.
-* Fixes to make M3C-gaussian.optg compatible with M3C-gamess.optg.
 * M3C-gaussian.iener in now available.
-* Reaction plots are now available through M3C.analysis tool (depend on graphviz www.graphviz.org). Options "reactions" and "reactionsd"
+* Reaction plots are now available through M3C.analysis tool (depend on graphviz www.graphviz.org). Options "reactions" and "reactionsd".
+
+Fixes
+-----
+* Fixes to make M3C-gaussian.optg compatible with M3C-gamess.optg.
+* Fixed a bug in format for large names of fragmentation channels in M3C.makeDB.
+

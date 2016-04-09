@@ -1,0 +1,335 @@
+#!/bin/bash
+
+if [ -f "$M3C_HOME/bin/gaussianDriver.sh" ]
+then
+        source $M3C_HOME/bin/gaussianDriver.sh
+else
+        source $M3C_HOME/src/gaussianDriver.sh
+fi
+
+##
+# @brief
+##
+function getEnergyGAUSSIANTemplate()
+{
+	local template=$1
+	local nProcShared=$2
+	local xyzFile=$3
+	local charge=$4
+	local mult=$5
+	
+	local SID="-$xyzFile$RANDOM"
+	
+	local nAtoms=""
+	
+	nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' $xyzFile`
+	
+	if [ "$nAtoms" -gt 0  ]
+	then
+		rxyz2xyz $xyzFile > .xyzFile$SID
+		fillTemplate $template .xyzFile$SID $charge $mult > input$SID.com
+		rm .xyzFile$SID
+# 		fillTemplate $template $xyzFile $charge $mult > input$SID.com
+			
+		runGAUSSIAN input$SID.com $nProcShared > input$SID.out 2>&1
+		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
+		cp input$SID.com ${xyzFile%.*}.com 2> /dev/null
+		
+		if grep "Normal termination" input$SID.out > /dev/null
+		then
+			energy=`grep -E "^[[:blank:]]+CCSD\(T\)= " input$SID.out | sed 's/D/E/g' | gawk '{printf "%.10f\n", $2}'`
+			test -z "$energy" && energy=`grep "SCF Done" input$SID.out | tail -n 1 | cut -d "=" -f 2 | cut -d "A" -f 1`
+			
+			echo $energy
+		fi
+	fi
+	
+	rm -rf .finalGeom$SID input$SID.com input$SID.out .finalGeom$SID
+}
+
+##
+# @brief
+##
+getEnergy()
+{
+	local iFileXYZ=$1
+	local charge=$2
+	local mult=$3
+	
+	getEnergyGAUSSIANTemplate $GAUSSIAN_TEMPLATE $NPROCSHARED $iFileXYZ $charge $mult > ${iFileXYZ%.*}.energy
+	
+	mv ${iFileXYZ%.*}.xyz $HISTORY_DIR/ 2> /dev/null
+	mv ${iFileXYZ%.*}.energy $HISTORY_DIR/ 2> /dev/null
+	mv ${iFileXYZ%.*}.out $HISTORY_DIR/ 2> /dev/null
+	mv ${iFileXYZ%.*}.com $HISTORY_DIR/ 2> /dev/null
+}
+
+##
+# @brief
+##
+function joinXYZfiles()
+{
+	local iFile1=$1
+	local iFile2=$2
+	
+	local nAtomsJoin
+	local SID="-$RANDOM"
+	
+	awk 'BEGIN{ n=1 }(NR==1){ nAtoms=$1 }( NR>2 && n<=nAtoms ){ print $0; n++ }' $iFile1 > .atoms1$SID
+	awk 'BEGIN{ n=1 }(NR==1){ nAtoms=$1 }( NR>2 && n<=nAtoms ){ print $0; n++ }' $iFile2 > .atoms2$SID
+	cat .atoms1$SID .atoms2$SID > .atoms$SID
+	nAtomsJoin=`cat .atoms$SID | wc -l`
+	
+	echo $nAtomsJoin
+	echo ""
+	cat .atoms$SID
+	
+	rm .atoms1$SID .atoms2$SID .atoms$SID
+}
+
+##
+# @brief
+##
+function main()
+{
+	GAUSSIAN_TEMPLATE=$1
+	local iFileMol1=$2
+	local iFileMol2=$3
+	local nOrient=$4
+	NPROCSHARED=$5
+	
+	local maxR=6.0
+	local stepSizeR=0.2
+	local SID="-$RANDOM"
+	
+	##############################
+	# Default options
+	##############################
+	if [ -z "$GAUSSIAN_TEMPLATE" -o \
+				-z "$iFileMol1" -o \
+				-z "$iFileMol2" -o \
+				-z "$nOrient" ]
+	then
+			echo "usage: M3C-gaussian.genpot gaussianTemplate iFileMol1 iFileMol2 nOrient [ nProcShared ]"
+			echo "                                                                               1       "
+			exit
+	fi
+	
+	[ -z "$NPROCSHARED" ] && NPROCSHARED=1
+	##############################
+	
+	if [ -n "$SLURM_NTASKS" ]
+	then
+			nThreads=$SLURM_NTASKS
+	else
+			nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
+	fi
+	nThreads=$(( $nThreads/$NPROCSHARED ))
+	
+	local charge1=`echo "$iFileMol1" | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
+	local charge2=`echo "$iFileMol2" | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
+	local mult1=`echo "$iFileMol1" | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
+	local mult2=`echo "$iFileMol2" | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
+	
+	local maxMult=`echo "$mult1+$mult2-1" | bc`
+	local minMult=`echo "sqrt(($mult1-$mult2)*($mult1-$mult2))+1" | bc`
+	
+	local radius1=`molecule.radius $iFileMol1`
+	local radius2=`molecule.radius $iFileMol2`
+	local minR=`echo "$radius1 $radius2" | gawk '{ if($1>$2) print $1; else print $2 }'`
+	
+	local charge=`echo "$charge1+$charge2" | bc`
+	local multiplicities="`seq $maxMult -2 $minMult`"
+	
+	for mult in $multiplicities
+	do
+		HISTORY_DIR="history.genpot_${iFileMol1%.*}--${iFileMol2%.*}_m${mult}"
+		
+		if [ -d "$HISTORY_DIR" ]
+		then
+				echo "@@@ WARNING @@@ There is already a history directory ($HISTORY_DIR). Backup copy will be generated"
+				mv $HISTORY_DIR $HISTORY_DIR.backup-`date +%Y%m%d`
+		fi
+		mkdir $HISTORY_DIR
+		
+		cp * $HISTORY_DIR/ &> /dev/null
+		cd $HISTORY_DIR
+		
+		for R in `seq $minR $stepSizeR $maxR`
+		do
+			molecule.move -i $iFileMol1 -x 0.0 -y 0.0 -z 0.0 > monomerAa$SID.xyz
+			molecule.move -i $iFileMol2 -x 0.0 -y 0.0 -z  $R > monomerBa$SID.xyz
+			
+			for i in `seq 1 $nOrient`
+			do
+				molecule.rotate -i monomerAa$SID.xyz -random true > monomerA$SID.xyz
+				molecule.rotate -i monomerBa$SID.xyz -random true > monomerB$SID.xyz
+				
+				joinXYZfiles monomerA$SID.xyz monomerB$SID.xyz > mol-$R-$i.xyz
+				rm monomerA$SID.xyz monomerB$SID.xyz
+			done
+			
+			rm monomerAa$SID.xyz
+			rm monomerBa$SID.xyz
+		done
+		
+		local xyzFile=( `ls | grep "mol-.*.xyz"` )
+		
+		echo ""
+		echo "Multiplicity: $mult"
+		echo ""
+	
+		#-----------------------------------------------------------------------
+		
+		startTime=`date "+%s"`
+		
+		ij=-1
+		for (( i=0; i<=$(( ${#xyzFile[@]}/$nThreads-1 )); i++ ))
+		do
+			iStartTime=`date "+%s"`
+			
+			echo -n "Running: "
+			
+			for (( j=1; j<=$nThreads; j++ ))
+			do
+				ij=$(( $j-1+$nThreads*$i ))
+				
+				if (( j != $nThreads ))
+				then
+					printf "%15s," "${xyzFile[$ij]%.*}"
+				else
+					printf "%15s" "${xyzFile[$ij]%.*}"
+				fi
+				
+				getEnergy ${xyzFile[$ij]} $charge $mult &
+			done
+			
+			echo -n " ... "
+			
+			wait
+			
+			iEndTime=`date "+%s"`
+			elapsedTime=$(( $iEndTime-$iStartTime ))
+			echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+		done
+
+		if (( $ij < ${#xyzFile[@]} ))
+		then
+			iStartTime=`date "+%s"`
+			
+			echo -n "Running: "
+			
+			k=1
+			for (( i=$(( $ij+1 )); i<${#xyzFile[@]}; i++ ))
+			do
+				if (( $i != $(( ${#xyzFile[@]} - 1 )) ))
+				then
+					printf "%15s," "${xyzFile[$i]%.*}"
+				else
+					printf "%15s " "${xyzFile[$i]%.*}"
+				fi
+				
+				getEnergy ${xyzFile[$i]} $charge $mult &
+
+				k=$(( $k+1 ))
+			done
+			
+			for (( i=$k; i<=$nThreads; i++ ))
+			do
+				if (( i != $nThreads ))
+				then
+					printf "%15s " ""
+				else
+					printf "%15s" ""
+				fi
+			done
+			
+			echo -n " ... "
+			
+			wait
+			
+			iEndTime=`date "+%s"`
+			elapsedTime=$(( $iEndTime-$iStartTime ))
+			echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+		fi
+		
+		endTime=`date "+%s"`
+		elapsedTime=$(( $endTime-$startTime ))
+		
+		echo -n "         "
+		printf "%$(( (15+1)*(${nThreads}+1) ))s" ""
+		echo "  ` echo -n  "Total"`: $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+		
+		#-----------------------------------------------------------------------
+		
+		cat /dev/null > .energyValues$SID
+		for (( i=0; i<=$(( ${#xyzFile[@]}-1 )); i++ ))
+		do
+			R=`echo ${xyzFile[$i]} | awk 'BEGIN{FS="-"}{print $2}'`
+			rotID=`echo ${xyzFile[$i]} | awk 'BEGIN{FS="-"}{print $3}' | sed 's/.xyz//g'`
+			
+			evalue=`cat ${xyzFile[$i]%.*}.energy`
+			
+			if [ -n "$evalue" ]
+			then
+				echo "$R    $rotID   $evalue" >> .energyValues$SID
+			else
+				echo "$R    $rotID      --  " >> .energyValues$SID
+			fi
+		done
+		
+		cat .energyValues$SID | gawk '
+		{
+				R = $1
+				rotID = $2
+				energy = $3
+
+				rotIDvec[rotID] = 1
+				token[R,rotID] = energy
+
+				if ( $3 != "--" ){
+						mapSum[R] += energy
+						mapSum2[R] += energy**2
+						mapN[R] += 1
+				}
+		}
+		END{
+				
+				for( R in mapSum ){
+						printf "#%14s     ", "R"
+							
+						i=1
+						for( rotID in rotIDvec ){
+								printf "%15d", i
+								i++
+						}
+
+						printf "     %15s%15s\n", "aver", "stdev"
+						break
+				}
+
+				for( R in mapSum ){
+
+						printf "%15.6f     ", R
+
+						for( rotID in rotIDvec ){
+								if( token[R,rotID] != "--" )
+										printf "%15.6f", token[R,rotID]
+								else
+										printf "%15s", "--"
+						}
+
+						printf "     %15.6f%15.6f\n", mapSum[R]/mapN[R], sqrt( mapSum2[R]/mapN[R]-(mapSum[R]/mapN[R])**2 )
+				
+				}
+				
+		}' | sort -n -k1 > ${iFileMol1%.*}--${iFileMol2%.*}_m${mult}.energy
+		
+		rm .energyValues$SID
+		
+		cp ${iFileMol1%.*}--${iFileMol2%.*}_m${mult}.energy ../
+		cd ..
+	done
+}
+
+main $*

@@ -123,14 +123,20 @@ module Fragment_
 	!>
 	!! @brief Constructor
 	!!
-	subroutine fromMassTableRow( this, strRow, id )
+	subroutine fromMassTableRow( this, strRow, id, store )
 		class(Fragment) :: this 
 		character(*), intent(in) :: strRow
 		integer, optional :: id
+		character(*), optional :: store
 		
 		real(8) :: rBuffer
 		character(100), allocatable :: tokens(:)
 		character(100) :: extension
+		
+		type(String) :: effStore
+		
+		effStore = "."
+		if( present(store) ) effStore = store
 		
 		call this.initDefault()
 		
@@ -151,7 +157,7 @@ module Fragment_
 			this.multiplicity = FString_toInteger( tokens(3) )
 			this.orbMomentum = FString_toInteger( tokens(4) )
 			this.sigmaSym = FString_toInteger( tokens(5) )
-			this.fileName = trim(tokens(6))
+			this.fileName = trim(effStore.fstr)//"/"//trim(tokens(6))
 			this.electronicEnergy = FString_toReal( tokens(7) )*eV
 		else
 			call GOptions_error( &
@@ -246,7 +252,7 @@ module Fragment_
 ! 					this.diagInertiaTensor.get(3,3)/amu/12.01_8, &
 ! 					"  ]   amu*angs**2/mC"
 
-			write(STDOUT,"(4X,A22,F15.5,A)")  "            Radius = ", this.radius()/angs, "   A"
+			write(STDOUT,"(4X,A22,F15.5,A)")  "            Radius = ", this.radius( type=GOptionsM3C_radiusType )/angs, "   A"
 			write(STDOUT,"(4X,A22,F15.7,A)")  "             Eelec = ", this.electronicEnergy/eV, "   eV"
 			write(STDOUT,"(4X,A22,F15.7,A)")  "             Eelec = ", this.electronicEnergy, "   a.u."
 			write(STDOUT,"(4X,A22,F15.7,A)")  "              Mass = ", this.mass()/amu, "   amu"

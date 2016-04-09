@@ -2,10 +2,10 @@
 ##################################################################
 #
 #  This file is part of M3C
-#  Copyright (C) by authors (2012-2015)
+#  Copyright (C) by authors (2012-2016)
 #  
 #  Authors:
-#    * Dr. Néstor F. Aguirre (2012-2015)
+#    * Dr. Néstor F. Aguirre (2012-2016)
 #          nestor.aguirre@uam.es
 #    * Dr. Sergio Díaz-Tendero (2012-2015)
 #          sergio.diaztendero@uam.es
@@ -52,39 +52,39 @@ function filterIsomers()
 	do
 	        for id2 in `seq $(( $id1 + 1 )) $(( ${#files[@]} - 1 ))`
 	        do
-	                chemF1=`molecule.chemicalFormula ${files[$id1]}`
-	                chemF2=`molecule.chemicalFormula ${files[$id2]}`
+					chemF1=`molecule.chemicalFormula ${files[$id1]}`
+					chemF2=`molecule.chemicalFormula ${files[$id2]}`
 
-	                q1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/q//g'`
-	                q2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/q//g'`
+					q1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/q//g'`
+					q2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/q//g'`
 
-                	m1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/m//g'`
-        	        m2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/m//g'`
-                
-	                if [ "$chemF1" = "$chemF2" -a  "$q1" = "$q2" -a "$m1" = "$m2" ]
-                	then
-				nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$i]}`
-                
-				case "$nAtoms" in
-					2)
-						gamma=10.0
-						;;
-					3)
-						gamma=5.0
-						;;
-					*)
-						gamma=1.0
-						;;
-				esac
-
-        	                test=`molecule.compare ${files[$id1]} ${files[$id2]} $gamma | grep OK | wc -l`
-
-	                        if [ "$test" -eq 3 ]
-                       		then
-        	                        rm ${files[$id1]}
-	                                break
-	                        fi
-	                fi
+					m1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/m//g'`
+					m2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/m//g'`
+				
+					if [ "$chemF1" = "$chemF2" -a  "$q1" = "$q2" -a "$m1" = "$m2" ]
+					then
+						nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$i]}`
+						
+						case "$nAtoms" in
+							2)
+								gamma=10.0
+								;;
+							3)
+								gamma=5.0
+								;;
+							*)
+								gamma=1.0
+								;;
+						esac
+							
+						test=`molecule.compare ${files[$id1]} ${files[$id2]} $gamma | grep OK | wc -l`
+						
+						if [ "$test" -eq 3 ]
+						then
+								rm ${files[$id1]}
+								break
+						fi
+					fi
         	done
 	done
 
@@ -132,10 +132,7 @@ function generateIsomers()
 		j=1
 		for i in `seq 1 $NSTEPS`
 		do
-			echo "Mis atomos $i"
-			cat products.xyz
-			optgGAMESSTemplate ../$GAMESS_TEMPLATE products.xyz $charge $mult > output.xyz
-# 			cp products.xyz output.xyz
+			optgGAMESSTemplate ../$GAMESS_TEMPLATE $NPROCSHARED products.xyz $charge $mult > output.xyz
 			nAtomsEnd=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' output.xyz`
 			
 			cp products.out history-$label/$label-$j.out
@@ -179,14 +176,8 @@ function generateIsomers()
 			successRandom="F"
 			for trial in `seq 1 10000`
 			do
-				echo "Intento antes M3C $trial"
-				cat products.xyz
-
 				M3C -i reactorT.m3c > M3C.log 2>&1
 
-				echo "Intento despues M3C $trial"
-				cat products.xyz
-				
 				if [ -n "`grep "@@@ ACCEPTED @@@" M3C.log 2> /dev/null`" ]
 				then
 					successRandom="T"
@@ -210,9 +201,6 @@ function generateIsomers()
 				esac
 				
 				mv newRand.xyz products.xyz
-
-				echo "Cambiando desde newRand"
-				cat products.xyz
 			fi
 		done
 		
@@ -242,6 +230,7 @@ function main()
 	NSTEPS=$4
 	INIT_GEOM_DIR=$5
 	FINAL_GEOM_DIR=$6
+	NPROCSHARED=$7
 	
 	WORK_DIR=tmp
 	
@@ -250,13 +239,32 @@ function main()
 	local charge=""
 	local mult=""
 	local oshell=""
+	
+	##############################
+	# Default options
+	##############################
+	if [ -z "$DATABASE" -o \
+		 -z "$GAMESS_TEMPLATE" -o \
+		 -z "$M3C_TEMPLATE" -o \
+		 -z "$NSTEPS" -o \
+		 -z "$INIT_GEOM_DIR" -o \
+		 -z "$FINAL_GEOM_DIR" ]
+	then
+		echo "usage: M3C-gamess.geniso database gamessTemplate M3CTemplate nSteps initGeomDir resultsGeomDir [ nProcShared ]"
+		echo "                                                                                                      1       "
+		exit
+	fi
 
+	[ -z "$NPROCSHARED" ] && NPROCSHARED=1
+	##############################
+	
 	if [ -n "$SLURM_NTASKS" ]
 	then
 		nThreads=$SLURM_NTASKS
 	else
 		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
+	nThreads=$(( $nThreads/$NPROCSHARED ))
 	
 	xyzFile=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $1 }' $DATABASE` )
 	charge=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $2 }' $DATABASE` )
@@ -269,7 +277,7 @@ function main()
 	if [ -d "$FINAL_GEOM_DIR" ]
 	then
 		echo "@@@ WARNING @@@ There is already an output directory ($FINAL_GEOM_DIR). Backup copy will be generated"
-		mv $FINAL_GEOM_DIR $FINAL_GEOM_DIR.backup
+		mv $FINAL_GEOM_DIR $FINAL_GEOM_DIR.backup-`date +%Y%m%d`
 	fi
 	mkdir $FINAL_GEOM_DIR
 

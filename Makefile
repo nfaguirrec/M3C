@@ -19,7 +19,7 @@ binary:
 	cp README M3C-v${VERSION}/
 	cp NEWS M3C-v${VERSION}/
 	cp M3Cvars.sh M3C-v${VERSION}/
-	cp doc/tutorial/M3C-tutorial.pdf M3C-v${VERSION}/doc/
+	cp doc/tutorial/tutorial-*.pdf M3C-v${VERSION}/doc/
 #	cp -r examples M3C-v${VERSION}
 	cp -r utils M3C-v${VERSION}
 	mkdir M3C-v${VERSION}/bin

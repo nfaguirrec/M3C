@@ -2,10 +2,10 @@
 ##################################################################
 #
 #  This file is part of M3C
-#  Copyright (C) by authors (2012-2015)
+#  Copyright (C) by authors (2012-2016)
 #  
 #  Authors:
-#    * Dr. Néstor F. Aguirre (2012-2015)
+#    * Dr. Néstor F. Aguirre (2012-2016)
 #          nestor.aguirre@uam.es
 #    * Dr. Sergio Díaz-Tendero (2012-2015)
 #          sergio.diaztendero@uam.es
@@ -305,15 +305,24 @@ EOF
 ##
 # @brief
 ##
-function removeEPSFiles()
+function storeTemporaryFiles()
 {
-	echo -n "Cleaning EPS files ... "
+	if [ -d "geometries.data" ]
+	then
+		echo "@@@ WARNING @@@ There is already a data directory (geometries.data). Backup copy will be generated"
+		mv geometries.data geometries.data.backup
+	fi
+	mkdir geometries.data
 	
+	echo -n "Storing TEX file ( geometries.data ) ... "
+	mv geometries*.tex geometries.data
+	echo "OK"
+	
+	echo -n "Storing EPS files ( geometries.data ) ... "
 	for item in `ls *.$FILTER`
 	do
-		rm ${item%.*}.eps > /dev/null 2>&1
+		mv ${item%.*}.eps geometries.data
 	done
-	
 	echo "OK"
 }
 
@@ -367,7 +376,8 @@ function geometriesByCategories()
 	echo "OK"
 	
 	echo -n "Cleaning temporal files ... "
-	rm geometries-$$.tex geometries-$$.aux geometries-$$.log geometries-$$.dvi
+	rm geometries-$$.aux geometries-$$.log geometries-$$.dvi
+	mv geometries-$$.tex geometries.sort.tex
 	mv geometries-$$.pdf geometries.sort.pdf
 	echo "OK"
 	
@@ -402,7 +412,8 @@ function geometries()
 	echo "OK"
 	
 	echo -n "Cleaning temporal files ... "
-	rm geometries-$$.tex geometries-$$.aux geometries-$$.log geometries-$$.dvi
+	rm geometries-$$.aux geometries-$$.log geometries-$$.dvi
+	mv geometries-$$.tex geometries.tex
 	mv geometries-$$.pdf geometries.pdf
 	echo "OK"
 	
@@ -445,12 +456,12 @@ function checkDependencies()
 {
 	JAVA_INTERP=""
 	
-	if [ -n "`which java`" ]
-	then
-		JAVA_INTERP="java"
-	elif [ -n "`which gij`" ]
+	if [ -n "`which gij`" ]
 	then
 		JAVA_INTERP="gij"
+	elif [ -n "`which java`" ]
+	then
+		JAVA_INTERP="java"
 	else
 		echo "### Error ### It's neccessary to have installed an interpreter for Java bytecode, e.g. java or gij"
 		exit
@@ -506,6 +517,7 @@ function main()
 	if [ -z "$RANDOM_ORIENT" ] ; then RANDOM_ORIENT="TRUE"; fi
 	####################################
 	
+	checkDependencies
 
 	### INPUT CHECK#####################
 	echo ""
@@ -519,26 +531,26 @@ function main()
 	echo "Random orientation? ${RANDOM_ORIENT}"
 	echo "Highlighted structures: $highlight"
 	echo ""
+	echo "Java: $JAVA_INTERP"
+	echo ""
 	####################################
-
-	checkDependencies
 
 	case $oType in
 		u-pdf)
 			buildEPSFiles
 			geometries $highlight
-			removeEPSFiles
+			storeTemporaryFiles
 			;;
 		s-pdf)
 			buildEPSFiles
 			geometriesByCategories
-			removeEPSFiles
+			storeTemporaryFiles
 			;;
 		pdf)
 			buildEPSFiles
 			geometries $highlight
 			geometriesByCategories
-			removeEPSFiles
+			storeTemporaryFiles
 			;;
 		gif)
 			buildGifFiles

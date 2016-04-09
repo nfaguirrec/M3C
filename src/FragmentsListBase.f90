@@ -699,7 +699,7 @@ module FragmentsListBase_
 		end if
 		
 ! Testing overlap
-#define OVERLAPPING(i,j) this.clusters(i).radius()+this.clusters(j).radius()-GOptionsM3C_overlappingRadius > norm2( rVec2-rVec1 )
+#define OVERLAPPING(i,j) this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType )-GOptionsM3C_overlappingRadius > norm2( rVec2-rVec1 )
 ! ! Sampling on "x" axis, which is the axis with inertia moment equal to cero
 ! #define RVEC_X(i) [ sample(1,i), 0.0_8, 0.0_8 ]
 ! ! Sampling on "x-y" axes in polar coordinates
@@ -916,7 +916,7 @@ module FragmentsListBase_
 		end if
 		
 ! Testing overlap
-#define OVERLAPPING(i,j) this.clusters(i).radius()+this.clusters(j).radius()-GOptionsM3C_overlappingRadius > norm2( rVec2-rVec1 )
+#define OVERLAPPING(i,j) this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType )-GOptionsM3C_overlappingRadius > norm2( rVec2-rVec1 )
 ! Sampling on "x" axis, which is the axis with inertia moment equal to cero (r)
 #define RVEC_X(i) [ sample(1,i), 0.0_8, 0.0_8 ]
 ! Sampling on "x-y" axes in polar coordinates (r,phi)
@@ -1143,7 +1143,7 @@ module FragmentsListBase_
 			write(*,"(<GOptions_indentLength*2>X,A33,2A10,3X,A10)") "A", "A", "A", "A"
 			do i=1,this.nMolecules()
 				write(*,"(<GOptions_indentLength*2>X,A20,3X,3F10.5,3X,F10.5)") trim(this.clusters(i).label()), &
-						this.clusters(i).center()/angs, this.clusters(i).radius()/angs
+						this.clusters(i).center()/angs, this.clusters(i).radius( type=GOptionsM3C_radiusType )/angs
 			end do
 			write(*,*) ""
 		end if
@@ -1579,7 +1579,7 @@ module FragmentsListBase_
 		if( present(maxIter) ) effMaxIter = maxIter
 		
 ! Testing overlap
-#define OVERLAPPING(i,j) this.clusters(i).radius()+this.clusters(j).radius()-GOptionsM3C_overlappingRadius > norm2( rVec2-rVec1 )
+#define OVERLAPPING(i,j) this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType )-GOptionsM3C_overlappingRadius > norm2( rVec2-rVec1 )
 ! Convertion from spherical to cartesian coordinates
 #define RVEC(i) [ sample(1,i)*sin(sample(2,i))*cos(sample(3,i)), sample(1,i)*sin(sample(2,i))*sin(sample(3,i)), sample(1,i)*cos(sample(2,i)) ]
 		
@@ -1588,9 +1588,9 @@ module FragmentsListBase_
 			this.logVfree_ = 0.0_8
 			do i=1,this.nMolecules()
 				this.logVfree_ = this.logVfree_ &
-					+ 3.0_8*log( (GOptionsM3C_systemRadius-this.clusters(i).radius())/(2.0_8*Math_PI) )+log( 4.0_8*Math_PI/3.0_8 )
+					+ 3.0_8*log( (GOptionsM3C_systemRadius-this.clusters(i).radius( type=GOptionsM3C_radiusType ))/(2.0_8*Math_PI) )+log( 4.0_8*Math_PI/3.0_8 )
 					
-				if( GOptionsM3C_systemRadius < this.clusters(i).radius() ) then
+				if( GOptionsM3C_systemRadius < this.clusters(i).radius( type=GOptionsM3C_radiusType ) ) then
 					write(*,*) "### ERROR ### FragmentsListBase.updateLogVfree: Rsys < Ri then Log( Rsys-Ri ) = NaN"
 					stop
 				end if
@@ -1790,12 +1790,12 @@ module FragmentsListBase_
 ! 				rvij = norm2( this.clusters(i).centerOfMass()-this.clusters(j).centerOfMass() )
 				rvij = norm2( this.clusters(i).center()-this.clusters(j).center() )
 				
-				if( this.clusters(i).radius()+this.clusters(j).radius()-GOptionsM3C_overlappingRadius > rvij ) then
+				if( this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType )-GOptionsM3C_overlappingRadius > rvij ) then
 					call GOptions_error( &
 						 "Overlapping configuration found", &
 						 "SMoleculeList.updateIntermolecularPotential()", &
 						 "( R1+R2 = "//&
-						 trim(FString_fromReal((this.clusters(i).radius()+this.clusters(j).radius())/angs,"(F5.3)"))//" A ) > " &
+						 trim(FString_fromReal((this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType ))/angs,"(F5.3)"))//" A ) > " &
 						 //"( rij = "//trim(FString_fromReal(rvij/angs,"(F5.3)"))//" A ) " &
 						 //trim(this.clusters(i).label())//" --- "//trim(this.clusters(j).label()) &
 					)
@@ -1854,12 +1854,12 @@ module FragmentsListBase_
 ! 				
 ! 				rvij = norm2( this.clusters(i).center()-this.clusters(j).center() )
 ! 				
-! 				if( this.clusters(i).radius()+this.clusters(j).radius()-GOptions_overlappingRadius > rvij ) then
+! 				if( this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType )-GOptions_overlappingRadius > rvij ) then
 ! 					call GOptions_error( &
 ! 						 "Overlapping configuration found", &
 ! 						 "Fragment.updateIntermolecularPotential()", &
 ! 						 "( R1+R2 = "//&
-! 						 trim(FString_fromReal((this.clusters(i).radius()+this.clusters(j).radius())/angs,"(F5.3)"))//" A ) > " &
+! 						 trim(FString_fromReal((this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType ))/angs,"(F5.3)"))//" A ) > " &
 ! 						 //"( rij = "//trim(FString_fromReal(rvij/angs,"(F5.3)"))//" A ) " &
 ! 						 //trim(this.clusters(i).label())//" --- "//trim(this.clusters(j).label()) &
 ! 					)
@@ -2197,12 +2197,12 @@ module FragmentsListBase_
 				end do
 			end do
 			
-			cRadius1 = this.clusters(si).radius()
-			cRadius2 = this.clusters(sj).radius()
+			cRadius1 = this.clusters(si).radius( type=GOptionsM3C_radiusType )
+			cRadius2 = this.clusters(sj).radius( type=GOptionsM3C_radiusType )
 			
 			output = output/2.0_8 + max( cRadius1, cRadius2 )
 		else
-			output = this.clusters(1).radius()
+			output = this.clusters(1).radius( type=GOptionsM3C_radiusType )
 		end if
 	end function radius
 	

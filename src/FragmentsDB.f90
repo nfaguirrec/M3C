@@ -13,6 +13,8 @@ module FragmentsDB_
 	use Fragment_
 	use ModelPotential_
 	
+	use GOptionsM3C_
+	
 	implicit none
 	private
 	
@@ -63,10 +65,11 @@ module FragmentsDB_
 	!>
 	!! @brief Constructor
 	!!
-	subroutine fromMassTable( this, massTable, strReference )
+	subroutine fromMassTable( this, massTable, strReference, store )
 		class(FragmentsDB) :: this
 		type(String), allocatable, intent(in) :: massTable(:)
 		type(String), optional, intent(in) :: strReference
+		type(String), optional, intent(in) :: store
 		
 		integer :: i, n
 		character(100), allocatable :: tokens(:)
@@ -78,7 +81,7 @@ module FragmentsDB_
 		call GOptions_section( "FRAGMENTS DATABASE INITIALIZATION", indent=1 )
 		
 		do i=1,size(massTable)
-			call this.clusters(i).fromMassTableRow( massTable(i).fstr, id=i )
+			call this.clusters(i).fromMassTableRow( massTable(i).fstr, id=i, store=store.fstr )
 			
 			call FString_split( massTable(i).fstr, tokens, " " )
 			
@@ -133,6 +136,7 @@ module FragmentsDB_
 		real(8) :: r, rMin, rMax, rStep
 		type(OFStream) :: oFile
 		type(String) :: strReference
+		type(String) :: store
 		
 		integer :: i, j, k, n
 		type(String) :: sBuffer
@@ -145,11 +149,12 @@ module FragmentsDB_
 		
 		call iParser.getBlock( "FRAGMENTS_DATABASE", massTable )
 		strReference = iParser.getString( "FRAGMENTS_DATABASE:reference", def="@@NONE@@" )
+		store = iParser.getString( "FRAGMENTS_DATABASE:store", def="." )
 		
 		if( strReference /= "@@NONE@@" ) then
-			call this.fromMassTable( massTable, strReference )
+			call this.fromMassTable( massTable, strReference, store=store )
 		else
-			call this.fromMassTable( massTable )
+			call this.fromMassTable( massTable, store=store )
 		end if
 		
 		deallocate(massTable)
@@ -194,7 +199,7 @@ module FragmentsDB_
 				maxMass = 0
 				do i=1,this.nMolecules()
 					if( this.clusters(i).nAtoms() > 1 ) then
-						write(oFile.unit,"(1X,F10.2,F20.8,5X,A)") this.clusters(i).radius()/angs, &
+						write(oFile.unit,"(1X,F10.2,F20.8,5X,A)") this.clusters(i).radius( type=GOptionsM3C_radiusType )/angs, &
 							( this.clusters(i).electronicEnergy - this.energyReference() )/eV, &
 							trim(this.clusters(i).label())
 							
@@ -625,7 +630,7 @@ module FragmentsDB_
 		
 		allocate( params(3) )
 		
-		params(1) = this.clusters(idR1).radius() + this.clusters(idR2).radius() ! Ra+Rb = Re
+		params(1) = this.clusters(idR1).radius( type=GOptionsM3C_radiusType ) + this.clusters(idR2).radius( type=GOptionsM3C_radiusType ) ! Ra+Rb = Re
 		params(2) = real(this.clusters(idR1).charge,8) ! qa = q1
 		params(3) = real(this.clusters(idR2).charge,8) ! qb = q2
 		
