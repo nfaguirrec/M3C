@@ -113,7 +113,7 @@ module FragmentsList_
 		
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_section( "BUILDING INITIAL CONFIGURATION "//trim(this.label()), indent=2 )
-			write(STDOUT,*) ""
+			write(IO_STDOUT,*) ""
 		end if
 		
 		this.forceInitializing = .false.
@@ -157,7 +157,7 @@ module FragmentsList_
 		
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_section( "CHANGE GEOMETRY "//trim(this.label()), indent=2 )
-			write(STDOUT,*) ""
+			write(IO_STDOUT,*) ""
 		end if
 
 		call this.changeGeometryFragmentsListBase()
@@ -264,7 +264,7 @@ module FragmentsList_
 		class(FragmentsList), intent(in) :: this
 		real(8) :: output
 		
-		output = this.kineticEnergy() + this.vibrationalEnergy_ + this.intermolEnergy_ + this.E_totJ
+		output = this.kineticEnergy() + this.internalEnergy()
 	end function totalEnergy
 	
 	!>
@@ -1040,7 +1040,7 @@ module FragmentsList_
 			do i=1,n
 				logMu = logMu + log(this.clusters(i).mass())
 			end do
-			!logMu = logMu - log( this.mass() )
+			logMu = logMu - log( this.mass() )
 			
 			if ( n == 1 ) then	
 				this.LnLambda = \
@@ -1108,6 +1108,7 @@ module FragmentsList_
 	!! @brief Test method
 	!!
 	subroutine FragmentsList_test()
+		use FragmentsDB_
 ! 		character(:), allocatable :: fstr
 ! 		
 ! 		type(FragmentsList) :: clist
@@ -1195,12 +1196,13 @@ module FragmentsList_
 		character(:), allocatable :: forbidden
 		character(100), allocatable :: tokens(:), items(:)
 		real(8) :: r, rBuffer
-		type(FragmentsList) :: clist
+		type(FragmentsList) :: clist, reactives, products
+		type(String) :: store
 		
 		allocate( massTable(3) )
-		massTable(1) = "       sC1    0  1  2    0   C1.xyz             -1026.581828"
-		massTable(2) = "      slC2    0  1  0    2   C2S-linear.xyz     -2062.282893       2*sC1   300"
-		massTable(3) = "      slC3    0  1  0    2   C3S-linear.xyz     -3097.388207    sC1,slC2   400"
+		massTable(1) = "       C(s)    0  1  2    0   C1.xyz         -1026.581828"
+		massTable(2) = "      C9(s)    0  1  0    2   prueba.xyz     -2062.282893    0.458"
+		massTable(3) = "      C9(t)    0  1  0    2   prueba.xyz     -3097.388207    0.458"
 		
 ! 		allocate( massTable(16) )
 
@@ -1223,7 +1225,20 @@ module FragmentsList_
 ! 		massTable(16) = "      tcC5    0  3  0    1   C5T-cyclic.xyz     -5162.267819   slC2,slC3   300"
 		
 		! En esta clase no se debería utilizar la base de datos
-! 		call RigidMoleculeDatabase_instance.init( massTable )
+		store="."
+		call FragmentsDB_instance.fromMassTable( massTable, store=store )
+		
+		GOptionsM3C_angularMomentumCouplingScheme = "JJL"
+		
+		call reactives.init( 3 )
+		reactives.clusters(1) = FragmentsDB_instance.clusters(3)
+		reactives.clusters(2) = FragmentsDB_instance.clusters(3)
+		reactives.clusters(3) = FragmentsDB_instance.clusters(3)
+		
+		do i=1,1000000
+			call reactives.changeGeometry()
+			products = reactives
+		end do
 		
 ! 		write(*,*) "getEelecFromName('slC3,tcC4,sC1') = ", (-3097.388207+0.049062-4129.378872+0.089866-1026.581828), " eV"
 ! 		write(*,*) RigidMoleculeDatabase_instance.getEelecFromName( "slC3,tcC4,sC1" )/eV, " eV"
@@ -1274,8 +1289,8 @@ module FragmentsList_
 		write(*,*) "------------------------------------"
 		write(*,*) " Load geometry from file"
 		write(*,*) "------------------------------------"
-		call clist.loadXYZ( "initialGeom.xyz" )
-		call clist.save()
+! 		call clist.loadXYZ( "prueba.xyz" )
+! 		call clist.save()
 		
 	end subroutine FragmentsList_test
 	

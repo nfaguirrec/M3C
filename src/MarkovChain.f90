@@ -37,7 +37,6 @@ module MarkovChain_
 		type(String) :: tracking
 		
 		type(RealHistogram), allocatable :: iTemperatureHistogram(:) ! One item for each experiment
-		type(RealHistogram), allocatable :: entropyHistogram(:)      ! One item for each experiment
 		type(RealHistogram), allocatable :: translationalEnergyHistogram(:)   ! One item for each experiment
 		type(RealHistogram), allocatable :: intermolEnergyHistogram(:)        ! One item for each experiment
 		type(RealHistogram), allocatable :: vibrationalEnergyHistogram(:)     ! One item for each experiment
@@ -129,7 +128,6 @@ module MarkovChain_
 		integer :: nExp
 		
 		if( allocated(this.iTemperatureHistogram) ) deallocate( this.iTemperatureHistogram )
-		if( allocated(this.entropyHistogram) ) deallocate( this.entropyHistogram )
 		if( allocated(this.translationalEnergyHistogram) ) deallocate( this.translationalEnergyHistogram )
 		if( allocated(this.intermolEnergyHistogram) ) deallocate( this.intermolEnergyHistogram )
 		if( allocated(this.vibrationalEnergyHistogram) ) deallocate( this.vibrationalEnergyHistogram )
@@ -192,7 +190,6 @@ module MarkovChain_
 		integer :: nExp
 		
 		allocate( this.iTemperatureHistogram(this.numberOfExperiments) )
-		allocate( this.entropyHistogram(this.numberOfExperiments) )
 		allocate( this.translationalEnergyHistogram(this.numberOfExperiments) )
 		allocate( this.intermolEnergyHistogram(this.numberOfExperiments) )
 		allocate( this.vibrationalEnergyHistogram(this.numberOfExperiments) )
@@ -204,20 +201,19 @@ module MarkovChain_
 		allocate( this.channelHistogram(this.numberOfExperiments) )
 		allocate( this.channelDetHistogram(this.numberOfExperiments) )
 		
-		call this.reactorAcceptedHistogram.initStringHistogram()
-		call this.reactorRejectedHistogram.initStringHistogram()
-		call this.reactorStatusHistogram.initStringHistogram()
+		call this.reactorAcceptedHistogram.initStringHistogram( algorithm=Histogram_RUNNING )
+		call this.reactorRejectedHistogram.initStringHistogram( algorithm=Histogram_RUNNING )
+		call this.reactorStatusHistogram.initStringHistogram( algorithm=Histogram_RUNNING )
 		
-		call this.transitionHistogram.initStringHistogram()
-		call this.transitionDetHistogram.initStringHistogram()
+		call this.transitionHistogram.initStringHistogram( algorithm=Histogram_RUNNING )
+		call this.transitionDetHistogram.initStringHistogram( algorithm=Histogram_RUNNING )
 		
 		do nExp=1,this.numberOfExperiments
-			call this.iTemperatureHistogram(nExp).initRealHistogram()
-			call this.entropyHistogram(nExp).initRealHistogram()
-			call this.translationalEnergyHistogram(nExp).initRealHistogram()
-			call this.intermolEnergyHistogram(nExp).initRealHistogram()
-			call this.vibrationalEnergyHistogram(nExp).initRealHistogram()
-			call this.rotationalEnergyHistogram(nExp).initRealHistogram()
+			call this.iTemperatureHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			call this.translationalEnergyHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			call this.intermolEnergyHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			call this.vibrationalEnergyHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			call this.rotationalEnergyHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
 			
 			call this.nFragsHistogram(nExp).init()
 			call this.speciesHistogram(nExp).init()
@@ -318,6 +314,8 @@ module MarkovChain_
 						currentTask = trim(adjustl( bufferTokens(1) ))
 					end if
 					
+					if( allocated(bufferTokens) ) deallocate( bufferTokens )
+					
 ! 					currentTask = trim(adjustl(taskTokens(i)))
 					call react.setType( currentTask )
 					
@@ -366,8 +364,8 @@ module MarkovChain_
 							
 							origin = "e"//trim(currentTask)
 							
-							call this.reactorRejectedHistogram.append( FString_toString( trim(currentTask) ) )
-							call this.reactorStatusHistogram.append( FString_toString( "e.REJECTED(E<0) " ) )
+							call this.reactorRejectedHistogram.add( FString_toString( trim(currentTask) ) )
+							call this.reactorStatusHistogram.add( FString_toString( "e.REJECTED(E<0) " ) )
 						else
 						
 							nTimesBlocked = 0  ! El bloqueo debe ser consecutivo, así que si no pasa por negative energy se cuenta nuevamente
@@ -392,8 +390,8 @@ module MarkovChain_
 								
 								origin = "a"//trim(currentTask)
 								
-								call this.reactorAcceptedHistogram.append( FString_toString( trim(currentTask) ) )
-								call this.reactorStatusHistogram.append( FString_toString( "a.ACCEPTED      " ) )
+								call this.reactorAcceptedHistogram.add( FString_toString( trim(currentTask) ) )
+								call this.reactorStatusHistogram.add( FString_toString( "a.ACCEPTED      " ) )
 							else
 								p = log( RandomUtils_uniform( [0.0_8, 1.0_8] ) )
 								
@@ -416,8 +414,8 @@ module MarkovChain_
 									
 									origin = "p"//trim(currentTask)
 									
-									call this.reactorAcceptedHistogram.append( FString_toString( trim(currentTask) ) )
-									call this.reactorStatusHistogram.append( FString_toString( "p.ACCEPTED(p<PI)" ) )
+									call this.reactorAcceptedHistogram.add( FString_toString( trim(currentTask) ) )
+									call this.reactorStatusHistogram.add( FString_toString( "p.ACCEPTED(p<PI)" ) )
 								else
 									call GOptions_info( &
 									"Step rejected logP="//trim(adjustl(FString_fromReal(p,"(F10.3)")))// &
@@ -425,8 +423,8 @@ module MarkovChain_
 									
 									origin = "r"//trim(currentTask)
 									
-									call this.reactorRejectedHistogram.append( FString_toString( trim(currentTask) ) )
-									call this.reactorStatusHistogram.append( FString_toString( "r.REJECTED      " ) )
+									call this.reactorRejectedHistogram.add( FString_toString( trim(currentTask) ) )
+									call this.reactorStatusHistogram.add( FString_toString( "r.REJECTED      " ) )
 								end if
 								
 							end if
@@ -458,12 +456,11 @@ module MarkovChain_
 								
 							end if
 						
-							call this.iTemperatureHistogram(nExp).append( react.reactives.iTemperature() )
-							call this.entropyHistogram(nExp).append( react.reactives.LnW() )
-							call this.translationalEnergyHistogram(nExp).append( react.reactives.translationalEnergy() )
-							call this.intermolEnergyHistogram(nExp).append( react.reactives.intermolEnergy() )
-							call this.vibrationalEnergyHistogram(nExp).append( react.reactives.vibrationalEnergy() )
-							call this.rotationalEnergyHistogram(nExp).append( react.reactives.rotationalEnergy() )
+							call this.iTemperatureHistogram(nExp).add( react.reactives.iTemperature() )
+							call this.translationalEnergyHistogram(nExp).add( react.reactives.translationalEnergy() )
+							call this.intermolEnergyHistogram(nExp).add( react.reactives.intermolEnergy() )
+							call this.vibrationalEnergyHistogram(nExp).add( react.reactives.vibrationalEnergy() )
+							call this.rotationalEnergyHistogram(nExp).add( react.reactives.rotationalEnergy() )
 							
 							sBuffer = trim(FString_fromInteger( react.reactives.nMolecules() ))
 							call this.nFragsHistogram(nExp).set( sBuffer, this.nFragsHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
@@ -963,29 +960,6 @@ module MarkovChain_
 		write(unit,*) ""
 		
 		write(unit,"(A)") "#------------------------------------"
-		write(unit,"(A)") "# Entropy"
-		write(unit,"(A)") "#------------------------------------"
-		write(unit,"(A1,9X,<this.numberOfExperiments>I15,5X,2A15)") "#", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
-		write(unit,"(A1,9X,<this.numberOfExperiments>A15,5X,2A15)") "#", ( "-----", i=1,this.numberOfExperiments ), "----", "----"
-		
-		call histBuffer.initRealHistogram()
-		
-		do i=1,this.numberOfExperiments
-			call histBuffer.add( this.entropyHistogram(i).mean() )
-			
-			if( i == 1 ) then
-				write(unit,"(10X,F15.5)",advance="no") this.entropyHistogram(i).mean()
-			else
-				write(unit,"(F15.5)",advance="no") this.entropyHistogram(i).mean()
-			end if
-		end do
-		
-		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
-		
-		write(unit,*) ""
-		write(unit,*) ""
-		
-		write(unit,"(A)") "#------------------------------------"
 		write(unit,"(A)") "# Energy components (eV)"
 		write(unit,"(A)") "#------------------------------------"
 		write(unit,"(A1,9X,A5,<this.numberOfExperiments>I15,5X,2A15)") "#", "  ", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
@@ -1055,7 +1029,7 @@ module MarkovChain_
 		write(unit,"(A)") "#------------------------------------"
 		
 		write(unit,"(A1,A)") "#", " Reactor type (ACCEPTED)"
-		call this.reactorAcceptedHistogram.build()
+! 		call this.reactorAcceptedHistogram.build()
 		call this.reactorAcceptedHistogram.densityBegin( simIter )
 		do while( associated(simIter) )
 			srPair = this.reactorAcceptedHistogram.pair( simIter )
@@ -1066,7 +1040,7 @@ module MarkovChain_
 		
 		write(unit,*) ""
 		write(unit,"(A1,A)") "#", " Reactor type (REJECTED)"
-		call this.reactorRejectedHistogram.build()
+! 		call this.reactorRejectedHistogram.build()
 		call this.reactorRejectedHistogram.densityBegin( simIter )
 		do while( associated(simIter) )
 			srPair = this.reactorRejectedHistogram.pair( simIter )
@@ -1077,7 +1051,7 @@ module MarkovChain_
 		
 		write(unit,*) ""
 		write(unit,"(A1,A)") "#", " Reactor status"
-		call this.reactorStatusHistogram.build()
+! 		call this.reactorStatusHistogram.build()
 		call this.reactorStatusHistogram.densityBegin( simIter )
 		do while( associated(simIter) )
 			srPair = this.reactorStatusHistogram.pair( simIter )
@@ -1097,7 +1071,7 @@ module MarkovChain_
 		
 		write(unit,"(A1,A15,5X,A)") "#", "prob.", "reaction"
 		write(unit,"(A1,A15,5X,A)") "#", "-----", "--------"
-		call this.transitionHistogram.build()
+! 		call this.transitionHistogram.build()
 		call this.transitionHistogram.densityBegin( simIter )
 		do while( associated(simIter) )
 			srPair = this.transitionHistogram.pair( simIter )
@@ -1111,7 +1085,7 @@ module MarkovChain_
 		
 		write(unit,"(A1,A15,5X,A)") "#", "prob.", "reaction"
 		write(unit,"(A1,A15,5X,A)") "#", "-----", "--------"
-		call this.transitionDetHistogram.build()
+! 		call this.transitionDetHistogram.build()
 		call this.transitionDetHistogram.densityBegin( simIter )
 		do while( associated(simIter) )
 			srPair = this.transitionDetHistogram.pair( simIter )
@@ -1175,6 +1149,8 @@ module MarkovChain_
 				call reactives.set( i, FragmentsDB_instance.clusters(iBuffer) )
 			end do
 		end if
+		
+		if( allocated(reactiveTokens) ) deallocate( reactiveTokens )
 		
 		call this.init()
 		

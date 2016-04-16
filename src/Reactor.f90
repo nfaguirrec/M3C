@@ -186,6 +186,8 @@ module Reactor_
 			end if
 		end do
 		
+		if( allocated(tokens) ) deallocate( tokens )
+		
 		call GOptions_error( &
 			"Unknown reactor id="//trim(FString_fromInteger(i))//" or strId="//trim(strId), &
 			"Reactor.setType()" &
@@ -579,11 +581,11 @@ module Reactor_
 			write(*,"(A)") ""
 		end if
 		
-		if( this.products.translationalEnergy() < 0.0_8 ) then
+		if( this.products.kineticEnergy() < 0.0_8 ) then
 			if( GOptions_printLevel >= 2 ) then
 				write(*,*) ""
 				write(*,*) "### Warning ### The kinetic energy is negative"
-				write(*,"(3X,A,F15.5,A)") "kEnergy = ", this.products.kineticEnergy()/eV, "  eV"
+				write(*,"(3X,A,F15.5,A)") "Kinetic Energy = ", this.products.kineticEnergy()/eV, "  eV"
 				write(*,*) "products <= reactives"
 				write(*,*) ""
 			end if
@@ -657,6 +659,8 @@ module Reactor_
 			write(*,"(A40,F15.5,A)") "excitationEnergy = ", rBuffer/eV, " eV"
 		end if
 		
+		if( allocated(reactiveTokens) ) deallocate( reactiveTokens )
+		
 ! 		call reactives.initialGuessFragmentsList()
 		
 		sBuffer = iParser.getString( "REACTOR:type", def="V" )
@@ -709,7 +713,6 @@ module Reactor_
 		type(BlocksIFileParser), intent(in) :: iParser
 		
 		type(FragmentsList) :: reactives
-		character(20), allocatable :: reactiveTokens(:)
 		
 		type(String) :: strReactives
 		type(String) :: sBuffer
@@ -828,7 +831,6 @@ module Reactor_
 		type(BlocksIFileParser), intent(in) :: iParser
 		
 		type(FragmentsList) :: reactives
-		character(20), allocatable :: reactiveTokens(:)
 		
 		type(String) :: strReactives
 		type(String) :: sBuffer

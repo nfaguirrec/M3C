@@ -63,7 +63,7 @@ module ModelPotential_
 		1, & ! COULOMB
 		4, & ! DHARMCOUL
 		4, & ! DMORSECOUL
-		2, & ! NEXP
+		3, & ! NEXP
 		3, & ! FLATR6
 		4  & ! FLATEXP
 	]
@@ -458,21 +458,26 @@ module ModelPotential_
 		real(8) :: output
 		
 		real(8) :: Re
-		real(8) :: A, b, r0, r1
+		real(8) :: dE, b, c
+		
+		real(8) :: A, r0, r1
 		
 		Re = params(1) ! Ra+Rb = Re
 		
-		A = userParams(1)
-		b = userParams(2)
+		dE = userParams(1)*eV
+		c = userParams(2)*angs
+		b = userParams(3)/angs
 		
 		r0 = Re - log(2.0)/(1.2_8/angs)
-		r1 = Re + 0.6_8*angs
+		r1 = Re + c
 ! 		write(*,*) Re/angs, r0/angs, r1/angs
 ! 		stop
+
+		A = dE*exp( b*(r1-Re) )
 		
-		output = A*exp(-b*(r-Re))*eV
-		if( r < r1 ) output = A*exp(-b*(r1-Re))*eV
-		if( r < r0 ) output = (10.0d3)*eV
+		output = A*exp(-b*(r-Re))
+		if( r < r1 ) output = dE
+		if( r < r0 ) output = 10.0d3*eV
 		
 ! 		if( r > Re ) then
 ! ! 			output = A*exp(-b*(r-Re-GOptionsM3C_overlappingRadius)) + E1

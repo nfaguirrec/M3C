@@ -54,13 +54,20 @@ function energyHistoryDiagram()
 	firstElecEnergy=`head -n7 $iFile | tail -n1 | gawk '{print $4}'`
 	nExp=`gawk 'BEGIN{n=0}($0~/^[[:blank:]]*$/){ n++ }END{print n/2-0.5}' $iFile`
 	
+# 1              2              3              4              5              6
+# #             trans       intermol            vib            rot            tot     formula
+# #                eV             eV             eV             eV               
+# #           -------       --------        -------          -----        -------
+#  pV         7.07940        6.92060        0.00000        0.00000       14.00000     C(t1)+C(t1)
+#  rS         5.11290        8.88710        0.00000        0.00000       14.00000     C(s1)+C(s1)
+#  pV         7.85160        6.14840        0.00000        0.00000       14.00000     C(t1)+C(t1)
+#  rS         7.01260        6.98740        0.00000        0.00000       14.00000     C(t1)+C(t1)
+	
 	cat > .plotE-$$ << EOF
 $M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-# set xlabel "Step"
-# set y2label "Ln(W)"
 set format y "%.1f"
 set format x "%.0t.10^{%T}"
 set xtics add ("0^ " 0)
@@ -68,44 +75,33 @@ set key out right center
 set xtics font "Helvetica Bold,7" rotate by -45
 set ytics font "Helvetica Bold,7"
 unset key
+set yrange [0:]
 
 set multiplot layout 2,2 columnsfirst scale 1.0,1.1
 
-set ylabel "Kinetic (eV)" font "Helvetica Bold,9"
+set ylabel "Translational (eV)" font "Helvetica Bold,9"
 plot [] [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
 	do
-		echo "'$iFile' i $(($i-1)) u :2 t 'kinetic' w l lw 0.6 lt $i, \\" >> .plotE-$$
+		echo "'$iFile' i $(($i-1)) u :2 notitle w l lw 0.6 lt $i, \\" >> .plotE-$$
 	done
 
 	cat >> .plotE-$$ << EOF
-"" u :(\$7-($firstElecEnergy)) t "total" w l lt 0 lw 1.5
+"" u :6 t "total" w l lt 0 lw 1.5
 
-set ylabel "Rotational (eV)" font "Helvetica Bold,9"
+set ylabel "Intermolecular (eV)"
 plot [] [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
 	do
-		echo "'' i $(($i-1)) u :6 t 'rotational' w l lw 0.6 lt $i, \\"  >> .plotE-$$
+		echo "'' i $(($i-1)) u :3 notitle w l lw 0.6 lt $i, \\" >> .plotE-$$
 	done
 
 	cat >> .plotE-$$ << EOF
-"" u :(\$7-($firstElecEnergy)) t "total" w l lt 0 lw 1.5
-
-set ylabel "Electronic (eV)"
-plot [] [:] \\
-EOF
-
-	for i in `seq 1 $nExp`
-	do
-		echo "'' i $(($i-1)) u :(\$4-($firstElecEnergy)) t 'electronic' w l lw 0.6 lt $i, \\" >> .plotE-$$
-	done
-
-	cat >> .plotE-$$ << EOF
-"" u :(\$7-($firstElecEnergy)) t "total" w l lt 0 lw 1.5
+"" u :6 t "total" w l lt 0 lw 1.5
 
 set ylabel "Vibrational (eV)"
 plot [] [:] \\
@@ -113,25 +109,123 @@ EOF
 
 	for i in `seq 1 $nExp`
 	do
-		echo "'' i $(($i-1)) u :5 t 'vibrational' w l lw 0.6 lt $i, \\" >> .plotE-$$
+		echo "'' i $(($i-1)) u :4 notitle w l lw 0.6 lt $i, \\" >> .plotE-$$
 	done
 	
 	cat >> .plotE-$$ << EOF
-"" u :(\$7-($firstElecEnergy)) t "total" w l lt 0 lw 1.5
+"" u :6 t "total" w l lt 0 lw 1.5
 
-# set ylabel "Weight (arb)"
-# plot [] [:] \\
+set ylabel "Rotational (eV)" font "Helvetica Bold,9"
+plot [] [:] \\
 EOF
 
-# 	for i in `seq 1 $nExp`
-# 	do
-# 		if [ "$i" != "$nExp" ]
-# 		then
-# 			echo "'' i $(($i-1)) u :8 t 'Ln(W)' w l lw 0.3 lt $i, \\" >> .plotE-$$
-# 		else
-# 			echo "'' i $(($i-1)) u :8 t 'Ln(W)' w l lw 0.3 lt $i" >> .plotE-$$
-# 		fi
-# 	done
+	for i in `seq 1 $nExp`
+	do
+		echo "'' i $(($i-1)) u :4 notitle w l lw 0.6 lt $i, \\"  >> .plotE-$$
+	done
+
+	cat >> .plotE-$$ << EOF
+"" u :6 t "total" w l lt 0 lw 1.5
+
+EOF
+
+	cat >> .plotE-$$ << EOF
+	
+unset multiplot
+
+pause -1
+EOF
+	
+	cp $iFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+	$M3C_GNUPLOT_EXEC .plotE-$$
+
+	rm .plotE-$$
+}
+
+####################################
+#
+####################################
+function weightHistoryDiagram()
+{
+	local iFile=$1
+	
+	firstElecEnergy=`head -n7 $iFile | tail -n1 | gawk '{print $4}'`
+	nExp=`gawk 'BEGIN{n=0}($0~/^[[:blank:]]*$/){ n++ }END{print n/2-0.5}' $iFile`
+	
+# 1              2              3              4              5              6             7
+# #              LnWe           LnWv           LnWn           LnWr           LnWt            LnW     formula
+# #              arb.           arb.           arb.           arb.           arb.           arb.     
+# #           -------        -------       --------       --------       --------        -------     -------
+#  pV         4.39445        0.00000       -0.69315        0.00000       21.52594       25.22724     C(t1)+C(t1)
+#  rS         3.21888        0.00000       -0.69315        0.00000       21.68865       24.21438     C(s1)+C(s1)
+#  pV         4.39445        0.00000       -0.69315        0.00000       21.47418       25.17548     C(t1)+C(t1)
+#  rS         4.39445        0.00000       -0.69315        0.00000       21.53068       25.23198     C(t1)+C(t1)
+	
+	cat > .plotE-$$ << EOF
+$M3C_PLOT_TERMINAL
+set termopt enhanced
+set encoding iso_8859_1
+
+set format y "%.1f"
+set format x "%.0t.10^{%T}"
+set xtics add ("0^ " 0)
+set key out right center
+set xtics font "Helvetica Bold,7" rotate by -45
+set ytics font "Helvetica Bold,7"
+unset key
+set yrange [0:]
+
+set multiplot layout 2,2 columnsfirst scale 1.0,1.1
+
+set ylabel "Electronic" font "Helvetica Bold,9"
+plot [] [:] \\
+EOF
+
+	for i in `seq 1 $nExp`
+	do
+		echo "'$iFile' i $(($i-1)) u :(\$2+\$4) notitle w l lw 0.6 lt $i, \\" >> .plotE-$$
+	done
+
+	cat >> .plotE-$$ << EOF
+"" u :7 t "total" w l lt 0 lw 1.5
+
+set ylabel "Vibrational" font "Helvetica Bold,9"
+plot [] [:] \\
+EOF
+
+	for i in `seq 1 $nExp`
+	do
+		echo "'' i $(($i-1)) u :3 notitle w l lw 0.6 lt $i, \\"  >> .plotE-$$
+	done
+
+	cat >> .plotE-$$ << EOF
+"" u :7 t "total" w l lt 0 lw 1.5
+
+set ylabel "Rotational"
+plot [] [:] \\
+EOF
+
+	for i in `seq 1 $nExp`
+	do
+		echo "'' i $(($i-1)) u :5 notitle w l lw 0.6 lt $i, \\" >> .plotE-$$
+	done
+
+	cat >> .plotE-$$ << EOF
+"" u :7 t "total" w l lt 0 lw 1.5
+
+set ylabel "Translational"
+plot [] [:] \\
+EOF
+
+	for i in `seq 1 $nExp`
+	do
+		echo "'' i $(($i-1)) u :6 notitle w l lw 0.6 lt $i, \\" >> .plotE-$$
+	done
+	
+	cat >> .plotE-$$ << EOF
+"" u :7 t "total" w l lt 0 lw 1.5
+
+EOF
 
 	cat >> .plotE-$$ << EOF
 	
@@ -1102,17 +1196,29 @@ set ytics font "Helvetica Bold,9"
 set key out right bottom font "Helvetica Bold,8" Right spacing 1.0
 set mxtics 5
 set mytics 5
-set grid y front
+# set grid y front
 set size $M3C_PLOT_SIZE
 
-set linestyle  1 lc rgb "black"
-set linestyle  2 lc rgb "red"
-set linestyle  3 lc rgb "forest-green"
-set linestyle  4 lc rgb "#4253BB"
-set linestyle  5 lc rgb "orange"
-set linestyle  6 lc rgb "#8196FF"
-# set linestyle  6 lc rgb "#FBDF06"
-set linestyle  7 lc rgb "green"
+# line styles
+set style line 1 lt 1 lc rgb '#E41A1C' # red
+set style line 2 lt 1 lc rgb '#377EB8' # blue
+set style line 3 lt 1 lc rgb '#984EA3' # purple
+set style line 4 lt 1 lc rgb 'dark-blue' # 
+set style line 5 lt 1 lc rgb 'gray50' #
+set style line 6 lt 1 lc rgb '#4DAF4A' # green
+set style line 7 lt 1 lc rgb '#FF7F00' # orange
+set style line 8 lt 1 lc rgb '#F781BF' # pink
+set style line 9 lt 1 lc rgb '#004488' #
+
+set style line 10 lt 1 lc rgbcolor "#004488"
+set style line 11 lt 1 lc rgbcolor "#888800"
+set style line 12 lt 1 lc rgbcolor "#008888"
+set style line 13 lt 1 lc rgbcolor "#880088"
+set style line 14 lt 1 lc rgbcolor "#880000"
+set style line 15 lt 1 lc rgb "blue"
+set style line 16 lt 1 lc rgb "dark-olivegreen"
+set style line 17 lt 1 lc rgb "orange"
+
 
 set y2range [-3:103.0]
 plot [$xMin-($xMax-$xMin)*0.03:$xMax+($xMax-$xMin)*0.03] [-3:103] \\
@@ -1140,15 +1246,38 @@ EOF
 		errCol="(\$$(( 2*$i+1 ))*100)"
 		smoothCol="(abs(\$$(( 2*$i+1 ))))"
 		
+# 		if (( $i != $nChannels ))
+# 		then
+# 			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+# # 			echo "'matrix.data' u 1:$yCol:(1e2) smooth acsplines notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+# 			
+# # 			if (( $i>3 ))
+# # 			then
+# # # 				echo "'matrix.data' u 1:$yCol:$errCol notitle w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/2.9 lw 0.3*$M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+# # 				echo "'matrix.data' u 1:$yCol:$errCol notitle w yerrorbars ls $i pt $i ps 0 lw 0.4*$M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+# # 			else
+# # # 				echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/2.9 lw 0.3*$M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+# 				echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps 0 lw 0.4*$M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+# # 			fi
+# 
+# # 			echo "'matrix.data' u 1:$yCol notitle w p pt $i ps $M3C_PLOT_LW/20.0 lc rgb 'white', \\" >> .plotMtj-$iFile$$
+# 		else
+# # 			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+# 			echo "'matrix.data' u 1:$yCol:(1e2) smooth acsplines notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+# 			
+# # 			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/2.9 lw 0.3*$M3C_PLOT_LW/2.0" >> .plotMtj-$iFile$$
+# 			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps 0 lw 0.4*$M3C_PLOT_LW/2.0" >> .plotMtj-$iFile$$
+# # 			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+# # 			echo "'matrix.data' u 1:$yCol notitle w p pt $i ps $M3C_PLOT_LW/20.0 lc rgb 'white'" >> .plotMtj-$iFile$$
+# 		fi
+
 		if (( $i != $nChannels ))
 		then
 			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
-			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
-			echo "'matrix.data' u 1:$yCol notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb 'white', \\" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
 		else
 			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
-			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
-			echo "'matrix.data' u 1:$yCol notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb 'white'" >> .plotMtj-$iFile$$
+			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW/2.0" >> .plotMtj-$iFile$$
 		fi
 	done
 	
@@ -1719,7 +1848,8 @@ set key font "Helvetica Bold,10"
 
 # set mxtics 10
 # set mytics 5
-set grid y
+# set grid y
+set mxtics 5
 
 max(a,b) = (a>b)?a:b
 
@@ -1733,6 +1863,9 @@ plot [0:] [-5:125] \
 "" u 1:(100*\$3/maxI_theo) t "Theoretical" w points pt 7 ps 0.9 lc rgb "blue", \
 "" u 1:(100*\$3/maxI_theo) notitle w points pt 7 ps 0.3 lc rgb "white", \
 "" u (\$1):(100*max(\$3/maxI_theo,\$4/maxI_exp)+5.0):2 notitle w labels left font "Serif,8" rotate by 90
+
+# plot [0:] [-5:105] \
+# ".$BRFile-tmp$$" u 1:(100*\$3/maxI_theo) notitle w impulses lt 1 lw 5
 
 pause -1
 EOF
@@ -2215,16 +2348,32 @@ function main()
 				energyHistoryDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.ehistory
 # 				historyDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.ehistory
 			else
-# 				dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAINenergyHistoryFile`
 				dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:energyHistoryFile`
 				
 				if [ -z "$dataFile" ]
 				then
-# 					dataFile=`getValueFromIFIle ${iFile%.*}.m3c SMJL:energyHistoryFile`
 					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:energyHistoryFile`
 				fi
 				
 				energyHistoryDiagram $dataFile
+# 				historyDiagram $dataFile
+			fi
+			;;
+			
+		weight)
+			if [ -n "$id" ]
+			then
+				weightHistoryDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.whistory
+# 				historyDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.whistory
+			else
+				dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:weightHistoryFile`
+				
+				if [ -z "$dataFile" ]
+				then
+					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:weightHistoryFile`
+				fi
+				
+				weightHistoryDiagram $dataFile
 # 				historyDiagram $dataFile
 			fi
 			;;

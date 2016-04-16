@@ -224,18 +224,18 @@ function buildGifFiles()
 		
 		echo -n "$iFile ... "
 		
-		if [ $RANDOM_ORIENT=="TRUE" ]
+		if [ "$RANDOM_ORIENT" == "TRUE" ]
 		then
-			molecule.rotate -i $iFile -random T > rand$iFile
-		elif [ $ORIENT=="TRUE" ]
+			molecule.rotate -i $iFile -random T > rand${iFile}${sID}
+		elif [ "$ORIENT" == "TRUE" ]
 		then
-			molecule.orient -i $iFile > rand$iFile
+			molecule.orient -i $iFile > rand${iFile}${sID}
 		else
-			cp $iFile rand$iFile
+			cp $iFile rand${iFile}${sID}
 		fi
 		
 		cat > geom$sID.jmol << EOF
-load "rand$iFile"
+load "rand${iFile}${sID}"
 background [255,255,255]
 wireframe 0.15; spacefill 23%
 
@@ -247,7 +247,7 @@ EOF
 		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1
 		rm geom$sID.jmol
 		
-		rm rand$iFile
+		rm rand${iFile}${sID}
 		
 		echo "OK"
 	done
@@ -273,18 +273,20 @@ function buildEPSFiles()
 		
 		echo -n "$iFile ... "
 		
-		if [ $RANDOM_ORIENT=="TRUE" ]
+		if [ "$RANDOM_ORIENT" == "TRUE" ]
 		then
-			molecule.rotate -i $iFile -random T > rand$iFile
-		elif [ $ORIENT=="TRUE" ]
+			molecule.rotate -i $iFile -random T > rand${iFile}${sID}
+		elif [ "$ORIENT" == "TRUE" ]
 		then
-			molecule.orient -i $iFile > rand$iFile
+			molecule.orient -i $iFile > rand${iFile}${sID}.xyz
+			molecule.rotate -i rand${iFile}${sID}.xyz -beta 1.5707963267949 -gamma 1.5707963267949 > rand${iFile}${sID}
+			rm rand${iFile}${sID}.xyz
 		else
-			cp $iFile rand$iFile
+			cp $iFile rand${iFile}${sID}
 		fi
 		
 		cat > geom$sID.jmol << EOF
-load "rand$iFile"
+load "rand${iFile}${sID}"
 background [255,255,255]
 wireframe 0.15; spacefill 23%
 moveto 0 1 0 0 -90
@@ -296,7 +298,7 @@ EOF
 		convert ${iFile%.*}.gif ${iFile%.*}.eps > /dev/null 2>&1
 		rm ${iFile%.*}.gif geom$sID.jmol
 		
-		rm rand$iFile
+		rm rand${iFile}${sID}
 
 		echo "OK"
 	done

@@ -27,7 +27,7 @@ module Fragment_
 		integer :: id
 		integer :: charge
 		integer :: multiplicity
-		integer :: orbMomentum
+		integer :: degL
 		integer :: sigmaSym
 		real(8) :: electronicEnergy
 		real(8), allocatable :: vibFrequencies(:)
@@ -82,6 +82,7 @@ module Fragment_
 			procedure :: showLnWComponents
 			
 			procedure :: spinAvailable
+! 			procedure :: rotSymNumber
 	end type Fragment
 	
 	contains
@@ -95,7 +96,7 @@ module Fragment_
 		this.id = -1
 		this.charge = 0
 		this.multiplicity = 1
-		this.orbMomentum = 0
+		this.degL = 1
 		this.sigmaSym = 1
 		this.electronicEnergy = 0.0_8
 		
@@ -155,7 +156,7 @@ module Fragment_
 			this.name = trim(adjustl(tokens(1)))
 			this.charge = FString_toInteger( tokens(2) )
 			this.multiplicity = FString_toInteger( tokens(3) )
-			this.orbMomentum = FString_toInteger( tokens(4) )
+			this.degL = FString_toInteger( tokens(4) )
 			this.sigmaSym = FString_toInteger( tokens(5) )
 			this.fileName = trim(effStore.fstr)//"/"//trim(tokens(6))
 			this.electronicEnergy = FString_toReal( tokens(7) )*eV
@@ -233,36 +234,36 @@ module Fragment_
 		end if
 		
 ! 		if( GOptions_printLevel >= 4 ) then
-			write(STDOUT,"(A)") ""
-			write(STDOUT,"(4X,A22,A)") "file name = ", this.fileName
-			write(STDOUT,"(4X,A22,A)") "name = ", this.name
-			write(STDOUT,"(4X,A23,3F14.5,A)") "Moments of inertia = [", &
+			write(IO_STDOUT,"(A)") ""
+			write(IO_STDOUT,"(4X,A22,A)") "file name = ", this.fileName
+			write(IO_STDOUT,"(4X,A22,A)") "name = ", this.name
+			write(IO_STDOUT,"(4X,A23,3F14.5,A)") "Moments of inertia = [", &
 					this.diagInertiaTensor.get(1,1)/amu/angs**2, &
 					this.diagInertiaTensor.get(2,2)/amu/angs**2, &
 					this.diagInertiaTensor.get(3,3)/amu/angs**2, &
 					"  ]   amu*angs**2"
-			write(STDOUT,"(4X,A23,3F14.5,A)") "Moments of inertia = [", &
+			write(IO_STDOUT,"(4X,A23,3F14.5,A)") "Moments of inertia = [", &
 					this.diagInertiaTensor.get(1,1), &
 					this.diagInertiaTensor.get(2,2), &
 					this.diagInertiaTensor.get(3,3), &
 					"  ]   a.u."
-! 			write(STDOUT,"(4X,A23,3F14.5,A)") "Moments of inertia = [", &
+! 			write(IO_STDOUT,"(4X,A23,3F14.5,A)") "Moments of inertia = [", &
 ! 					this.diagInertiaTensor.get(1,1)/amu/12.01_8, &
 ! 					this.diagInertiaTensor.get(2,2)/amu/12.01_8, &
 ! 					this.diagInertiaTensor.get(3,3)/amu/12.01_8, &
 ! 					"  ]   amu*angs**2/mC"
 
-			write(STDOUT,"(4X,A22,F15.5,A)")  "            Radius = ", this.radius( type=GOptionsM3C_radiusType )/angs, "   A"
-			write(STDOUT,"(4X,A22,F15.7,A)")  "             Eelec = ", this.electronicEnergy/eV, "   eV"
-			write(STDOUT,"(4X,A22,F15.7,A)")  "             Eelec = ", this.electronicEnergy, "   a.u."
-			write(STDOUT,"(4X,A22,F15.7,A)")  "              Mass = ", this.mass()/amu, "   amu"
+			write(IO_STDOUT,"(4X,A22,F15.5,A)")  "            Radius = ", this.radius( type=GOptionsM3C_radiusType )/angs, "   A"
+			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "             Eelec = ", this.electronicEnergy/eV, "   eV"
+			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "             Eelec = ", this.electronicEnergy, "   a.u."
+			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "              Mass = ", this.mass()/amu, "   amu"
 			if( this.nAtoms() > 1 ) then
-				write(STDOUT,"(4X,A22,F15.7,A)")  "   aver. vib. freq = ", product(this.vibFrequencies)**(1.0_8/size(this.vibFrequencies))/eV, "   eV"
-				write(STDOUT,"(4X,A22,F15.7,A)")  "               ZPE = ", this.ZPE/eV, "   eV"
-! 				write(STDOUT,"(4X,A22,F15.7,A)")  "               ZPE = ", this.ZPE, "   a.u."
+				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "   aver. vib. freq = ", product(this.vibFrequencies)**(1.0_8/size(this.vibFrequencies))/eV, "   eV"
+				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "               ZPE = ", this.ZPE/eV, "   eV"
+! 				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "               ZPE = ", this.ZPE, "   a.u."
 			end if
-			write(STDOUT,"(4X,A23,2I5,A)")    "          (fr, fv) = (", this.fr(), this.fv(), "  )"
-! 			write(STDOUT,"(A)") ""
+			write(IO_STDOUT,"(4X,A23,2I5,A)")    "          (fr, fv) = (", this.fr(), this.fv(), "  )"
+! 			write(IO_STDOUT,"(A)") ""
 ! 		end if
 		
 		! Esto no depende de nada, así que se puede evaluar desde el principio
@@ -284,7 +285,7 @@ module Fragment_
 		this.id = other.id
 		this.charge = other.charge
 		this.multiplicity = other.multiplicity
-		this.orbMomentum = other.orbMomentum
+		this.degL = other.degL
 		this.sigmaSym = other.sigmaSym
 		this.electronicEnergy = other.electronicEnergy
 		
@@ -678,7 +679,7 @@ module Fragment_
 	subroutine updateLnWe( this )
 		class(Fragment) :: this
 		
-		this.LnWe_ = log( real(this.multiplicity*(2*this.orbMomentum+1),8) )
+		this.LnWe_ = log( real(this.multiplicity*this.degL,8) )
 		
 		if( GOptions_printLevel >= 4 ) then
 			call GOptions_valueReport( "LnWe", this.LnWe_, indent=3 )
@@ -711,7 +712,7 @@ module Fragment_
 			if( effForce1D ) then
 			
 				if( GOptions_printLevel >= 4 ) then
-					write(STDOUT,"(A)") "** Forcing 1D"
+					write(IO_STDOUT,"(A)") "** Forcing 1D"
 				end if
 				
 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -722,7 +723,7 @@ module Fragment_
 			else if( effForce2D ) then
 			
 				if( GOptions_printLevel >= 4 ) then
-					write(STDOUT,"(A)") "** Forcing 2D"
+					write(IO_STDOUT,"(A)") "** Forcing 2D"
 				end if
 				
 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -794,7 +795,7 @@ module Fragment_
 				end select
 ! 			else
 ! 				if( GOptions_printLevel >= 4 ) then
-! 					write(STDOUT,"(A)") "** Forcing 1D"
+! 					write(IO_STDOUT,"(A)") "** Forcing 1D"
 ! 				end if
 ! 
 ! 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -871,22 +872,386 @@ module Fragment_
 		call output.append( S )
 	end function spinAvailable
 	
+!       Real*8 Function RotSN(Linear,Group)
+!       Implicit Real*8 (A-H,O-Z)
+! C
+! C ROTational Symmetry Number
+! C     Returns the rotational symmetry number for a given point group,
+! C     as follows:
+! C                   POINT GROUP                    ROTATION SYMM.NUMBER
+! C
+! C C1,CI, CS, C(inf)v                                         1
+! C C2,C2V,C2H           D(inf)H                               2
+! C C3,C3V,C3H                          S6                     3
+! C C4,C4V,C4H           D2,D2D,D2H                            4
+! C C6,C6V,C6H           D3,D3D,D3H                            6
+! C                      D4,D4D,D4H                            8
+! C                      D6,D6D,D6H     T ,TD                 12
+! C                                     OH                    24
+! C
+! C Input
+! C     Group  : Point group, given as a string
+! C
+! C Output:
+! C     Linear : Indicates if the molecule is linear
+! C
+! C     Input
+!       Character Group*(*)
+! C     Output
+!       Logical Linear
+! C
+!       Linear = (Group(1:2).eq.'C*').or.(Group(1:2).eq.'D*')
+!       RotSN = 1.0D0
+!       If((Group(1:2).eq.'C1').or.(Group(1:2).eq.'CI')) Return
+!       If((Group(1:2).eq.'CS').or.(Group(1:2).eq.'C*')) Return
+!       RotSN = 2.0D0
+!       If((Group(1:2).eq.'C2').or.(Group(1:2).eq.'D*')) Return
+!       RotSN = 3.0D0
+!       If((Group(1:2).eq.'C3').or.(Group(1:2).eq.'S6')) Return
+!       RotSN = 4.0D0
+!       If((Group(1:2).eq.'C4').or.(Group(1:2).eq.'D2')) Return
+!       RotSN = 6.0D0
+!       If((Group(1:2).eq.'C6').or.(Group(1:2).eq.'D3')) Return
+!       RotSN = 8.0D0
+!       If(Group(1:2).eq.'D4') Return
+!       RotSN = 12.0D0
+!       If(Group(1:2).eq.'D6'.or.Group(1:1).eq.'T')Return
+!       RotSN = 24.0D0
+!       If(Group(1:2).eq.'OH ') Return
+!       RotSN = 0.0D0
+!       Return
+!       End
+
+!       Subroutine NewLab(IOut,NReps,Group,ChrLab)
+!       Implicit Real*8(A-H,O-Z)
+! C
+! C NEW symmetry LABels
+! C     Returns the number of irreducible representations, as well as
+! C     their label Group symmetry given in Group
+! C
+! C Input:
+! C     Group  : Group symmetry (character string)
+! C
+! C Output:
+! C     NReps  : Number of irreducible representations
+! C     ChrLab : (NReps) Labels of the irreducible representations
+! C
+! C     Dimensions
+!       Integer MAXREP
+!       Parameter (MAXREP=15)
+! C     Input
+!       Character Group*(*)
+! C     Output
+!       Character ChrLab(MAXREP)*4
+! C     Local
+!       Integer i
+! C
+!       Do 100 i = 1, MAXREP
+!   100   ChrLab(i) = '    '
+! C
+!       If(Index(Group,'OH  ').ne.0) then
+!         NReps = 10
+!         ChrLab( 1) = 'A1G'
+!         ChrLab( 2) = 'A1U'
+!         ChrLab( 3) = 'A2G'
+!         ChrLab( 4) = 'A2U'
+!         ChrLab( 5) = 'EG'
+!         ChrLab( 6) = 'EU'
+!         ChrLab( 7) = 'T1G'
+!         ChrLab( 8) = 'T1U'
+!         ChrLab( 9) = 'T2G'
+!         ChrLab(10) = 'T2U'
+!         ChrLab(11) = '??'
+!       else if(Index(Group,'O   ').ne.0) then
+!         NReps = 5
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = 'A2'
+!         ChrLab(3) = 'E'
+!         ChrLab(4) = 'T1'
+!         ChrLab(5) = 'T2'
+!         ChrLab(6) = '??'
+!       else if(Index(Group,'TD  ').ne.0) then
+!         NReps = 5
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = 'A2'
+!         ChrLab(3) = 'E'
+!         ChrLab(4) = 'T1'
+!         ChrLab(5) = 'T2'
+!         ChrLab(6) = '??'
+!       else if(Index(Group,'T   ').ne.0) then
+!         NReps = 3
+!         ChrLab(1) = 'A'
+!         ChrLab(2) = 'E'
+!         ChrLab(3) = 'T'
+!         ChrLab(4) = '??'
+!       else if(Index(Group,'D*  ').ne.0 .or.
+!      $        Index(Group,'D*H ').ne.0) then
+!         NReps = 8
+!         ChrLab(1) = 'SGG'
+!         ChrLab(2) = 'SGU'
+!         ChrLab(3) = 'PIG'
+!         ChrLab(4) = 'PIU'
+!         ChrLab(5) = 'DLTG'
+!         ChrLab(6) = 'DLTU'
+!         ChrLab(7) = 'PHIG'
+!         ChrLab(8) = 'PHIU'
+!         ChrLab(9) = '??'
+!       else if(Index(Group,'D2H').ne.0) then
+!         NReps = 8
+!         ChrLab(1) = 'AG'
+!         ChrLab(2) = 'AU'
+!         ChrLab(3) = 'B1G'
+!         ChrLab(4) = 'B1U'
+!         ChrLab(5) = 'B2G'
+!         ChrLab(6) = 'B2U'
+!         ChrLab(7) = 'B3G'
+!         ChrLab(8) = 'B3U'
+!         ChrLab(9) = '??'
+!       else if(Index(Group,'D3H').ne.0) then
+!         NReps = 6
+!         ChrLab(1) = 'A1'''
+!         ChrLab(2) = 'A1"'
+!         ChrLab(3) = 'A2'''
+!         ChrLab(4) = 'A2"'
+!         ChrLab(5) = 'E'''
+!         ChrLab(6) = 'E"'
+!         ChrLab(7) = '??'
+!       else if(Index(Group,'D4H').ne.0) then
+!         NReps = 10
+!         ChrLab( 1) = 'A1G'
+!         ChrLab( 2) = 'A1U'
+!         ChrLab( 3) = 'A2G'
+!         ChrLab( 4) = 'A2U'
+!         ChrLab( 5) = 'B1G'
+!         ChrLab( 6) = 'B1U'
+!         ChrLab( 7) = 'B2G'
+!         ChrLab( 8) = 'B2U'
+!         ChrLab( 9) = 'EG'
+!         ChrLab(10) = 'EU'
+!         ChrLab(11) = '??'
+!       else if(Index(Group,'D5H').ne.0) then
+!         NReps = 8
+!         ChrLab(1) = 'A1'''
+!         ChrLab(2) = 'A1"'
+!         ChrLab(3) = 'A2'''
+!         ChrLab(4) = 'A2"'
+!         ChrLab(5) = 'E1'''
+!         ChrLab(6) = 'E1"'
+!         ChrLab(7) = 'E2'''
+!         ChrLab(8) = 'E2"'
+!         ChrLab(9) = '??'
+!       else if(Index(Group,'D6H').ne.0) then
+!         NReps = 12
+!         ChrLab( 1) = 'A1G'
+!         ChrLab( 2) = 'A1U'
+!         ChrLab( 3) = 'A2G'
+!         ChrLab( 4) = 'A2U'
+!         ChrLab( 5) = 'B1G'
+!         ChrLab( 6) = 'B1U'
+!         ChrLab( 7) = 'B2G'
+!         ChrLab( 8) = 'B2U'
+!         ChrLab( 9) = 'E1G'
+!         ChrLab(10) = 'E1U'
+!         ChrLab(11) = 'E2G'
+!         ChrLab(12) = 'E2U'
+!         ChrLab(13) = '??'
+!       else if(Index(Group,'D2D').ne.0) then
+!         NReps = 5
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = 'A2'
+!         ChrLab(3) = 'B1'
+!         ChrLab(4) = 'B2'
+!         ChrLab(5) = 'E'
+!         ChrLab(6) = '??'
+!       else if(Index(Group,'D3D').ne.0) then
+!         NReps = 6
+!         ChrLab(1) = 'A1G '
+!         ChrLab(2) = 'A1U'
+!         ChrLab(3) = 'A2G'
+!         ChrLab(4) = 'A2U'
+!         ChrLab(5) = 'EG'
+!         ChrLab(6) = 'EU'
+!         ChrLab(7) = '??'
+!       else if(Index(Group,'D4D').ne.0) then
+!         NReps = 7
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = 'A2'
+!         ChrLab(3) = 'B1'
+!         ChrLab(4) = 'B2'
+!         ChrLab(5) = 'E1'
+!         ChrLab(6) = 'E2'
+!         ChrLab(7) = 'E3'
+!         ChrLab(8) = '??'
+!       else if(Index(Group,'D2 ').ne.0) then
+!         NReps = 4
+!         ChrLab(1) = 'A'
+!         ChrLab(2) = 'B1'
+!         ChrLab(3) = 'B2'
+!         ChrLab(4) = 'B3'
+!         ChrLab(5) = '??'
+!       else if(Index(Group,'D3 ').ne.0) then
+!         NReps = 3
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = 'A2'
+!         ChrLab(3) = 'E'
+!         ChrLab(4) = '??'
+!       else if(Index(Group,'D4 ').ne.0) then
+!         NReps = 5
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = 'A2'
+!         ChrLab(3) = 'B1'
+!         ChrLab(4) = 'B2'
+!         ChrLab(5) = 'E'
+!         ChrLab(6) = '??'
+!       else if(Index(Group,'D6 ').ne.0) then
+!         NReps = 6
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = 'A2'
+!         ChrLab(3) = 'B1'
+!         ChrLab(4) = 'B2'
+!         ChrLab(5) = 'E1'
+!         ChrLab(6) = 'E2'
+!         ChrLab(7) = '??'
+!       else if(Index(Group,'C*V ').ne.0 .or.
+!      $        Index(Group,'C*  ').ne.0) then
+!         NReps = 4
+!         ChrLab(1) = 'SG'
+!         ChrLab(2) = 'PI'
+!         ChrLab(3) = 'DLTA'
+!         ChrLab(4) = 'PHI'
+!         ChrLab(5) = '??'
+!       else if(Index(Group,'C2H').ne.0) then
+!         NReps = 4
+!         ChrLab(1) = 'AG'
+!         ChrLab(2) = 'AU'
+!         ChrLab(3) = 'BG'
+!         ChrLab(4) = 'BU'
+!         ChrLab(5) = '??'
+!       else if(Index(Group,'C3H').ne.0) then
+!         NReps = 4
+!         ChrLab(1) = 'A'''
+!         ChrLab(2) = 'A"'
+!         ChrLab(3) = 'E'''
+!         ChrLab(4) = 'E"'
+!         ChrLab(5) = '??'
+!       else if(Index(Group,'C4H').ne.0) then
+!         NReps = 6
+!         ChrLab(1) = 'AG'
+!         ChrLab(2) = 'AU'
+!         ChrLab(3) = 'BG'
+!         ChrLab(4) = 'BU'
+!         ChrLab(5) = 'EG'
+!         ChrLab(6) = 'EU'
+!         ChrLab(7) = '??'
+!       else if(Index(Group,'C6H').ne.0) then
+!         NReps = 8
+!         ChrLab(1) = 'AG'
+!         ChrLab(2) = 'AU'
+!         ChrLab(3) = 'BG'
+!         ChrLab(4) = 'BU'
+!         ChrLab(5) = 'E1G'
+!         ChrLab(6) = 'E1U'
+!         ChrLab(7) = 'E2G'
+!         ChrLab(8) = 'E2U'
+!         ChrLab(9) = '??'
+!       else if(Index(Group,'C2V').ne.0) then
+!         NReps = 4
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = 'A2'
+!         ChrLab(3) = 'B1'
+!         ChrLab(4) = 'B2'
+!         ChrLab(5) = '??'
+!       else if(Index(Group,'C3V').ne.0) then
+!         NReps = 3
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = 'A2'
+!         ChrLab(3) = 'E'
+!         ChrLab(4) = '??'
+!       else if(Index(Group,'C4V').ne.0) then
+!         NReps = 5
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = 'A2'
+!         ChrLab(3) = 'B1'
+!         ChrLab(4) = 'B2'
+!         ChrLab(5) = 'E'
+!         ChrLab(6) = '??'
+!       else if(Index(Group,'C5V').ne.0) then
+!         NReps = 4
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = 'A2'
+!         ChrLab(3) = 'E1'
+!         ChrLab(4) = 'E2'
+!         ChrLab(5) = '??'
+!       else if(Index(Group,'C6V').ne.0) then
+!         NReps = 6
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = 'A2'
+!         ChrLab(3) = 'B1'
+!         ChrLab(4) = 'B2'
+!         ChrLab(5) = 'E1'
+!         ChrLab(6) = 'E2'
+!         ChrLab(7) = '??'
+!       else if(Index(Group,'CS  ').ne.0) then
+!         NReps = 2
+!         ChrLab(1) = 'A'''
+!         ChrLab(2) = 'A"'
+!         ChrLab(3) = '??'
+!       else if(Index(Group,'CI  ').ne.0) then
+!         NReps = 2
+!         ChrLab(1) = 'AG'
+!         ChrLab(2) = 'AU'
+!         ChrLab(3) = '??'
+!       else if(Index(Group,'C2 ').ne.0) then
+!         NReps = 2
+!         ChrLab(1) = 'A'
+!         ChrLab(2) = 'B'
+!         ChrLab(3) = '??'
+!       else if(Index(Group,'C3 ').ne.0) then
+!         NReps = 2
+!         ChrLab(1) = 'A'
+!         ChrLab(2) = 'E'
+!         ChrLab(3) = '??'
+!       else if(Index(Group,'C4 ').ne.0) then
+!         NReps = 3
+!         ChrLab(1) = 'A'
+!         ChrLab(2) = 'B'
+!         ChrLab(3) = 'E'
+!         ChrLab(4) = '??'
+!       else if(Index(Group,'C6 ').ne.0) then
+!         NReps = 4
+!         ChrLab(1) = 'A'
+!         ChrLab(2) = 'B'
+!         ChrLab(3) = 'E1'
+!         ChrLab(4) = 'E2'
+!         ChrLab(5) = '??'
+!       else
+!         NReps = 1
+!         ChrLab(1) = 'A1'
+!         ChrLab(2) = '??'
+!       endIf
+!       Return
+!       End
+	
 	!>
 	!! @brief Test method
 	!!
 	subroutine Fragment_test()
 		character(:), allocatable :: fstr
-		type(Fragment) :: cluster
+		type(Fragment) :: cluster, cluster2
 		type(Matrix) :: Im, Rot
+		integer :: i
 		
-		fstr = "      slC4    0  1  0    2   C4S-linear.xyz     -4129.754238  tC1,slC3  1000"
+		fstr = "      slC4    0  1  0    2   prueba.xyz     -4129.754238  0.4159"
 		
-		write(STDOUT,*) "================================"
+		write(IO_STDOUT,*) "================================"
 		call cluster.init( fstr )
 ! 		call cluster.show()
 		
-! 		fstr = "      slC5    0  1  0    2   C5S-linear.xyz     -5165.261895  slC2,slC3  1000"
-		fstr = "      slC5    0  1  0    2   C5S-cyclic.xyz     -5165.261895  slC2,slC3  1000"
+! 		fstr = "      slC5    0  1  0    2   prueba.xyz     -5165.261895  0.4159"
+		fstr = "      slC5    0  1  0    2   prueba.xyz     -5165.261895  0.4159"
+		
+		do i=1,1000000
+		write(*,*) i
 		
 		call cluster.init( fstr )
 ! 		call cluster.show()
@@ -895,21 +1260,7 @@ module Fragment_
 		cluster.maxJ = 100
 		
 		call cluster.changeVibrationalEnergy()
-! 		call cluster.changeAngularMomentum()
-		write(*,*) "logVtheta = ", cluster.logVtheta_
-		write(*,*) "LnWe = ", cluster.LnWe()
-		write(*,*) "LnWv = ", cluster.LnWv()
-		write(*,*) " LnW = ", cluster.LnW()
-		
-! ! 		call cluster.setRotationOff()
-! 		call cluster.changeAngularMomentum()
-! 		write(*,*) "logVtheta = ", cluster.logVtheta_
-! 		write(*,*) "LnWe = ", cluster.LnWe()
-! 		write(*,*) "LnWv = ", cluster.LnWv()
-! 		write(*,*) " LnW = ", cluster.LnW()
-! 		
-! ! 		call cluster.setRotationOn()
-! 		call cluster.changeAngularMomentum()
+		call cluster.changeOrientation()
 ! 		write(*,*) "logVtheta = ", cluster.logVtheta_
 ! 		write(*,*) "LnWe = ", cluster.LnWe()
 ! 		write(*,*) "LnWv = ", cluster.LnWv()
@@ -917,9 +1268,13 @@ module Fragment_
 		
 		call cluster.setCenter( [-1.5_8, 3.8_8, 2.8_8] )
 		call cluster.rotate( random=.true. )
-		write(STDOUT,"(A,3F5.1)") "newCenter = ", cluster.center()
+! 		write(IO_STDOUT,"(A,3F5.1)") "newCenter = ", cluster.center()
 		
-		call cluster.save("salida.xyz")
+		cluster = cluster2
+		
+		end do
+		
+! 		call cluster.save("salida.xyz")
 	end subroutine Fragment_test
 	
 end module Fragment_
