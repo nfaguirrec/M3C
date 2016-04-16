@@ -226,7 +226,7 @@ main(){
 	fi
 	
 	rm $iFile
-	rm `ls *.xyz | grep -E -v "^E_[[:digit:].-]+"`
+	rm `ls *.xyz 2> /dev/null | grep -E -v "^E_[[:digit:].-]+"` &> /dev/null
 	
 	popd . > /dev/null 2> /dev/null
 	

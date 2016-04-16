@@ -2331,6 +2331,8 @@ module FragmentsListBase_
 			end do
 		end if
 		
+		if( allocated(reactiveTokens) ) deallocate( reactiveTokens )
+		
 		rMin = iParser.getReal( "SYSROPT:rMin", def=2.0_8 )*angs
 		rMax = iParser.getReal( "SYSROPT:rMax", def=10.0_8 )*angs
 		rStep = iParser.getReal( "SYSROPT:rStep", def=2.0_8 )*angs

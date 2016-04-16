@@ -99,7 +99,7 @@ module FragmentsDB_
 				this.clusters(i).maxEvib = 0.0_8
 			end if
 			
-			write(STDOUT,"(4X,A22,F15.7,A)")  "           maxEvib = ", this.clusters(i).maxEvib/eV, "   eV"
+			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "           maxEvib = ", this.clusters(i).maxEvib/eV, "   eV"
 			
 			deallocate( tokens )
 		end do
@@ -115,10 +115,10 @@ module FragmentsDB_
 			end do
 		end if
 		
-		write(STDOUT,*) ""
-		write(STDOUT,*) ""
-		write(STDOUT,"(A,F15.7,A)")  "     Electronic energy reference = ", this.energyReference_/eV, "   eV"
-		write(STDOUT,*) ""
+		write(IO_STDOUT,*) ""
+		write(IO_STDOUT,*) ""
+		write(IO_STDOUT,"(A,F15.7,A)")  "     Electronic energy reference = ", this.energyReference_/eV, "   eV"
+		write(IO_STDOUT,*) ""
 		
 		call GOptions_section( "END FRAGMENTS DATABASE INITIALIZATION", indent=1 )
 		
@@ -265,18 +265,18 @@ module FragmentsDB_
 								r = rMin
 								do while( r <= rMax )
 									write(*,"(2F20.7)") r/angs, ( &
-! 										+ this.clusters(i).electronicEnergy &
-! 										+ this.clusters(j).electronicEnergy &
+										+ this.clusters(i).electronicEnergy &
+										+ this.clusters(j).electronicEnergy &
 										+ this.potential( i, j, r, n ) &
-! 										- this.energyReference() &
+										- this.energyReference() &
 										)/eV
 									
 									if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
 										write(oFile.unit,"(2F20.7)") r/angs, ( &
-! 											+ this.clusters(i).electronicEnergy &
-! 											+ this.clusters(j).electronicEnergy &
+											+ this.clusters(i).electronicEnergy &
+											+ this.clusters(j).electronicEnergy &
 											+ this.potential( i, j, r, n ) &
-! 											- this.energyReference() &
+											- this.energyReference() &
 											)/eV
 									end if
 									
@@ -539,7 +539,7 @@ module FragmentsDB_
 			deallocate( subTokens )
 		end do
 		
-		deallocate(reactiveTokens)
+		if( allocated(reactiveTokens) ) deallocate( reactiveTokens )
 	end function getEelecFromName
 	
 	!>
