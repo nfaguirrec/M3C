@@ -1213,11 +1213,12 @@ set style line 9 lt 1 lc rgb '#004488' #
 set style line 10 lt 1 lc rgbcolor "#004488"
 set style line 11 lt 1 lc rgbcolor "#888800"
 set style line 12 lt 1 lc rgbcolor "#008888"
-set style line 13 lt 1 lc rgbcolor "#880088"
+# set style line 13 lt 1 lc rgbcolor "#880088"
 set style line 14 lt 1 lc rgbcolor "#880000"
-set style line 15 lt 1 lc rgb "blue"
-set style line 16 lt 1 lc rgb "dark-olivegreen"
-set style line 17 lt 1 lc rgb "orange"
+set style line 15 lt 1 lc rgb "orange"
+# set style line 16 lt 1 lc rgb "dark-olivegreen"
+# set style line 17 lt 1 lc rgb "orange"
+set style line 24 lt 1 lc rgb "orange"  # Cambia al amarillo
 
 
 set y2range [-3:103.0]
@@ -1248,25 +1249,24 @@ EOF
 		
 # 		if (( $i != $nChannels ))
 # 		then
-# 			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
-# # 			echo "'matrix.data' u 1:$yCol:(1e2) smooth acsplines notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
-# 			
-# # 			if (( $i>3 ))
-# # 			then
-# # # 				echo "'matrix.data' u 1:$yCol:$errCol notitle w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/2.9 lw 0.3*$M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
-# # 				echo "'matrix.data' u 1:$yCol:$errCol notitle w yerrorbars ls $i pt $i ps 0 lw 0.4*$M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
-# # 			else
-# # # 				echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/2.9 lw 0.3*$M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
-# 				echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps 0 lw 0.4*$M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
-# # 			fi
+# # 			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+# 			echo "'matrix.data' u 1:$yCol:(4e2/abs(1e-4+$errCol)) smooth acsplines notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+# 			if (( $i>3 ))
+# 			then
+# # 				echo "'matrix.data' u 1:$yCol:$errCol notitle w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/2.9 lw 0.3*$M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+# 				echo "'matrix.data' u 1:$yCol:$errCol notitle w yerrorbars ls $i pt $i ps 0 lw 0.5*$M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+# 			else
+# # 				echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/2.9 lw 0.3*$M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+# 				echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps 0 lw 0.5*$M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
+# 			fi
 # 
 # # 			echo "'matrix.data' u 1:$yCol notitle w p pt $i ps $M3C_PLOT_LW/20.0 lc rgb 'white', \\" >> .plotMtj-$iFile$$
 # 		else
 # # 			echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
-# 			echo "'matrix.data' u 1:$yCol:(1e2) smooth acsplines notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+# 			echo "'matrix.data' u 1:$yCol:(4e2/abs(1e-4+$errCol)) smooth acsplines notitle w l ls $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
 # 			
 # # 			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/2.9 lw 0.3*$M3C_PLOT_LW/2.0" >> .plotMtj-$iFile$$
-# 			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps 0 lw 0.4*$M3C_PLOT_LW/2.0" >> .plotMtj-$iFile$$
+# 			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps 0 lw 0.5*$M3C_PLOT_LW/2.0" >> .plotMtj-$iFile$$
 # # 			echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW/2.0, \\" >> .plotMtj-$iFile$$
 # # 			echo "'matrix.data' u 1:$yCol notitle w p pt $i ps $M3C_PLOT_LW/20.0 lc rgb 'white'" >> .plotMtj-$iFile$$
 # 		fi
@@ -1439,6 +1439,11 @@ unset key
 set xlabel "Internal Energy (eV)"
 set ylabel "Temperature (eV)"
 
+plot [:] [:] \
+"$energyDir/temperatureTable$$.dat" u 1:2 w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
+"" u 1:2:3 notitle w yerrorbars lt 1 ps 0, \
+"" u 1:2 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white"
+
 # sw(x,S)=1/(x*x*S)
 # plot [-0.45:-0.2] [0.0005:0.0045] \
 # "$energyDir/temperatureTable$$.dat" u 1:2 w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
@@ -1447,86 +1452,86 @@ set ylabel "Temperature (eV)"
 # "" u 1:2:(sw(\$3+0.00001,1000)) smooth acsplines w l lt 3
 
 
-#==============================================================
-# Todo este bloque es temporal
-#--------------------------------------------------------------
-Jval=int(`awk '($1=="totalJ"){print $3}' $iFile`/LJ_j)
-
-param=( (Jval==0)? 0.0001 : (Jval==8) ? 0.00005 : (Jval==11) ? 0.00001 : 0.0001 )
-print Jval, param
-set table
-set output "table.dat"
-sw(x,S)=1/(x*x*S)
-plot \
-"< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 1:2:(sw(\$3+param,3000)) smooth acsplines w l lt 3  # OK L=12
-
-# "< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 1:2:(sw(\$3+0.00004,3000)) smooth acsplines w l lt 3  # OK L=12
-# "< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 1:2:(sw(\$3+0.0001,3000)) smooth acsplines w l lt 3  # OK L=0
-# "< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 1:2:(sw(\$3+0.00005,3000)) smooth acsplines w l lt 3  # OK L=8
-# "$energyDir/temperatureTable$$.dat" u 1:2:(sw(\$3+0.0001,3000)) smooth acsplines w l lt 3
-unset table
-unset output
-
-! n1df.derivative -i table.dat -c 2,1 -o dtable.dat -s 10
-
-set xlabel "Temperature (eV)"
-set ylabel "Internal Energy (eV)"
-set y2label "Heat Capacity per atom"
-set xtics rotate by -45
-set ytics nomirror
-set y2tics nomirror
-# "$energyDir/temperatureTable$$.dat" u 2:1 w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
-
-# set y2range [2:18]
+# #==============================================================
+# # Todo este bloque es temporal
+# #--------------------------------------------------------------
+# Jval=int(`awk '($1=="totalJ"){print $3}' $iFile`/LJ_j)
+# 
+# param=( (Jval==0)? 0.0001 : (Jval==8) ? 0.00005 : (Jval==11) ? 0.00001 : 0.0001 )
+# print Jval, param
+# set table
+# set output "table.dat"
+# sw(x,S)=1/(x*x*S)
+# plot \
+# "< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 1:2:(sw(\$3+param,3000)) smooth acsplines w l lt 3  # OK L=12
+# 
+# # "< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 1:2:(sw(\$3+0.00004,3000)) smooth acsplines w l lt 3  # OK L=12
+# # "< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 1:2:(sw(\$3+0.0001,3000)) smooth acsplines w l lt 3  # OK L=0
+# # "< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 1:2:(sw(\$3+0.00005,3000)) smooth acsplines w l lt 3  # OK L=8
+# # "$energyDir/temperatureTable$$.dat" u 1:2:(sw(\$3+0.0001,3000)) smooth acsplines w l lt 3
+# unset table
+# unset output
+# 
+# ! n1df.derivative -i table.dat -c 2,1 -o dtable.dat -s 10
+# 
+# set xlabel "Temperature (eV)"
+# set ylabel "Internal Energy (eV)"
+# set y2label "Heat Capacity per atom"
+# set xtics rotate by -45
+# set ytics nomirror
+# set y2tics nomirror
+# # "$energyDir/temperatureTable$$.dat" u 2:1 w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
+# 
+# # set y2range [2:18]
+# # plot [0.0005:0.0045] [-0.45:-0.2] \
+# # "< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 2:1 w p pt 7 ps $M3C_PLOT_LW/2.9 lw 0.3 lt 1, \
+# # "" u 2:1:3 notitle w xerrorbars lt 1 ps 0, \
+# # "" u 2:1 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+# # "dtable.dat" u 1:(\$2/13.0) axis x1y2 w l lc rgb "blue" lw 2, \
+# # "table.dat" u 2:1 w l lc rgb "forest-green" lw 2, \
+# # "Jellinek.dat" i 0 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 7 lc rgb "black", \
+# # "Jellinek.dat" i 0 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 7 ps 0.4 lc rgb "white", \
+# # "Jellinek.dat" i 1 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 7 lc rgb "black", \
+# # "Jellinek.dat" i 2 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 9 ps 1.0 lc rgb "black", \
+# # "Jellinek.dat" i 2 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 9 ps 0.4 lc rgb "white"
+# 
+# set xlabel "Temperature (eV)"
+# set ylabel "Internal Energy (eV)"
+# set ytics mirror
+# unset y2tics
+# unset y2label
+# set format y "%.2f"
+# 
 # plot [0.0005:0.0045] [-0.45:-0.2] \
 # "< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 2:1 w p pt 7 ps $M3C_PLOT_LW/2.9 lw 0.3 lt 1, \
 # "" u 2:1:3 notitle w xerrorbars lt 1 ps 0, \
 # "" u 2:1 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
-# "dtable.dat" u 1:(\$2/13.0) axis x1y2 w l lc rgb "blue" lw 2, \
-# "table.dat" u 2:1 w l lc rgb "forest-green" lw 2, \
-# "Jellinek.dat" i 0 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 7 lc rgb "black", \
-# "Jellinek.dat" i 0 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 7 ps 0.4 lc rgb "white", \
-# "Jellinek.dat" i 1 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 7 lc rgb "black", \
-# "Jellinek.dat" i 2 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 9 ps 1.0 lc rgb "black", \
-# "Jellinek.dat" i 2 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 9 ps 0.4 lc rgb "white"
-
-set xlabel "Temperature (eV)"
-set ylabel "Internal Energy (eV)"
-set ytics mirror
-unset y2tics
-unset y2label
-set format y "%.2f"
-
-plot [0.0005:0.0045] [-0.45:-0.2] \
-"< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 2:1 w p pt 7 ps $M3C_PLOT_LW/2.9 lw 0.3 lt 1, \
-"" u 2:1:3 notitle w xerrorbars lt 1 ps 0, \
-"" u 2:1 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
-"table.dat" u 2:1 w l lc rgb "blue" lw 2, \
-"Jellinek.dat" i 0 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 7 ps 1.3 lc rgb "black", \
-"Jellinek.dat" i 0 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 7 ps 0.6 lc rgb "white", \
-"Jellinek.dat" i 1 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 7 ps 1.3 lc rgb "black"
-
-
-# "Jellinek.dat" i 2 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 9 ps 1.0 lc rgb "black", \
-# "Jellinek.dat" i 2 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 9 ps 0.4 lc rgb "white"
-
-pause -1
-
-set ytics nomirror
-set y2tics nomirror
-set xlabel "Temperature (eV)"
-set ylabel "Internal Energy (eV)"
-set y2label "Heat Capacity per atom"
-
-set y2range [2:16]
-plot [0.0005:0.0045] [-0.45:-0.2] \
-"< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 2:1 w p pt 7 ps $M3C_PLOT_LW/2.9 lw 0.3 lt 1 lc rgb "gray80", \
-"" u 2:1:3 notitle w xerrorbars lt 1 ps 0 lc rgb "gray80", \
-"" u 2:1 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
-"table.dat" u 2:1 w l lc rgb "gray80" lw 2, \
-"dtable.dat" u 1:(\$2/13.0) axis x1y2 w l lc rgb "blue" lw 2
-
-#==============================================================
+# "table.dat" u 2:1 w l lc rgb "blue" lw 2, \
+# "Jellinek.dat" i 0 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 7 ps 1.3 lc rgb "black", \
+# "Jellinek.dat" i 0 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 7 ps 0.6 lc rgb "white", \
+# "Jellinek.dat" i 1 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 7 ps 1.3 lc rgb "black"
+# 
+# 
+# # "Jellinek.dat" i 2 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 9 ps 1.0 lc rgb "black", \
+# # "Jellinek.dat" i 2 u (\$2*K/eV):(\$1*erg*10**(-14)*13/eV) w p pt 9 ps 0.4 lc rgb "white"
+# 
+# pause -1
+# 
+# set ytics nomirror
+# set y2tics nomirror
+# set xlabel "Temperature (eV)"
+# set ylabel "Internal Energy (eV)"
+# set y2label "Heat Capacity per atom"
+# 
+# set y2range [2:16]
+# plot [0.0005:0.0045] [-0.45:-0.2] \
+# "< awk '(\$2>0.0004){print \$0}' $energyDir/temperatureTable$$.dat" u 2:1 w p pt 7 ps $M3C_PLOT_LW/2.9 lw 0.3 lt 1 lc rgb "gray80", \
+# "" u 2:1:3 notitle w xerrorbars lt 1 ps 0 lc rgb "gray80", \
+# "" u 2:1 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+# "table.dat" u 2:1 w l lc rgb "gray80" lw 2, \
+# "dtable.dat" u 1:(\$2/13.0) axis x1y2 w l lc rgb "blue" lw 2
+# 
+# #==============================================================
 
 pause -1
 EOF
@@ -1693,11 +1698,10 @@ function channelFitBRDiagram()
 	mv $energyDir/matrix.dat .
 	mv $energyDir/keys.dat .
 	
-	nChannels=`cat keys.dat | wc -w`
-	nChannels=$(( $nChannels-1 ))
-	
 	M3CfitBR -i $iFile -d matrix.dat -k keys.dat
 	rm matrix.dat keys.dat
+	
+	nChannels=`awk '($0!~/^[[:blank:]]*#.*$/){print $0}' $BRFile | wc -l`
 	
 	cp $BRFile tmp-$$
 	gawk '
@@ -1705,7 +1709,7 @@ function channelFitBRDiagram()
 	'"`cat $M3C_HOME/utils/M3CUtils.gawk`"'   # Debería ser la anterior linea, pero solo está disponible para gawk >= 2011
 	($1!~/^#/){
 		print reduceM3CLabel($1), $2, $3, $4
-	}' tmp-$$ > $BRFile
+	}' tmp-$$ | sed '{s/\(C\)\([0-9]\)/\1_\2/g;s/p/^{+}/g}' > $BRFile
 	rm tmp-$$
 	
 	yMax=`gawk '($0!~/#/){printf "%s\n%s\n",$2,$3}' $BRFile | sort -k 1 -n | tail -n1`
@@ -1724,15 +1728,16 @@ set format y "%.0f"
 #set key left
 set xtics font "Helvetica Bold,9" rotate by -45
 set ytics font "Helvetica Bold,9"
-set key font "Helvetica Bold,10"
+set key font "Helvetica Bold,10" spacing 1.2
 
 set mytics 5
 # set grid y
 
-plot [-$nChannels*0.1:$nChannels*1.1] [-$yMax*0.1:$yMax*1.1] \
+plot [-1:$(($nChannels-1))+1] [-$yMax*0.1:$yMax*1.1] \
 "$BRFile" u :3:4:xtic(1) t "experimental" w yerrorbars pt 7 lt 3, \
-"" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
-"" u :2 t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+"$BRFile" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
+"old.dat" u :2 t "theoretical" w lp ps 2.0 pt 3 lt 0 lw 2 lc rgb "forest-green", \
+"$BRFile" u :2 t "theoretical + U(R)" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
 
 pause -1
 EOF

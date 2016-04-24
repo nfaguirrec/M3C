@@ -257,12 +257,10 @@ program M3CfitBR
 	
 	do i=1,size(isMappedExp2Data)
 		if( isMappedExp2Data(i) == .false. ) then
-			write(*,*) "### ERROR ### M3CfitBR: "//trim(expBRKey(i).fstr)//" has not been mapped."
-			write(*,*) "                        Remove it from the input file"
-			write(*,*) ""
-			stop
+			write(*,"(A)") "@@@ WARNING @@@ "//trim(expBRKey(i).fstr)//" has not been mapped. Selecting zero probability in all range of energy"
 		end if
 	end do
+	write(*,*) ""
 	
 	!-------------------------------------------------------------------
 	! Loading the channel probabilities
@@ -272,8 +270,14 @@ program M3CfitBR
 	allocate( P(nChannels) )
 	do i=1,nChannels
 		write(*,"(A)",advance="no") "Reading channel "//trim(FString_fromInteger(i))//":"//trim(FString_fromInteger(2*i))//" ... "
-				
-		call bufferGrid.fromFile( dataFileName.fstr, column=2*idData2Exp(i) )
+		
+		if( isMappedExp2Data(i) ) then
+			call bufferGrid.fromFile( dataFileName.fstr, column=2*idData2Exp(i) )
+		else
+			bufferGrid = energyGrid
+			bufferGrid.data = 0.0_8
+		end if
+		
 		call P(i).fromGridArray( energyGrid, bufferGrid.data )
 		write(*,"(A)") "OK"
 	end do
