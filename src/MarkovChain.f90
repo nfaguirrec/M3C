@@ -7,6 +7,7 @@ module MarkovChain_
 	use RealList_
 	use RandomUtils_
 	use UnitsConverter_
+	use IOStream_
 	use StringIntegerPair_
 	use StringRealPair_
 	use StringIntegerMap_
@@ -36,6 +37,11 @@ module MarkovChain_
 		integer :: freqBlockingCheck = 4
 		type(String) :: tracking
 		
+		type(OFStream) :: energyHistoryFile
+		type(OFStream) :: weightHistoryFile
+		type(OFStream) :: JHistoryFile
+		type(OFStream) :: LHistoryFile
+		
 		type(RealHistogram), allocatable :: iTemperatureHistogram(:) ! One item for each experiment
 		type(RealHistogram), allocatable :: translationalEnergyHistogram(:)   ! One item for each experiment
 		type(RealHistogram), allocatable :: intermolEnergyHistogram(:)        ! One item for each experiment
@@ -61,10 +67,10 @@ module MarkovChain_
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Strings de history
-		type(StringList), private :: energyHistory
-		type(StringList), private :: weightHistory
-		type(StringList), private :: JHistory
-		type(StringList), private :: LHistory
+! 		type(StringList), private :: energyHistory
+! 		type(StringList), private :: weightHistory
+! 		type(StringList), private :: JHistory
+! 		type(StringList), private :: LHistory
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		
 		contains
@@ -78,10 +84,10 @@ module MarkovChain_
 			procedure, private :: initHistograms
 			procedure, NOPASS :: showAverHistogram
 			procedure :: run
-			procedure :: saveEnergyHistory
-			procedure :: saveWeightHistory
-			procedure :: saveJHistory
-			procedure :: saveLHistory
+! 			procedure :: saveEnergyHistory
+! 			procedure :: saveWeightHistory
+! 			procedure :: saveJHistory
+! 			procedure :: saveLHistory
 			procedure :: saveHistograms
 			
 			procedure :: execute
@@ -244,8 +250,8 @@ module MarkovChain_
 		character(100) :: geometryFileName
 		character(2) :: origin
 		
-		call this.energyHistory.clear()
-		call this.weightHistory.clear()
+! 		call this.energyHistory.clear()
+! 		call this.weightHistory.clear()
 		
 		call this.clearHistograms()
 		call this.initHistograms()
@@ -446,8 +452,15 @@ module MarkovChain_
 									write(6,"(A)") trim(sBuffer.fstr)
 								end if
 								
-								call this.weightHistory.append( react.reactives.weightHistoryLine( origin ) )
-								call this.energyHistory.append( react.reactives.energyHistoryLine( origin ) )
+								if( this.weightHistoryFile.isOpen() ) then
+									sBuffer = react.reactives.weightHistoryLine( origin )
+									write( this.weightHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
+								end if
+								
+								if( this.energyHistoryFile.isOpen() ) then
+									sBuffer = react.reactives.energyHistoryLine( origin )
+									write( this.energyHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
+								end if
 								
 								if( .not. this.geometryHistoryFilePrefix.isEmpty() ) then
 									geometryFileName = trim(this.geometryHistoryFilePrefix.fstr)//"-"//trim(FString_fromInteger(nExp))//".xyz"
@@ -473,8 +486,15 @@ module MarkovChain_
 								call this.speciesDetHistogram(nExp).set( sBuffer, this.speciesDetHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
 							end do
 							
-							call this.JHistory.append( react.reactives.JHistoryLine() )
-							call this.LHistory.append( react.reactives.LHistoryLine() )
+							if( this.JHistoryFile.isOpen() ) then
+								sBuffer = react.reactives.JHistoryLine()
+								write( this.JHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
+							end if
+							
+							if( this.LHistoryFile.isOpen() ) then
+								sBuffer = react.reactives.LHistoryLine()
+								write( this.LHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
+							end if
 							
 							sBuffer = react.reactives.label( details=.false. )
 							call this.channelHistogram(nExp).set( sBuffer, this.channelHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
@@ -492,34 +512,42 @@ module MarkovChain_
 			sBuffer = ""
 ! 			if( this.tracking == "energy" ) then
 				
-				call this.weightHistory.append( sBuffer )
-				call this.weightHistory.append( sBuffer )
+				if( this.weightHistoryFile.isOpen() ) then
+					write( this.weightHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
+					write( this.weightHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
+				end if
 				
 ! 			else if( this.tracking == "weight" ) then
 			
-				call this.energyHistory.append( sBuffer )
-				call this.energyHistory.append( sBuffer )
+				if( this.energyHistoryFile.isOpen() ) then
+					write( this.energyHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
+					write( this.energyHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
+				end if
 				
 ! 			end if
 			write(6,"(A)") ""
 			write(6,"(A)") ""
 			
-			call this.JHistory.append( sBuffer )
-			call this.JHistory.append( sBuffer )
+			if( this.JHistoryFile.isOpen() ) then
+				write( this.JHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
+				write( this.JHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
+			end if
 			
-			call this.LHistory.append( sBuffer )
-			call this.LHistory.append( sBuffer )
+			if( this.LHistoryFile.isOpen() ) then
+				write( this.LHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
+				write( this.LHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
+			end if
 		end do
 		
 		if( GOptions_printLevel >= 1 ) then
 			write(*,"(A)") ""
 		end if
 		
-		if( this.tracking == "energy" ) then
-			call this.saveWeightHistory()
-		else if( this.tracking == "weight" ) then
-			call this.saveEnergyHistory()
-		end if
+! 		if( this.tracking == "energy" ) then
+! 			call this.saveWeightHistory()
+! 		else if( this.tracking == "weight" ) then
+! 			call this.saveEnergyHistory()
+! 		end if
 			
 		call this.saveHistograms()
 		
@@ -650,193 +678,193 @@ module MarkovChain_
 		end if
 	end subroutine showAverHistogram
 	
-	!>
-	!! @brief Save the energy for the accepted steps in a file
-	!!
-	subroutine saveEnergyHistory( this, oFileName )
-		class(MarkovChain), intent(in) :: this
-		character(*), optional, intent(in) :: oFileName
-		
-		integer :: unit
-		
-		type(OFStream) :: oFile
-		class(StringListIterator), pointer :: iter
-		type(String) :: strBuffer
-		integer :: i
-		
-		unit = 6
-		if( present(oFileName) ) then
-			call oFile.open( oFileName )
-			unit = oFile.unit
-		end if
-		
-		write(unit,"(A)") "#------------------------------------"
-		write(unit,"(A)") "# ENERGY HISTORY"
-		write(unit,"(A)") "#------------------------------------"
-		write(unit,"(A1,3X,5A15,5X,A)") "#", "trans", "intermol", "vib", "rot", "tot", "formula"
-		write(unit,"(A1,3X,5A15,5X,A)") "#", "eV", "eV", "eV", "eV", ""
-		write(unit,"(A1,3X,5A15,5X,A)") "#", "-------", "--------", "-------", "-----", "-------"
-		
-		iter => this.energyHistory.begin
-		do while( associated(iter) )
-			
-			strBuffer = this.energyHistory.at(iter)
-			
-			if( strBuffer.isEmpty() ) then
-				write(unit,*) ""
-			else
-				write(unit,"(A)",advance="no") trim(strBuffer.fstr)
-				write(unit,*)
-			end if
-			
-			iter => iter.next
-		end do
-		
-		write(unit,"(A)") ""
-		
-		if( present(oFileName) ) then
-			call oFile.close()
-		end if
-	end subroutine saveEnergyHistory
+! 	!>
+! 	!! @brief Save the energy for the accepted steps in a file
+! 	!!
+! 	subroutine saveEnergyHistory( this, oFileName )
+! 		class(MarkovChain), intent(in) :: this
+! 		character(*), optional, intent(in) :: oFileName
+! 		
+! 		integer :: unit
+! 		
+! 		type(OFStream) :: oFile
+! 		class(StringListIterator), pointer :: iter
+! 		type(String) :: strBuffer
+! 		integer :: i
+! 		
+! 		unit = 6
+! 		if( present(oFileName) ) then
+! 			call oFile.open( oFileName )
+! 			unit = oFile.unit
+! 		end if
+! 		
+! 		write(unit,"(A)") "#------------------------------------"
+! 		write(unit,"(A)") "# ENERGY HISTORY"
+! 		write(unit,"(A)") "#------------------------------------"
+! 		write(unit,"(A1,3X,5A15,5X,A)") "#", "trans", "intermol", "vib", "rot", "tot", "formula"
+! 		write(unit,"(A1,3X,5A15,5X,A)") "#", "eV", "eV", "eV", "eV", ""
+! 		write(unit,"(A1,3X,5A15,5X,A)") "#", "-------", "--------", "-------", "-----", "-------"
+! 		
+! 		iter => this.energyHistory.begin
+! 		do while( associated(iter) )
+! 			
+! 			strBuffer = this.energyHistory.at(iter)
+! 			
+! 			if( strBuffer.isEmpty() ) then
+! 				write(unit,*) ""
+! 			else
+! 				write(unit,"(A)",advance="no") trim(strBuffer.fstr)
+! 				write(unit,*)
+! 			end if
+! 			
+! 			iter => iter.next
+! 		end do
+! 		
+! 		write(unit,"(A)") ""
+! 		
+! 		if( present(oFileName) ) then
+! 			call oFile.close()
+! 		end if
+! 	end subroutine saveEnergyHistory
 	
-	!>
-	!! @brief Save the energy for the accepted steps in a file
-	!!
-	subroutine saveWeightHistory( this, oFileName )
-		class(MarkovChain), intent(in) :: this
-		character(*), optional, intent(in) :: oFileName
-		
-		integer :: unit
-		
-		type(OFStream) :: oFile
-		class(StringListIterator), pointer :: iter
-		type(String) :: strBuffer
-		integer :: i
-		
-		unit = 6
-		if( present(oFileName) ) then
-			call oFile.open( oFileName )
-			unit = oFile.unit
-		end if
-		
-		write(unit,"(A)") "#------------------------------------"
-		write(unit,"(A)") "# WEIGHT HISTORY"
-		write(unit,"(A)") "#------------------------------------"
-		write(unit,"(A1,3X,6A15,5X,A)") "#", "LnWe", "LnWv", "LnWn", "LnWr", "LnWt", "LnW", "formula"
-		write(unit,"(A1,3X,6A15,5X,A)") "#", "arb.", "arb.", "arb.", "arb.", "arb.", "arb.", ""
-		write(unit,"(A1,3X,6A15,5X,A)") "#", "-------", "-------", "--------", "--------", "--------", "-------", "-------"
-		
-		iter => this.weightHistory.begin
-		do while( associated(iter) )
-			
-			strBuffer = this.weightHistory.at(iter)
-			
-			if( strBuffer.isEmpty() ) then
-				write(unit,*) ""
-			else
-				write(unit,"(A)",advance="no") trim(strBuffer.fstr)
-				write(unit,*)
-			end if
-			
-			iter => iter.next
-		end do
-		
-		write(unit,"(A)") ""
-		
-		if( present(oFileName) ) then
-			call oFile.close()
-		end if
-	end subroutine saveWeightHistory
+! 	!>
+! 	!! @brief Save the energy for the accepted steps in a file
+! 	!!
+! 	subroutine saveWeightHistory( this, oFileName )
+! 		class(MarkovChain), intent(in) :: this
+! 		character(*), optional, intent(in) :: oFileName
+! 		
+! 		integer :: unit
+! 		
+! 		type(OFStream) :: oFile
+! 		class(StringListIterator), pointer :: iter
+! 		type(String) :: strBuffer
+! 		integer :: i
+! 		
+! 		unit = 6
+! 		if( present(oFileName) ) then
+! 			call oFile.open( oFileName )
+! 			unit = oFile.unit
+! 		end if
+! 		
+! 		write(unit,"(A)") "#------------------------------------"
+! 		write(unit,"(A)") "# WEIGHT HISTORY"
+! 		write(unit,"(A)") "#------------------------------------"
+! 		write(unit,"(A1,3X,6A15,5X,A)") "#", "LnWe", "LnWv", "LnWn", "LnWr", "LnWt", "LnW", "formula"
+! 		write(unit,"(A1,3X,6A15,5X,A)") "#", "arb.", "arb.", "arb.", "arb.", "arb.", "arb.", ""
+! 		write(unit,"(A1,3X,6A15,5X,A)") "#", "-------", "-------", "--------", "--------", "--------", "-------", "-------"
+! 		
+! 		iter => this.weightHistory.begin
+! 		do while( associated(iter) )
+! 			
+! 			strBuffer = this.weightHistory.at(iter)
+! 			
+! 			if( strBuffer.isEmpty() ) then
+! 				write(unit,*) ""
+! 			else
+! 				write(unit,"(A)",advance="no") trim(strBuffer.fstr)
+! 				write(unit,*)
+! 			end if
+! 			
+! 			iter => iter.next
+! 		end do
+! 		
+! 		write(unit,"(A)") ""
+! 		
+! 		if( present(oFileName) ) then
+! 			call oFile.close()
+! 		end if
+! 	end subroutine saveWeightHistory
 	
-	!>
-	!! @brief Save the energy for the accepted steps in a file
-	!!
-	subroutine saveJHistory( this, oFileName )
-		class(MarkovChain), intent(in) :: this
-		character(*), optional, intent(in) :: oFileName
-		
-		integer :: unit
-		
-		type(OFStream) :: oFile
-		class(StringListIterator), pointer :: iter
-		type(String) :: strBuffer
-		
-		unit = 6
-		if( present(oFileName) ) then
-			call oFile.open( oFileName )
-			unit = oFile.unit
-		end if
-		
-		write(unit,"(A)") "#------------------------------------"
-		write(unit,"(A)") "# J HISTORY"
-		write(unit,"(A)") "#------------------------------------"
-		
-		iter => this.JHistory.begin
-		do while( associated(iter) )
-			
-			strBuffer = this.JHistory.at(iter)
-			
-			if( strBuffer.isEmpty() ) then
-				write(unit,*) ""
-			else
-				write(unit,"(A)",advance="no") trim(strBuffer.fstr)
-				write(unit,*)
-			end if
-			
-			iter => iter.next
-		end do
-		
-		write(unit,"(A)") ""
-		
-		if( present(oFileName) ) then
-			call oFile.close()
-		end if
-	end subroutine saveJHistory
+! 	!>
+! 	!! @brief Save the energy for the accepted steps in a file
+! 	!!
+! 	subroutine saveJHistory( this, oFileName )
+! 		class(MarkovChain), intent(in) :: this
+! 		character(*), optional, intent(in) :: oFileName
+! 		
+! 		integer :: unit
+! 		
+! 		type(OFStream) :: oFile
+! 		class(StringListIterator), pointer :: iter
+! 		type(String) :: strBuffer
+! 		
+! 		unit = 6
+! 		if( present(oFileName) ) then
+! 			call oFile.open( oFileName )
+! 			unit = oFile.unit
+! 		end if
+! 		
+! 		write(unit,"(A)") "#------------------------------------"
+! 		write(unit,"(A)") "# J HISTORY"
+! 		write(unit,"(A)") "#------------------------------------"
+! 		
+! 		iter => this.JHistory.begin
+! 		do while( associated(iter) )
+! 			
+! 			strBuffer = this.JHistory.at(iter)
+! 			
+! 			if( strBuffer.isEmpty() ) then
+! 				write(unit,*) ""
+! 			else
+! 				write(unit,"(A)",advance="no") trim(strBuffer.fstr)
+! 				write(unit,*)
+! 			end if
+! 			
+! 			iter => iter.next
+! 		end do
+! 		
+! 		write(unit,"(A)") ""
+! 		
+! 		if( present(oFileName) ) then
+! 			call oFile.close()
+! 		end if
+! 	end subroutine saveJHistory
 	
-	!>
-	!! @brief
-	!!
-	subroutine saveLHistory( this, oFileName )
-		class(MarkovChain), intent(in) :: this
-		character(*), optional, intent(in) :: oFileName
-		
-		integer :: unit
-		
-		type(OFStream) :: oFile
-		class(StringListIterator), pointer :: iter
-		type(String) :: strBuffer
-		
-		unit = 6
-		if( present(oFileName) ) then
-			call oFile.open( oFileName )
-			unit = oFile.unit
-		end if
-		
-		write(unit,"(A)") "#------------------------------------"
-		write(unit,"(A)") "# L HISTORY"
-		write(unit,"(A)") "#------------------------------------"
-		
-		iter => this.LHistory.begin
-		do while( associated(iter) )
-			
-			strBuffer = this.LHistory.at(iter)
-			
-			if( strBuffer.isEmpty() ) then
-				write(unit,*) ""
-			else
-				write(unit,"(A)",advance="no") trim(strBuffer.fstr)
-				write(unit,*)
-			end if
-			
-			iter => iter.next
-		end do
-		
-		write(unit,"(A)") ""
-		
-		if( present(oFileName) ) then
-			call oFile.close()
-		end if
-	end subroutine saveLHistory
+! 	!>
+! 	!! @brief
+! 	!!
+! 	subroutine saveLHistory( this, oFileName )
+! 		class(MarkovChain), intent(in) :: this
+! 		character(*), optional, intent(in) :: oFileName
+! 		
+! 		integer :: unit
+! 		
+! 		type(OFStream) :: oFile
+! 		class(StringListIterator), pointer :: iter
+! 		type(String) :: strBuffer
+! 		
+! 		unit = 6
+! 		if( present(oFileName) ) then
+! 			call oFile.open( oFileName )
+! 			unit = oFile.unit
+! 		end if
+! 		
+! 		write(unit,"(A)") "#------------------------------------"
+! 		write(unit,"(A)") "# L HISTORY"
+! 		write(unit,"(A)") "#------------------------------------"
+! 		
+! 		iter => this.LHistory.begin
+! 		do while( associated(iter) )
+! 			
+! 			strBuffer = this.LHistory.at(iter)
+! 			
+! 			if( strBuffer.isEmpty() ) then
+! 				write(unit,*) ""
+! 			else
+! 				write(unit,"(A)",advance="no") trim(strBuffer.fstr)
+! 				write(unit,*)
+! 			end if
+! 			
+! 			iter => iter.next
+! 		end do
+! 		
+! 		write(unit,"(A)") ""
+! 		
+! 		if( present(oFileName) ) then
+! 			call oFile.close()
+! 		end if
+! 	end subroutine saveLHistory
 	
 	!>
 	!! @brief
@@ -1111,10 +1139,6 @@ module MarkovChain_
 		
 		type(FragmentsList) :: reactives
 		character(20), allocatable :: reactiveTokens(:)
-		type(String) :: energyHistoryFile
-		type(String) :: weightHistoryFile
-		type(String) :: JHistoryFile
-		type(String) :: LHistoryFile
 		type(String) :: histogramFile
 		logical :: genEbkl
 		
@@ -1175,34 +1199,81 @@ module MarkovChain_
 		write(*,"(A40,A)") "geometryHistoryFilePrefix = ", trim(this.geometryHistoryFilePrefix.fstr)
 		write(*,"(A40,I15)") "freqBlockingCheck = ", this.freqBlockingCheck
 		write(*,"(A40,A)") "tracking = ", trim(this.tracking.fstr)
+		
+		sBuffer = iParser.getString( "MARKOV_CHAIN:energyHistoryFile", def="#@NONE@#" )
+		if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+			call this.energyHistoryFile.init( trim(sBuffer.fstr) )
+			
+			write(this.energyHistoryFile.unit,"(A)") "#------------------------------------"
+			write(this.energyHistoryFile.unit,"(A)") "# ENERGY HISTORY"
+			write(this.energyHistoryFile.unit,"(A)") "#------------------------------------"
+			write(this.energyHistoryFile.unit,"(A1,3X,5A15,5X,A)") "#", "trans", "intermol", "vib", "rot", "tot", "formula"
+			write(this.energyHistoryFile.unit,"(A1,3X,5A15,5X,A)") "#", "eV", "eV", "eV", "eV", ""
+			write(this.energyHistoryFile.unit,"(A1,3X,5A15,5X,A)") "#", "-------", "--------", "-------", "-----", "-------"
+			
+			write(*,"(A40,A)") "energyHistoryFile = ", trim(sBuffer.fstr)
+		end if
+		
+		sBuffer = iParser.getString( "MARKOV_CHAIN:weightHistoryFile", def="#@NONE@#" )
+		if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+			call this.weightHistoryFile.init( trim(sBuffer.fstr) )
+			
+			write(this.weightHistoryFile.unit,"(A)") "#------------------------------------"
+			write(this.weightHistoryFile.unit,"(A)") "# WEIGHT HISTORY"
+			write(this.weightHistoryFile.unit,"(A)") "#------------------------------------"
+			write(this.weightHistoryFile.unit,"(A1,3X,6A15,5X,A)") "#", "LnWe", "LnWv", "LnWn", "LnWr", "LnWt", "LnW", "formula"
+			write(this.weightHistoryFile.unit,"(A1,3X,6A15,5X,A)") "#", "arb.", "arb.", "arb.", "arb.", "arb.", "arb.", ""
+			write(this.weightHistoryFile.unit,"(A1,3X,6A15,5X,A)") "#", "-------", "-------", "--------", "--------", "--------", "-------", "-------"
+			
+			write(*,"(A40,A)") "weightHistoryFile = ", trim(sBuffer.fstr)
+		end if
+		
+		sBuffer = iParser.getString( "MARKOV_CHAIN:JHistoryFile", def="#@NONE@#" )
+		if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+			call this.JHistoryFile.init( trim(sBuffer.fstr) )
+			
+			write(this.JHistoryFile.unit,"(A)") "#------------------------------------"
+			write(this.JHistoryFile.unit,"(A)") "# J HISTORY"
+			write(this.JHistoryFile.unit,"(A)") "#------------------------------------"
+			
+			write(*,"(A40,A)") "JHistoryFile = ", trim(sBuffer.fstr)
+		end if
+		
+		sBuffer = iParser.getString( "MARKOV_CHAIN:LHistoryFile", def="#@NONE@#" )
+		if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+			call this.LHistoryFile.init( trim(sBuffer.fstr) )
+			
+			write(this.LHistoryFile.unit,"(A)") "#------------------------------------"
+			write(this.LHistoryFile.unit,"(A)") "# L HISTORY"
+			write(this.LHistoryFile.unit,"(A)") "#------------------------------------"
+			
+			write(*,"(A40,A)") "LHistoryFile = ", trim(sBuffer.fstr)
+		end if
+		
 		write(*,*)
 		
 		call this.run( reactives )
-		
-		energyHistoryFile = iParser.getString( "MARKOV_CHAIN:energyHistoryFile", def="#@NONE@#" )
-		if( trim(energyHistoryFile.fstr) /= "#@NONE@#" ) then
-			call this.saveEnergyHistory( energyHistoryFile.fstr )
-		end if
-		
-		weightHistoryFile = iParser.getString( "MARKOV_CHAIN:weightHistoryFile", def="#@NONE@#" )
-		if( trim(weightHistoryFile.fstr) /= "#@NONE@#" ) then
-			call this.saveWeightHistory( weightHistoryFile.fstr )
-		end if
-		
-		JHistoryFile = iParser.getString( "MARKOV_CHAIN:JHistoryFile", def="#@NONE@#" )
-		if( trim(JHistoryFile.fstr) /= "#@NONE@#" ) then
-			call this.saveJHistory( JHistoryFile.fstr )
-		end if
-		
-		LHistoryFile = iParser.getString( "MARKOV_CHAIN:LHistoryFile", def="#@NONE@#" )
-		if( trim(LHistoryFile.fstr) /= "#@NONE@#" ) then
-			call this.saveLHistory( LHistoryFile.fstr )
-		end if
 		
 		histogramFile = iParser.getString( "MARKOV_CHAIN:histogramFile", def="#@NONE@#" )
 		genEbkl = iParser.getLogical( "MARKOV_CHAIN:genEbkl", def=.false. )
 		if( trim(histogramFile.fstr) /= "#@NONE@#" ) then
 			call this.saveHistograms( histogramFile.fstr, genEbkl )
+		end if
+		
+		if( this.energyHistoryFile.isOpen() ) then
+			call this.energyHistoryFile.close()
+		end if
+		
+		if( this.weightHistoryFile.isOpen() ) then
+			call this.weightHistoryFile.close()
+		end if
+		
+		if( this.JHistoryFile.isOpen() ) then
+			call this.JHistoryFile.close()
+		end if
+		
+		if( this.LHistoryFile.isOpen() ) then
+			call this.LHistoryFile.close()
 		end if
 		
 	end subroutine execute
