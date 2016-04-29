@@ -386,7 +386,7 @@ module FragmentsDB_
 			call FString_split( potentialTable(i).fstr, cols, " " )
 			
 			if( size(cols) >= 2 ) then
-				call FString_split( cols(1), tokens, "+->" )
+				call FString_split( cols(1), tokens, "+" )
 				
 				idR1 = this.getIdFromName( tokens(1) )
 				idR2 = this.getIdFromName( tokens(2) )
