@@ -1608,7 +1608,7 @@ function channelBRDiagram()
 	'"`cat $M3C_HOME/utils/M3CUtils.gawk`"'   # Debería ser la anterior linea, pero solo está disponible para gawk >= 2011
 	($1!~/^#/){
 		print reduceM3CLabel($1), $2, $3, $4
-	}' tmp-$$ > $BRFile
+	}' tmp-$$ | sed '{s/\(C\)\([0-9]\)/\1_\2/g;s/p/^{+}/g}' > $BRFile
 	rm tmp-$$
 	
 	yMax=`gawk '($0!~/#/){printf "%s\n%s\n",$2,$3}' $BRFile | sort -k 1 -n | tail -n1`
@@ -1736,8 +1736,10 @@ set mytics 5
 plot [-1:$(($nChannels-1))+1] [-$yMax*0.1:$yMax*1.1] \
 "$BRFile" u :3:4:xtic(1) t "experimental" w yerrorbars pt 7 lt 3, \
 "$BRFile" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
-"old.dat" u :2 t "theoretical" w lp ps 2.0 pt 3 lt 0 lw 2 lc rgb "forest-green", \
-"$BRFile" u :2 t "theoretical + U(R)" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+"$BRFile" u :2 t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+
+# "$BRFile" u :2 t "theoretical + U(R)" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+#"old.dat" u :2 t "theoretical" w lp ps 2.0 pt 3 lt 0 lw 2 lc rgb "forest-green", \
 
 pause -1
 EOF
