@@ -23,7 +23,7 @@ module FragmentsList_
 		real(8) :: rotationalEnergy_      !< It is calculated into updateRotationalEnergy procedure
 		real(8) :: E_totJ                !< Experimental en versión 1.9
 		
-		real(8), private :: LnLambda     !< Translational weight
+		real(8), private :: LnLambda_     !< Translational weight
 		real(8), private :: LnDiagI_     !< Contiene el log del producto de la diagonal de los tensores de inercia efectivos
 		
 		contains
@@ -48,6 +48,8 @@ module FragmentsList_
 			procedure :: weightHistoryLine
 				
 			procedure :: LnW
+			procedure :: LnLambda
+			procedure :: LnDiagI
 			procedure, private :: updateLambda
 ! 			procedure :: showLnWComponents
 			
@@ -77,7 +79,7 @@ module FragmentsList_
 		
 		this.rotationalEnergy_ = 0.0_8
 		this.E_totJ = 0.0_8
-		this.LnLambda = 0.0_8
+		this.LnLambda_ = 0.0_8
 		this.LnDiagI_ = 0.0_8
 	end subroutine initFragmentsList
 	
@@ -92,7 +94,7 @@ module FragmentsList_
 		
 		this.rotationalEnergy_ = other.rotationalEnergy_
 		this.E_totJ = other.E_totJ
-		this.LnLambda = other.LnLambda
+		this.LnLambda_ = other.LnLambda_
 		this.LnDiagI_ = other.LnDiagI_
 	end subroutine copyFragmentsList
 	
@@ -237,8 +239,28 @@ module FragmentsList_
 		class(FragmentsList) :: this
 		real(8) :: output
 		
-		output = this.LnWn() + this.LnWe() + this.LnWv() + this.LnLambda
+		output = this.LnWn() + this.LnWe() + this.LnWv() + this.LnLambda_
 	end function LnW
+	
+	!>
+	!! @brief
+	!!
+	function LnLambda( this ) result( output )
+		class(FragmentsList) :: this
+		real(8) :: output
+		
+		output = this.LnLambda_
+	end function LnLambda
+	
+	!>
+	!! @brief
+	!!
+	function LnDiagI( this ) result( output )
+		class(FragmentsList) :: this
+		real(8) :: output
+		
+		output = this.LnDiagI_
+	end function LnDiagI
 
 	! Creo que esto ya no lo uso
 ! 	subroutine showLnWComponents( this )
@@ -252,8 +274,8 @@ module FragmentsList_
 ! 			trim(FString_fromReal(this.LnWv(),"(F10.5)"))// &
 ! 			trim(FString_fromReal(this.LnWn(),"(F10.5)"))// &
 ! 			trim(FString_fromReal(this.LnDiagI_,"(F10.5)"))// &
-! 			trim(FString_fromReal(this.LnLambda,"(F10.5)"))// &
-! 			trim(FString_fromReal(this.LnWe()+this.LnWv()+this.LnWn()+this.LnLambda,"(F10.5)"))// &
+! 			trim(FString_fromReal(this.LnLambda_,"(F10.5)"))// &
+! 			trim(FString_fromReal(this.LnWe()+this.LnWv()+this.LnWn()+this.LnLambda_,"(F10.5)"))// &
 ! 			"     "//trim(this.label())
 ! 	end subroutine showLnWComponents
 	
@@ -338,8 +360,8 @@ module FragmentsList_
 		write(line,"(1X,A2,1X,6F15.5,5X,A)") &
 			trim(prefixEff), &
 			this.LnWe(), this.LnWv(), &
-! 			this.LnWn(), 0.0_8, this.LnLambda, &
-			this.LnWn(), this.LnDiagI_, this.LnLambda, &   ! << Solo por visualización del valor de LnDiagI_
+! 			this.LnWn(), 0.0_8, this.LnLambda_, &
+			this.LnWn(), 0.5*this.LnDiagI_+this.logVtheta_, this.LnLambda_-0.5*this.LnDiagI_-this.logVtheta_, &
 			this.LnW(), trim(this.label())
 			
 		output = line
@@ -1018,10 +1040,10 @@ module FragmentsList_
 		Et = this.kineticEnergy()
 		
 		if( Et < 0.0_8 ) then
-			this.LnLambda = 0.0_8
+			this.LnLambda_ = 0.0_8
 ! 		else if( this.nMolecules() == 1 ) then
-! ! 			this.LnLambda = this.logVfree_ + this.logVtheta_
-! 			this.LnLambda = 0.0_8
+! ! 			this.LnLambda_ = this.logVfree_ + this.logVtheta_
+! 			this.LnLambda_ = 0.0_8
 		else
 			select case( trim(GOptionsM3C_angularMomentumCouplingScheme.fstr) )
 				case( "JJ" )
@@ -1043,13 +1065,13 @@ module FragmentsList_
 			logMu = logMu - log( this.mass() )
 			
 			if ( n == 1 ) then	
-				this.LnLambda = \
+				this.LnLambda_ = \
 					0.5_8*this.clusters(1).fr()*log(2.0_8*Math_PI) &
 					- log( Gamma(0.5_8*this.clusters(1).fr()) ) &
 					+ this.logVtheta_ &
 					+ 0.5_8*this.LnDiagI_
 			else
-				this.LnLambda = \
+				this.LnLambda_ = \
 					0.5_8*s*log(2.0_8*Math_PI) &
 					- log( Gamma(0.5_8*s) ) &
 					+ 1.5*logMu &
@@ -1060,7 +1082,7 @@ module FragmentsList_
 				
 		end if
 		
-		if( ( Math_isNaN(this.LnLambda) .or. Math_isInf(this.LnLambda) ) .and. GOptions_printLevel >= 2 ) then
+		if( ( Math_isNaN(this.LnLambda_) .or. Math_isInf(this.LnLambda_) ) .and. GOptions_printLevel >= 2 ) then
 			write(*,*) ""
 			call GOptions_valueReport( "reactorEnergy", this.reactorEnergy()/eV, "eV", indent=2 )
 			call GOptions_valueReport( "internalEnergy", this.internalEnergy()/eV, "eV", indent=2 )
@@ -1072,7 +1094,7 @@ module FragmentsList_
 			call GOptions_valueReport( "logVtheta", this.logVtheta_, indent=2 )
 			call GOptions_valueReport( "logVJ", this.logVJ_, indent=2 )
 			call GOptions_valueReport( "0.5*logMu", 0.5*logMu, indent=2 )
-			call GOptions_valueReport( "LnLambda", this.LnLambda, indent=2 )
+			call GOptions_valueReport( "LnLambda_", this.LnLambda_, indent=2 )
 		end if
 	end subroutine updateLambda
 		
