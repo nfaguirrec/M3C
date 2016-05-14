@@ -43,10 +43,18 @@ module MarkovChain_
 		type(OFStream) :: LHistoryFile
 		
 		type(RealHistogram), allocatable :: iTemperatureHistogram(:) ! One item for each experiment
+		
 		type(RealHistogram), allocatable :: translationalEnergyHistogram(:)   ! One item for each experiment
 		type(RealHistogram), allocatable :: intermolEnergyHistogram(:)        ! One item for each experiment
 		type(RealHistogram), allocatable :: vibrationalEnergyHistogram(:)     ! One item for each experiment
 		type(RealHistogram), allocatable :: rotationalEnergyHistogram(:)      ! One item for each experiment
+		
+		type(RealHistogram), allocatable :: electronicWeightHistogram(:)      ! One item for each experiment
+		type(RealHistogram), allocatable :: vibrationalWeightHistogram(:)     ! One item for each experiment
+		type(RealHistogram), allocatable :: combinatorialWeightHistogram(:)   ! One item for each experiment
+		type(RealHistogram), allocatable :: rotationalWeightHistogram(:)      ! One item for each experiment
+		type(RealHistogram), allocatable :: translationalWeightHistogram(:)   ! One item for each experiment
+		type(RealHistogram), allocatable :: totalWeightHistogram(:)           ! One item for each experiment
 		
 		type(StringHistogram) :: reactorAcceptedHistogram    ! One for all experiments
 		type(StringHistogram) :: reactorRejectedHistogram    ! One for all experiments
@@ -134,10 +142,18 @@ module MarkovChain_
 		integer :: nExp
 		
 		if( allocated(this.iTemperatureHistogram) ) deallocate( this.iTemperatureHistogram )
+		
 		if( allocated(this.translationalEnergyHistogram) ) deallocate( this.translationalEnergyHistogram )
 		if( allocated(this.intermolEnergyHistogram) ) deallocate( this.intermolEnergyHistogram )
 		if( allocated(this.vibrationalEnergyHistogram) ) deallocate( this.vibrationalEnergyHistogram )
 		if( allocated(this.rotationalEnergyHistogram) ) deallocate( this.rotationalEnergyHistogram )
+		
+		if( allocated(this.electronicWeightHistogram) ) deallocate( this.electronicWeightHistogram )
+		if( allocated(this.vibrationalWeightHistogram) ) deallocate( this.vibrationalWeightHistogram )
+		if( allocated(this.combinatorialWeightHistogram) ) deallocate( this.combinatorialWeightHistogram )
+		if( allocated(this.rotationalWeightHistogram) ) deallocate( this.rotationalWeightHistogram )
+		if( allocated(this.translationalWeightHistogram) ) deallocate( this.translationalWeightHistogram )
+		if( allocated(this.totalWeightHistogram) ) deallocate( this.totalWeightHistogram )
 		
 		call this.reactorAcceptedHistogram.clear()
 		call this.reactorRejectedHistogram.clear()
@@ -196,10 +212,18 @@ module MarkovChain_
 		integer :: nExp
 		
 		allocate( this.iTemperatureHistogram(this.numberOfExperiments) )
+		
 		allocate( this.translationalEnergyHistogram(this.numberOfExperiments) )
 		allocate( this.intermolEnergyHistogram(this.numberOfExperiments) )
 		allocate( this.vibrationalEnergyHistogram(this.numberOfExperiments) )
 		allocate( this.rotationalEnergyHistogram(this.numberOfExperiments) )
+		
+		allocate( this.electronicWeightHistogram(this.numberOfExperiments) )
+		allocate( this.vibrationalWeightHistogram(this.numberOfExperiments) )
+		allocate( this.combinatorialWeightHistogram(this.numberOfExperiments) )
+		allocate( this.rotationalWeightHistogram(this.numberOfExperiments) )
+		allocate( this.translationalWeightHistogram(this.numberOfExperiments) )
+		allocate( this.totalWeightHistogram(this.numberOfExperiments) )
 		
 		allocate( this.nFragsHistogram(this.numberOfExperiments) )
 		allocate( this.speciesHistogram(this.numberOfExperiments) )
@@ -216,10 +240,18 @@ module MarkovChain_
 		
 		do nExp=1,this.numberOfExperiments
 			call this.iTemperatureHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			
 			call this.translationalEnergyHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
 			call this.intermolEnergyHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
 			call this.vibrationalEnergyHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
 			call this.rotationalEnergyHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			
+			call this.electronicWeightHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			call this.vibrationalWeightHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			call this.combinatorialWeightHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			call this.rotationalWeightHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			call this.translationalWeightHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			call this.totalWeightHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
 			
 			call this.nFragsHistogram(nExp).init()
 			call this.speciesHistogram(nExp).init()
@@ -470,10 +502,18 @@ module MarkovChain_
 							end if
 						
 							call this.iTemperatureHistogram(nExp).add( react.reactives.iTemperature() )
+							
 							call this.translationalEnergyHistogram(nExp).add( react.reactives.translationalEnergy() )
 							call this.intermolEnergyHistogram(nExp).add( react.reactives.intermolEnergy() )
 							call this.vibrationalEnergyHistogram(nExp).add( react.reactives.vibrationalEnergy() )
 							call this.rotationalEnergyHistogram(nExp).add( react.reactives.rotationalEnergy() )
+							
+							call this.electronicWeightHistogram(nExp).add( react.reactives.LnWe() )
+							call this.vibrationalWeightHistogram(nExp).add( react.reactives.LnWv() )
+							call this.combinatorialWeightHistogram(nExp).add( react.reactives.LnWn() )
+							call this.rotationalWeightHistogram(nExp).add( 0.5_8*react.reactives.LnDiagI()+react.reactives.logVtheta_ )
+							call this.translationalWeightHistogram(nExp).add( react.reactives.LnLambda()-0.5_8*react.reactives.LnDiagI()-react.reactives.logVtheta_ )
+							call this.totalWeightHistogram(nExp).add( react.reactives.LnW() )
 							
 							sBuffer = trim(FString_fromInteger( react.reactives.nMolecules() ))
 							call this.nFragsHistogram(nExp).set( sBuffer, this.nFragsHistogram(nExp).at( sBuffer, defaultValue=0 )+1 )
@@ -1048,6 +1088,99 @@ module MarkovChain_
 		end do
 		
 		write(unit,"(5X,2F15.5)") histBuffer.mean()/eV, histBuffer.stdev()/eV
+		
+		write(unit,*) ""
+		write(unit,*) ""
+		
+		write(unit,"(A)") "#------------------------------------"
+		write(unit,"(A)") "# Weight components (arb.)"
+		write(unit,"(A)") "#------------------------------------"
+		write(unit,"(A1,9X,A5,<this.numberOfExperiments>I15,5X,2A15)") "#", "  ", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
+		write(unit,"(A1,9X,A5,<this.numberOfExperiments>A15,5X,2A15)") "#", "  ", ( "-----", i=1,this.numberOfExperiments ), "----", "----"
+		
+		call histBuffer.initRealHistogram()
+		
+		do i=1,this.numberOfExperiments
+			call histBuffer.add( this.electronicWeightHistogram(i).mean() )
+			
+			if( i == 1 ) then
+				write(unit,"(10X,A5,F15.5)",advance="no") "LnWe", this.electronicWeightHistogram(i).mean()
+			else
+				write(unit,"(F15.5)",advance="no") this.electronicWeightHistogram(i).mean()
+			end if
+		end do
+		
+		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
+		
+		call histBuffer.initRealHistogram()
+		
+		do i=1,this.numberOfExperiments
+			call histBuffer.add( this.vibrationalWeightHistogram(i).mean() )
+			
+			if( i == 1 ) then
+				write(unit,"(10X,A5,F15.5)",advance="no") "LnWv", this.vibrationalWeightHistogram(i).mean()
+			else
+				write(unit,"(F15.5)",advance="no") this.vibrationalWeightHistogram(i).mean()
+			end if
+		end do
+		
+		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
+		
+		call histBuffer.initRealHistogram()
+		
+		do i=1,this.numberOfExperiments
+			call histBuffer.add( this.combinatorialWeightHistogram(i).mean() )
+			
+			if( i == 1 ) then
+				write(unit,"(10X,A5,F15.5)",advance="no") "LnWn", this.combinatorialWeightHistogram(i).mean()
+			else
+				write(unit,"(F15.5)",advance="no") this.combinatorialWeightHistogram(i).mean()
+			end if
+		end do
+		
+		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
+		
+		call histBuffer.initRealHistogram()
+		
+		do i=1,this.numberOfExperiments
+			call histBuffer.add( this.rotationalWeightHistogram(i).mean() )
+			
+			if( i == 1 ) then
+				write(unit,"(10X,A5,F15.5)",advance="no") "LnWr", this.rotationalWeightHistogram(i).mean()
+			else
+				write(unit,"(F15.5)",advance="no") this.rotationalWeightHistogram(i).mean()
+			end if
+		end do
+		
+		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
+		
+		call histBuffer.initRealHistogram()
+		
+		do i=1,this.numberOfExperiments
+			call histBuffer.add( this.translationalWeightHistogram(i).mean() )
+			
+			if( i == 1 ) then
+				write(unit,"(10X,A5,F15.5)",advance="no") "LnWt", this.translationalWeightHistogram(i).mean()
+			else
+				write(unit,"(F15.5)",advance="no") this.translationalWeightHistogram(i).mean()
+			end if
+		end do
+		
+		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
+		
+		call histBuffer.initRealHistogram()
+		
+		do i=1,this.numberOfExperiments
+			call histBuffer.add( this.totalWeightHistogram(i).mean() )
+			
+			if( i == 1 ) then
+				write(unit,"(10X,A5,F15.5)",advance="no") "LnW", this.totalWeightHistogram(i).mean()
+			else
+				write(unit,"(F15.5)",advance="no") this.totalWeightHistogram(i).mean()
+			end if
+		end do
+		
+		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
 		
 		write(unit,*) ""
 		write(unit,*) ""

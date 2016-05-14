@@ -1,0 +1,425 @@
+#!/bin/bash
+##################################################################
+#
+#  This file is part of M3C
+#  Copyright (C) by authors (2012-2016)
+#  
+#  Authors:
+#    * Dr. Néstor F. Aguirre (2012-2016)
+#          nestor.aguirre@uam.es
+#    * Dr. Sergio Díaz-Tendero (2012-2015)
+#          sergio.diaztendero@uam.es
+#    * Prof. M. Paul-Antoine Hervieux (2012-2015)
+#          Paul-Antoine.Hervieux@ipcms.unistra.fr
+#    * Prof. Fernando Martín (2012-2015)
+#          fernando.martin@uam.es
+#    * Prof. Manuel Alcamí (2012-2015)
+#          manuel.alcami@uam.es
+#  
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the
+#  following conditions are met:
+#  
+#   * Redistributions of binary or source code must retain
+#     the above copyright notice and this list of conditions
+#     and/or other materials provided with the distribution.
+#   * All advertising materials mentioning features or use of
+#     this software must display the following acknowledgement:
+#     
+#     This product includes software from M3C project.
+#
+##################################################################
+
+[ -z "$M3C_STORE"  ] && M3C_STORE=$PWD
+
+##############################
+# Usage menu
+##############################
+function textbb(){
+	echo -n `tput bold`$1`tput sgr0`
+}
+
+function usage(){
+	if [ -z "$REFERENCE" ]
+	then
+		echo ""
+		echo "`textbb NAME`"
+		echo "     M3C.store"
+		echo ""
+		echo "`textbb SYNOPSIS`"
+		echo "     M3C.store [COMMAND] [COMMAND_PARAMETERS]"
+		echo ""
+		echo "`textbb DESCRIPTION`"
+		echo "     This command allows to interact with an M3C storage, which is specified by the enviromnent"
+		echo "     variable M3C_HOME (default current directory)."
+		echo ""
+		echo "`textbb COMMANDS`"
+		echo ""
+		echo "     `textbb makeDB`"
+		echo "          Allows to build the section FRAGMENTS_DATABASE for the M3C input file by obtaining"
+		echo "          information from the store (check M3C_STORE variable)."
+		echo ""
+		echo "          `textbb makeDB` molRefence [ maxVibSteps debug spinConservation ]"
+		echo "                                   10      FALSE       FALSE       "
+		echo ""
+		echo "                molRefence: XYZ file which represents the initial molecule to start the fragmentation model."
+		echo "               maxVibSteps: Maximum number of random trials."
+		echo "                     debug: Shows detailed information."
+		echo "          spinConservation: Activates the spin conservation rule during search."
+		echo ""
+		echo "     `textbb add`"
+		echo "          Includes a new molecule into the store (check M3C_STORE variable)."
+		echo ""
+		echo "          `textbb add` molecule"
+		echo ""
+		echo "                  molecule: XYZ file of the molecule to be included into the store."
+		echo ""
+		echo ""
+		exit
+	fi
+}
+
+##############################
+# Catching parameters
+##############################
+COMMAND=$1
+
+case $COMMAND in
+	makeDB)
+		REFERENCE=$2
+		MAXVIB_NSTEPS=$3
+		DEBUG=$4
+		SPIN_CONSERVATION=$5
+		
+		if [ -z "$REFERENCE" ]
+		then
+			echo ""
+			echo "### ERROR ### molRefence is a required parameter" 
+			echo ""
+			echo "List of available molecules:"
+			echo ""
+			
+			printf "%10s %30s%20s\n" "" "fileName" "Energy (a.u.)"
+			printf "%10s %30s%20s\n" "" "--------" "-------------"
+			
+			i=1
+			for f in `ls $M3C_STORE`
+			do
+				if [[ "$f" =~ ".rxyz" ]]
+				then
+					printf "%10d)%30s%20.6f\n" $i $f `grep Energy $M3C_STORE/$f | awk '{print $3}'`
+					i=$(( $i+1 ))
+				fi
+			done
+			
+			exit
+		fi
+		
+		[ -z "$MAXVIB_NSTEPS" ] && MAXVIB_NSTEPS=10
+		[ -z "$DEBUG" ] && DEBUG="FALSE"
+		[ -z "$SPIN_CONSERVATION" ] && SPIN_CONSERVATION="FALSE"
+		
+		;;
+	add)
+		NEW_MOLECULE=$2
+		
+		;;
+	*)
+		usage
+		exit
+		;;
+esac
+
+##############################
+# Global variables
+##############################
+
+WORKDIR=$PWD
+TEMPDIR=/tmp
+
+eV=`echo 1.0/27.211396132 | bc -l`
+
+declare -A SMULT
+SMULT["1"]="s"
+SMULT["2"]="d"
+SMULT["3"]="t"
+SMULT["4"]="q"
+
+declare -A SCHARGE
+SCHARGE["0"]=""
+SCHARGE["1"]="p"
+SCHARGE["2"]="pp"
+SCHARGE["3"]="ppp"
+SCHARGE["4"]="pppp"
+
+declare -A RSYMN  # Rotational symmetry number
+RSYMN["SO3"]=1 # << Atoms
+RSYMN["C1"]=1
+RSYMN["CI"]=1
+RSYMN["CS"]=1
+RSYMN["C*V"]=1
+RSYMN["C2"]=2
+RSYMN["C2V"]=2
+RSYMN["C2H"]=2
+RSYMN["D*H"]=2
+RSYMN["C3"]=3
+RSYMN["C3V"]=3
+RSYMN["C3H"]=3
+RSYMN["S6"]=3
+RSYMN["C4"]=4
+RSYMN["C4V"]=4
+RSYMN["C4H"]=4
+RSYMN["D2"]=4
+RSYMN["D2D"]=4
+RSYMN["D2H"]=4
+RSYMN["C6"]=6
+RSYMN["C6V"]=6
+RSYMN["C6H"]=6
+RSYMN["D3"]=6
+RSYMN["D3D"]=6
+RSYMN["D3H"]=6
+RSYMN["D4"]=8
+RSYMN["D4D"]=8
+RSYMN["D4H"]=8
+RSYMN["D6"]=12
+RSYMN["D6D"]=12
+RSYMN["D6H"]=12
+RSYMN["T"]=12
+RSYMN["TD"]=12
+RSYMN["OH"]=24
+
+declare -A OMEGAL  # Labels of the irreducible representations
+OMEGAL["S"]=1 # << Atoms
+OMEGAL["P"]=3 # << Atoms
+OMEGAL["D"]=5 # << Atoms
+OMEGAL["F"]=7 # << Atoms
+OMEGAL["A'"]=1
+OMEGAL["A"]=1
+OMEGAL["A\""]=1
+OMEGAL["A1'"]=1
+OMEGAL["A1"]=1
+OMEGAL["A1\""]=1
+OMEGAL["A1G"]=1
+OMEGAL["A1U"]=1
+OMEGAL["A2'"]=1
+OMEGAL["A2"]=1
+OMEGAL["A2\""]=1
+OMEGAL["A2G"]=1
+OMEGAL["A2U"]=1
+OMEGAL["AG"]=1
+OMEGAL["AU"]=1
+OMEGAL["B"]=1
+OMEGAL["B1"]=1
+OMEGAL["B1G"]=1
+OMEGAL["B1U"]=1
+OMEGAL["B2"]=1
+OMEGAL["B2G"]=1
+OMEGAL["B2U"]=1
+OMEGAL["B3"]=1
+OMEGAL["B3G"]=1
+OMEGAL["B3U"]=1
+OMEGAL["BG"]=1
+OMEGAL["BU"]=1
+OMEGAL["DLTA"]=4
+OMEGAL["DLTG"]=4
+OMEGAL["DLTU"]=4
+OMEGAL["E'"]=2
+OMEGAL["E"]=2
+OMEGAL["E\""]=2
+OMEGAL["E1'"]=2
+OMEGAL["E1"]=2
+OMEGAL["E1\""]=2
+OMEGAL["E1G"]=2
+OMEGAL["E1U"]=2
+OMEGAL["E2'"]=2
+OMEGAL["E2"]=2
+OMEGAL["E2\""]=2
+OMEGAL["E2G"]=2
+OMEGAL["E2U"]=2
+OMEGAL["E3"]=2
+OMEGAL["EG"]=2
+OMEGAL["EU"]=2
+OMEGAL["PHI"]=6
+OMEGAL["PHIG"]=6
+OMEGAL["PHIU"]=6
+OMEGAL["PI"]=2
+OMEGAL["PIG"]=2
+OMEGAL["PIU"]=2
+OMEGAL["SG"]=1
+OMEGAL["SGG"]=1
+OMEGAL["SGU"]=1
+# OMEGAL["T"]=0
+# OMEGAL["T1"]=0
+# OMEGAL["T1G"]=0
+# OMEGAL["T1U"]=0
+# OMEGAL["T2"]=0
+# OMEGAL["T2G"]=0
+# OMEGAL["T2U"]=0
+OMEGAL["??"]=1
+
+declare -A MAXVIBCHANNEL
+
+##############################
+
+showDataBase()
+{
+	local maxVibChannelsFile=$1
+	
+	cd $M3C_STORE
+	
+	cat /dev/null > $TEMPDIR/.molValues$$
+
+	grep "Energy" *.rxyz | gawk 'BEGIN{FS="[:=]+"}{print $1,$3}' \
+	| while read line
+	do
+		fileName=`echo $line | gawk '{print $1}'`
+		
+		if [ "`molecule.isFragmentOf $fileName $REFERENCE`" = "OK" ]
+		then
+		
+			energy=`echo $line | gawk '{print $2}'`
+
+			charge=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
+			mult=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
+			id=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $4}'`
+			nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}(NR>3 && $0~/^[[:blank:]]*$/){exit}END{print i}' $fileName`
+			mass=`molecule.mass $fileName | gawk '{print int($1/1822.88853)}'`
+			
+			if [ -z "$charge" ]; then charge=0; fi
+			if [ -z "$mult" ]; then mult=0; fi
+
+			echo $((10000000*$charge+1000000*$nAtoms+100*$mass+10*$id+$mult)) $fileName $energy >> $TEMPDIR/.molValues$$
+			
+		fi
+	done
+	
+	printf "\t#---------------------------------------------------------------------------------------------------------------------\n"
+	printf "\t#%20s%5s%3s%3s%5s%30s%20s%30s\n" "Label" "Z" "M" "WL" "SYM" "geomFile" "Eelec" "maxVib"
+	printf "\t#---------------------------------------------------------------------------------------------------------------------\n"
+	
+	sort -k1 -n $TEMPDIR/.molValues$$ \
+	| while read line
+	do
+		fileName=`echo $line | gawk '{print $2}'`
+		
+		if [ "`molecule.isFragmentOf $fileName $REFERENCE`" = "OK" ]
+		then
+		
+			energy=`echo $line | gawk '{printf "%20.6f", $3/'$eV'}'`
+
+			label=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $1}'`
+			charge=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
+			mult=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
+			isomerID=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $4}'`
+			nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}(NR>3 && $0~/^[[:blank:]]*$/){exit}END{print i}' $fileName`
+			
+			groupSym=`grep "SYMMETRY" $fileName | awk '{print $2}'`
+			elecState=`grep "ELECTRONIC_STATE" $fileName | awk '{print $2}'`
+			
+			finalLabel="$label${SCHARGE[$charge]}(${SMULT[$mult]}$isomerID)"
+			
+			if [ "$nAtoms" -eq 1 ]
+			then
+				printf "\t%21s%5d%3d%3d%5d%30s%20.6f%30s%s%8s  %s\n" \
+					"$finalLabel" $charge $mult "${OMEGAL[${elecState#*-}]}" "${RSYMN[$groupSym]}" $fileName $energy "" \
+						"    #" "" "$groupSym($elecState)"
+			else
+				if [ -f "$maxVibChannelsFile" ]
+				then
+					finalLabelSpecialCharacters=`echo $finalLabel | sed 's/[()]/\\\&/g'`
+					channel=`awk '($1=="'"$finalLabelSpecialCharacters"'"){ print $2; stop }' $maxVibChannelsFile 2> /dev/null`
+					channelEnergy=`awk '($1=="'"$finalLabelSpecialCharacters"'"){ printf "%.2f", $3; stop }' $maxVibChannelsFile 2> /dev/null`
+					
+					[ -z "$channel" ] && channel="NONE"
+					
+					printf "\t%21s%5d%3d%3d%5d%30s%20.6f%30s%s%8.2f  %s\n" \
+						"$finalLabel" $charge $mult "${OMEGAL[${elecState#*-}]}" "${RSYMN[$groupSym]}" $fileName $energy $channel \
+						"    #" $channelEnergy "$groupSym($elecState)"
+				else
+					printf "\t%21s%5d%3d%3d%5d%30s%20.6f%30s\n" "$finalLabel" $charge $mult 0 1 $fileName $energy 0.0000
+				fi
+			fi
+			
+		fi
+	done
+
+	rm $TEMPDIR/.molValues$$
+
+	printf "\t#---------------------------------------------------------------------------------------------------------------------\n"
+	
+	cd $WORKDIR
+}
+
+main()
+{
+	cat /dev/null > $TEMPDIR/.input-$$.m3c
+	cat /dev/null > $TEMPDIR/.channels$$
+
+	echo "BEGIN GOPTIONS" >> $TEMPDIR/.input-$$.m3c
+
+	if [ "$SPIN_CONSERVATION" = "TRUE" ]
+	then
+			echo "useSpinConservationRules = true" >> $TEMPDIR/.input-$$.m3c
+	else
+			echo "useSpinConservationRules = false" >> $TEMPDIR/.input-$$.m3c
+	fi
+
+	echo "END GOPTIONS" >> $TEMPDIR/.input-$$.m3c
+
+	echo "BEGIN FRAGMENTS_DATABASE" >> $TEMPDIR/.input-$$.m3c
+	echo "store = $M3C_STORE" >> $TEMPDIR/.input-$$.m3c
+	echo "maxVib = true" >> $TEMPDIR/.input-$$.m3c
+	echo "maxVibNSteps = $MAXVIB_NSTEPS" >> $TEMPDIR/.input-$$.m3c
+	
+	if [ "$DEBUG" = "TRUE" ]
+	then
+			echo "maxVibDetailed = true" >> $TEMPDIR/.input-$$.m3c
+	else
+			echo "maxVibDetailed = false" >> $TEMPDIR/.input-$$.m3c
+	fi
+	
+	showDataBase >> $TEMPDIR/.input-$$.m3c
+	
+	echo "END FRAGMENTS_DATABASE" >> $TEMPDIR/.input-$$.m3c
+	
+	M3C -i $TEMPDIR/.input-$$.m3c > $TEMPDIR/.input-$$.out
+	
+	sed '/^\s*maxVibNSteps =/,/^\s*ELAPSED TIME/!d' $TEMPDIR/.input-$$.out | gawk '( NF>2 && $1~/^[[:digit:].]+$/){ print $0 }' > $TEMPDIR/.vibBlock$$
+	
+	cat $TEMPDIR/.vibBlock$$ | while read line
+	do
+		maxVibEnergyItem=`echo $line | gawk '{print $1}'`
+		fragmentItem=`echo $line | gawk '{print $2}'`
+		maxVibItem=`echo $line | gawk '{print $3}'`
+		
+		echo "$fragmentItem    $maxVibItem   $maxVibEnergyItem" >> $TEMPDIR/.channels$$
+# 		Es extraño, pero el mapa no funciona cuando se llama fuera de este bucle, probar en otra versión de bash
+# 		MAXVIBCHANNEL["$fragmentItem"]=$maxVibItem
+	done
+	
+	#---------------------------------------------
+	# Para calcular el label de la referencia
+	label=`echo $REFERENCE | gawk 'BEGIN{FS="[.-]+"}{print $1}'`
+	charge=`echo $REFERENCE | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
+	mult=`echo $REFERENCE | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
+	isomerID=`echo $REFERENCE | gawk 'BEGIN{FS="[.-]+"}{print $4}'`
+	finalLabel="$label${SCHARGE[$charge]}(${SMULT[$mult]}$isomerID)"
+	#---------------------------------------------
+	
+	echo "BEGIN FRAGMENTS_DATABASE"
+	echo ""
+	printf "\t%s\n" "store = $M3C_STORE"
+	printf "\t%s\n" "reference = $finalLabel"
+	echo ""
+	showDataBase $TEMPDIR/.channels$$
+	echo "END FRAGMENTS_DATABASE"
+	
+	if [ "$DEBUG" = "TRUE" ]
+	then
+		cat $TEMPDIR/.input-$$.out
+	fi
+	
+	rm $TEMPDIR/.input-$$.m3c $TEMPDIR/.input-$$.out $TEMPDIR/.vibBlock$$ $TEMPDIR/.channels$$
+}
+
+main $*

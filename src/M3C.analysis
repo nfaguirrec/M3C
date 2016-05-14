@@ -1,11 +1,42 @@
 #!/bin/bash
+##################################################################
+#
+#  This file is part of M3C
+#  Copyright (C) by authors (2012-2016)
+#  
+#  Authors:
+#    * Dr. Néstor F. Aguirre (2012-2016)
+#          nestor.aguirre@uam.es
+#    * Dr. Sergio Díaz-Tendero (2012-2015)
+#          sergio.diaztendero@uam.es
+#    * Prof. M. Paul-Antoine Hervieux (2012-2015)
+#          Paul-Antoine.Hervieux@ipcms.unistra.fr
+#    * Prof. Fernando Martín (2012-2015)
+#          fernando.martin@uam.es
+#    * Prof. Manuel Alcamí (2012-2015)
+#          manuel.alcami@uam.es
+#  
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the
+#  following conditions are met:
+#  
+#   * Redistributions of binary or source code must retain
+#     the above copyright notice and this list of conditions
+#     and/or other materials provided with the distribution.
+#   * All advertising materials mentioning features or use of
+#     this software must display the following acknowledgement:
+#     
+#     This product includes software from M3C project.
+#
+##################################################################
 
 FILTER=".*"
 
-test -z "$M3C_PLOT_SIZE"     && M3C_PLOT_SIZE="square"
-test -z "$M3C_PLOT_LW"       && M3C_PLOT_LW="2.0"
-test -z "$M3C_PLOT_TERMINAL" && M3C_PLOT_TERMINAL="set terminal wxt size 800,400"
-test -z "$M3C_GNUPLOT_EXEC"  && M3C_GNUPLOT_EXEC="gnuplot"
+[ -z "$M3C_GNUPLOT_EXEC"  ] && M3C_GNUPLOT_EXEC="gnuplot"
+[ -z "$M3C_PLOT_TERMINAL" ] && M3C_PLOT_TERMINAL="set terminal wxt size 800,400"
+[ -z "$M3C_PLOT_SIZE"     ] && M3C_PLOT_SIZE="square"
+[ -z "$M3C_PLOT_LW"       ] && M3C_PLOT_LW="2.0"
+[ -z "$M3C_PLOT_XRANGE"   ] && M3C_PLOT_XRANGE="[:]"
 
 LOCAL_DIR=$PWD  # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 
@@ -80,7 +111,7 @@ set yrange [0:]
 set multiplot layout 2,2 columnsfirst scale 1.0,1.1
 
 set ylabel "Translational (eV)" font "Helvetica Bold,9"
-plot [] [:] \\
+plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
@@ -92,7 +123,7 @@ EOF
 "" u :6 t "total" w l lt 0 lw 1.5
 
 set ylabel "Intermolecular (eV)"
-plot [] [:] \\
+plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
@@ -104,7 +135,7 @@ EOF
 "" u :6 t "total" w l lt 0 lw 1.5
 
 set ylabel "Vibrational (eV)"
-plot [] [:] \\
+plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
@@ -116,7 +147,7 @@ EOF
 "" u :6 t "total" w l lt 0 lw 1.5
 
 set ylabel "Rotational (eV)" font "Helvetica Bold,9"
-plot [] [:] \\
+plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
@@ -178,7 +209,7 @@ set yrange [0:]
 set multiplot layout 2,2 columnsfirst scale 1.0,1.1
 
 set ylabel "Electronic" font "Helvetica Bold,9"
-plot [] [:] \\
+plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
@@ -190,7 +221,7 @@ EOF
 "" u :7 t "total" w l lt 0 lw 1.5
 
 set ylabel "Vibrational" font "Helvetica Bold,9"
-plot [] [:] \\
+plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
@@ -202,7 +233,7 @@ EOF
 "" u :7 t "total" w l lt 0 lw 1.5
 
 set ylabel "Rotational"
-plot [] [:] \\
+plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
@@ -214,7 +245,7 @@ EOF
 "" u :7 t "total" w l lt 0 lw 1.5
 
 set ylabel "Translational"
-plot [] [:] \\
+plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
@@ -265,7 +296,7 @@ unset key
 set multiplot layout 2,2 columnsfirst scale 1.0,1.1
 
 set ylabel "Translational (eV)" font "Helvetica Bold,9"
-plot [] [:] \\
+plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
@@ -278,7 +309,7 @@ EOF
 "" u :(-\$6) t "total" w l lw 0.0
 
 set ylabel "Potential (eV)" font "Helvetica Bold,9"
-plot [] [:] \\
+plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
@@ -291,7 +322,7 @@ EOF
 "" u :(-\$6) t "total" w l lw 0.0
 
 set ylabel "Vibrational (eV)"
-plot [] [:] \\
+plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
@@ -304,7 +335,7 @@ EOF
 "" u :(-\$6) t "total" w l lw 0.0
 
 set ylabel "Rotational (eV)"
-plot [] [:] \\
+plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 	for i in `seq 1 $nExp`
@@ -317,7 +348,7 @@ EOF
 "" u :(-\$6) t "total" w l lw 0.0
 
 # set ylabel "Weight (arb)"
-# plot [] [:] \\
+# plot $M3C_PLOT_XRANGE [:] \\
 EOF
 
 # 	for i in `seq 1 $nExp`
@@ -443,9 +474,11 @@ function energyCorrelationDiagram()
 {
 	local iFile=$1
 	local task=$2
+	local withLabels=$3
+	local freqLabels=$4
 	
-	withLabels="TRUE"
-	freqLabels="10"
+	test -z "$withLabels"   && withLabels="FALSE"
+	test -z "$freqLabels"   && freqLabels=10
 	
 	cat > .plotE-$$ << EOF
 $M3C_PLOT_TERMINAL
@@ -467,207 +500,198 @@ set cbtics font "Serif,8"
 set pointsize 0.3
 set view map
 
+set xrange $M3C_PLOT_XRANGE
+
 #             trans       intermol            vib            rot            tot     formula
 #               2            3                 4              5              6         7
 
 EOF
+
+	declare -A axisLabel
+	declare -A column
 	
-	case "$task" in
-		"Et.vs.U" )
-			echo "set xlabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
-			
-			if [ "$withLabels" = "TRUE" ]
-			then
-				echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
-				echo "'$iFile' u 2:3:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
-			else
-				echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
-			fi
-			
-			histogram2D $iFile "2,3" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"U.vs.Et" )
-			echo "set xlabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			
-			if [ "$withLabels" = "TRUE" ]
-			then
-				echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
-				echo "'$iFile' u 3:2:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
-			else
-				echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
-			fi
-			
-			histogram2D $iFile "3,2" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Et.vs.Ev" )
-			echo "set xlabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			
-			if [ "$withLabels" = "TRUE" ]
-			then
-				echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
-				echo "'$iFile' u 2:4:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
-			else
-				echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
-			fi
-			
-			histogram2D $iFile "2,4" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Ev.vs.Et" )
-			echo "set xlabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			
-			if [ "$withLabels" = "TRUE" ]
-			then
-				echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
-				echo "'$iFile' u 4:2:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
-			else
-				echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
-			fi
-			
-			histogram2D $iFile "4,2" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Et.vs.Er" )
-			echo "set xlabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			
-			if [ "$withLabels" = "TRUE" ]
-			then
-				echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
-				echo "'$iFile' u 2:5:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
-			else
-				echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
-			fi
-			
-			histogram2D $iFile "2,5" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Er.vs.Et" )
-			echo "set xlabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Translational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			
-			if [ "$withLabels" = "TRUE" ]
-			then
-				echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
-				echo "'$iFile' u 5:2:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
-			else
-				echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
-			fi
-			
-			histogram2D $iFile "5,2" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"U.vs.Ev" )
-			echo "set xlabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			
-			if [ "$withLabels" = "TRUE" ]
-			then
-				echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
-				echo "'$iFile' u 3:4:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
-			else
-				echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
-			fi
-			
-			histogram2D $iFile "3,4" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Ev.vs.U" )
-			echo "set xlabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
-			
-			if [ "$withLabels" = "TRUE" ]
-			then
-				echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
-				echo "'$iFile' u 4:3:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
-			else
-				echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
-			fi
-			
-			histogram2D $iFile "4,3" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"U.vs.Er" )
-			echo "set xlabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			
-			if [ "$withLabels" = "TRUE" ]
-			then
-				echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
-				echo "'$iFile' u 3:5:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
-			else
-				echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
-			fi
-			
-			histogram2D $iFile "3,5" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Er.vs.U" )
-			echo "set xlabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Intermolecular potential (eV)' font 'Serif,9'" >> .plotE-$$
-			
-			if [ "$withLabels" = "TRUE" ]
-			then
-				echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
-				echo "'$iFile' u 5:3:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
-			else
-				echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
-			fi
-			
-			histogram2D $iFile "5,3" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Ev.vs.Er" )
-			echo "set xlabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			
-			if [ "$withLabels" = "TRUE" ]
-			then
-				echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
-				echo "'$iFile' u 4:5:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
-			else
-				echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
-			fi
-			
-			histogram2D $iFile "4,5" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		"Er.vs.Ev" )
-			echo "set xlabel 'Rotational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			echo "set ylabel 'Vibrational energy (eV)' font 'Serif,9'" >> .plotE-$$
-			
-			if [ "$withLabels" = "TRUE" ]
-			then
-				echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
-				echo "'$iFile' u 5:4:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
-			else
-				echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
-			fi
-			
-			histogram2D $iFile "5,4" >> .plotE-$$
-			echo "e" >> .plotE-$$
-			;;
-		*)
-			echo "### ERROR ### Energy correlation diagram. Unknown option $task"
-			echo "              Available options:"
-			echo "                  Et.vs.U   |  U.vs.Et"
-			echo "                  Et.vs.Ev  | Ev.vs.Et"
-			echo "                  Et.vs.Er  | Er.vs.Et"
-			echo "                   U.vs.Ev  | Ev.vs.U"
-			echo "                   U.vs.Er  | Er.vs.U"
-			echo "                  Ev.vs.Er  | Er.vs.Ev"
-			exit
-	esac
+	axisLabel["Et"]="Translational energy (eV)"
+	axisLabel["U"]="Intermolecular potential (eV)"
+	axisLabel["Ev"]="Vibrational energy (eV)"
+	axisLabel["Er"]="Rotational energy (eV)"
+	axisLabel["E"]="Total energy (eV)"
+	
+	column["Et"]=2
+	column["U"]=3
+	column["Ev"]=4
+	column["Er"]=5
+	column["E"]=6
+	
+	coord1=`echo $task | awk 'BEGIN{FS="."}{print $1}'`
+	coord2=`echo $task | awk 'BEGIN{FS="."}{print $3}'`
+	
+	echo "              Available options:"
+	echo "                  Et.vs.U   |  U.vs.Et"
+	echo "                  Et.vs.Ev  | Ev.vs.Et"
+	echo "                  Et.vs.Er  | Er.vs.Et"
+	echo "                   U.vs.Ev  | Ev.vs.U"
+	echo "                   U.vs.Er  | Er.vs.U"
+	echo "                  Ev.vs.Er  | Er.vs.Ev"
+
+	if [ -z "$task" ]
+	then
+		echo ""
+		echo "### ERROR ### Energy correlation diagram. Unknown option $task"
+		exit
+	fi
+	
+	echo "set xlabel '${axisLabel[$coord1]}' font 'Serif,9'" >> .plotE-$$
+	echo "set ylabel '${axisLabel[$coord2]}' font 'Serif,9'" >> .plotE-$$
+	
+	if [ "$withLabels" = "TRUE" ]
+	then
+		echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
+		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
+	else
+		echo "splot \"-\" u 1:2::3 w p ps 0" >> .plotE-$$
+	fi
+	
+	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "60,60" >> .plotE-$$
+	echo "e" >> .plotE-$$
 	
 	echo "pause -1" >> .plotE-$$
 	
 	cp $iFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+	cp .plotE-$$ $LOCAL_DIR/figure.gnuplot
+	
+	$M3C_GNUPLOT_EXEC .plotE-$$
+
+	rm .plotE-$$
+}
+
+####################################
+#
+####################################
+function weightCorrelationDiagram()
+{
+	local iFile=$1
+	local task=$2
+	local withLabels=$3
+	local freqLabels=$4
+	
+	test -z "$withLabels"   && withLabels="FALSE"
+	test -z "$freqLabels"   && freqLabels=10
+	
+	cat > .plotE-$$ << EOF
+$M3C_PLOT_TERMINAL
+set termopt enhanced
+set encoding iso_8859_1
+set size $M3C_PLOT_SIZE
+set format y "%.1f"
+set format x "%.1f"
+set format cb "10^{%T}"
+
+set logscale cb
+
+unset key
+set palette defined ( 0 "white", 1 "blue", 2 "green", 3 "orange", 4 "yellow", 5 "red" )
+set pm3d implicit at s
+set xtics rotate by -45 font "Serif,8"
+set ytics font "Serif,8"
+set cbtics font "Serif,8"
+set pointsize 0.3
+set view map
+
+set xrange $M3C_PLOT_XRANGE
+
+#              LnWe           LnWv           LnWn           LnWr           LnWt            LnW     formula
+#                 2              3              4              5              6              7           8
+
+EOF
+	
+	declare -A axisLabel
+	declare -A column
+	
+	axisLabel["LnWe"]="LnWe (arb.)"
+	axisLabel["LnWv"]="LnWv (arb.)"
+	axisLabel["LnWn"]="LnWn (arb.)"
+	axisLabel["LnWr"]="LnWr (arb.)"
+	axisLabel["LnWt"]="LnWt (arb.)"
+	axisLabel["LnW"]="LnW (arb.)"
+	
+	column["LnWe"]=2
+	column["LnWv"]=3
+	column["LnWn"]=4
+	column["LnWr"]=5
+	column["LnWt"]=6
+	column["LnW"]=7
+	
+	coord1=`echo $task | awk 'BEGIN{FS="."}{print $1}'`
+	coord2=`echo $task | awk 'BEGIN{FS="."}{print $3}'`
+	
+	echo "              Available options:"
+	echo "                  LnWe.vs.LnWv   |  LnWv.vs.LnWe"
+	echo "                  LnWe.vs.LnWn   |  LnWn.vs.LnWe"
+	echo "                  LnWe.vs.LnWr   |  LnWr.vs.LnWe"
+	echo "                  LnWe.vs.LnWt   |  LnWt.vs.LnWe"
+	echo "                  LnWe.vs.LnW    |   LnW.vs.LnWe"
+	echo "                  LnWv.vs.LnWn   |  LnWn.vs.LnWv"
+	echo "                  LnWv.vs.LnWr   |  LnWr.vs.LnWv"
+	echo "                  LnWv.vs.LnWt   |  LnWt.vs.LnWv"
+	echo "                  LnWv.vs.LnW    |   LnW.vs.LnWv"
+	echo "                  LnWn.vs.LnWr   |  LnWr.vs.LnWn"
+	echo "                  LnWn.vs.LnWt   |  LnWt.vs.LnWn"
+	echo "                  LnWn.vs.LnW    |   LnW.vs.LnWn"
+	echo "                  LnWr.vs.LnWt   |  LnWt.vs.LnWr"
+	echo "                  LnWr.vs.LnW    |   LnW.vs.LnWr"
+	echo "                  LnWt.vs.LnW    |   LnW.vs.LnWt"
+
+	if [ -z "$task" ]
+	then
+		echo ""
+		echo "### ERROR ### Weight correlation diagram. Unknown option $task"
+		exit
+	fi
+	
+	echo "set xlabel '${axisLabel[$coord1]}' font 'Serif,9'" >> .plotE-$$
+	echo "set ylabel '${axisLabel[$coord2]}' font 'Serif,9'" >> .plotE-$$
+	
+	if [ "$withLabels" = "TRUE" ]
+	then
+		echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
+		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:(0.0):8 every $freqLabels w labels font ',5'" >> .plotE-$$
+		
+# 		#Esto es un apaño que ya no se hace necesario
+# 		if [ "$coord1" = "LnWr" ]
+# 		then
+# 			echo "splot \"-\" u (\$1/2):2:3 w p ps 0, \\" >> .plotE-$$
+# 			echo "'$iFile' u (column(${column[$coord1]})/2.0):${column[$coord2]}:(0.0):8 every $freqLabels w labels font ',5'" >> .plotE-$$
+# 		elif [ "$coord2" = "LnWr" ]
+# 		then
+# 			echo "splot \"-\" u 1:(\$2/2):3 w p ps 0, \\" >> .plotE-$$
+# 			echo "'$iFile' u ${column[$coord1]}:(column(${column[$coord2]})/2.0):(0.0):8 every $freqLabels w labels font ',5'" >> .plotE-$$
+# 		else
+# 			echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
+# 			echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:(0.0):8 every $freqLabels w labels font ',5'" >> .plotE-$$
+# 		fi
+	else
+		echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
+
+# 		#Esto es un apaño que ya no se hace necesario
+# 		if [ "$coord1" = "LnWr" ]
+# 		then
+# 			echo "splot \"-\" u (\$1/2.0):2:3 w p ps 0" >> .plotE-$$
+# 		elif [ "$coord2" = "LnWr" ]
+# 		then
+# 			echo "splot \"-\" u 1:(\$2/2.0):3 w p ps 0" >> .plotE-$$
+# 		else
+# 			echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
+# 		fi
+	fi
+	
+	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "60,60" >> .plotE-$$
+	echo "e" >> .plotE-$$
+	
+	echo "pause -1" >> .plotE-$$
+	
+	cp $iFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+	cp .plotE-$$ $LOCAL_DIR/figure.gnuplot
+	
 	$M3C_GNUPLOT_EXEC .plotE-$$
 
 	rm .plotE-$$
@@ -847,7 +871,7 @@ set title "Species distribution"
 set size 1.0,0.9
 set origin 0.0,0.1
 
-plot [] [0:] \
+plot $M3C_PLOT_XRANGE [0:] \
 '.dataC-$$' i 2 u (\$$(($nExp+2))*100.0):(\$$(($nExp+3))*100.0):xticlabels(1)
 
 pause -1
@@ -885,7 +909,7 @@ set title "Species distribution (P>`echo "scale=1;$maxPForDetails*100.0" | bc -l
 set size 1.0,0.9
 set origin 0.0,0.1
 
-plot [] [0:] \
+plot $M3C_PLOT_XRANGE [0:] \
 '.dataC-$$' i 3 u (\$$(($nExp+2))*100.0):(\$$(($nExp+3))*100.0):xticlabels(1)
 
 pause -1
@@ -940,7 +964,7 @@ set ylabel "Probability (%)"
 set size 1.0,0.9
 set origin 0.0,0.1
 
-plot [] [0:] \
+plot $M3C_PLOT_XRANGE [0:] \
 '.dataC-$$' i 0 u (\$$(($nExp+2))*100.0):(\$$(($nExp+3))*100.0):xticlabels(1)
 
 pause -1
@@ -978,7 +1002,7 @@ set title "Channels distribution (P>`echo "scale=1;$maxPForDetails*100.0" | bc -
 set size 1.0,0.9
 set origin 0.0,0.1
 
-plot [] [0:] \
+plot $M3C_PLOT_XRANGE [0:] \
 '.dataC-$$' i 1 u (\$$(($nExp+2))*100.0):(\$$(($nExp+3))*100.0):xticlabels(1)
 
 pause -1
@@ -1220,10 +1244,14 @@ set style line 15 lt 1 lc rgb "orange"
 # set style line 17 lt 1 lc rgb "orange"
 set style line 24 lt 1 lc rgb "orange"  # Cambia al amarillo
 
-
 set y2range [-3:103.0]
-plot [$xMin-($xMax-$xMin)*0.03:$xMax+($xMax-$xMin)*0.03] [-3:103] \\
 EOF
+	if [ "$M3C_PLOT_XRANGE" = "[:]" ]
+	then
+		echo "plot [$xMin-($xMax-$xMin)*0.03:$xMax+($xMax-$xMin)*0.03] [-3:103] \\" >> .plotMtj-$iFile$$
+	else
+		echo "plot $M3C_PLOT_XRANGE [-3:103] \\" >> .plotMtj-$iFile$$
+	fi
 	
 	####################################################
 	# Visualization of deposited energy function
@@ -1323,7 +1351,7 @@ set key out bottom
 set xlabel "Internal Energy (eV)"
 set ylabel "Energy (eV)"
 
-plot \
+plot $M3C_PLOT_XRANGE \
 "$energyDir/ecompTable$$.dat" u 1:2 t "trans" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
 "" u 1:2:3 notitle w yerrorbars lt 1 ps 0, \
 "" u 1:2 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
@@ -1382,7 +1410,7 @@ set format y "%.0f"
 
 fixValue(x) = ( 100*x<0.0 ? 0.0 : ( 100*x>100.0 ? 100.0 : 100*x ))
 
-plot [] [-2:102] \
+plot $M3C_PLOT_XRANGE [-2:102] \
 "$energyDir/ecompTable$$.dat" u 1:(fixValue(\$2/(\$2+\$4+\$6+\$8))) t "trans" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
 "" u 1:(fixValue(\$2/(\$2+\$4+\$6+\$8))):(fixValue(\$3/(\$2+\$4+\$6+\$8))) notitle w yerrorbars lt 1 ps 0, \
 "" u 1:(fixValue(\$2/(\$2+\$4+\$6+\$8))) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
@@ -1395,6 +1423,130 @@ plot [] [-2:102] \
 "" u 1:(fixValue(\$8/(\$2+\$4+\$6+\$8))) t "rot" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 4, \
 "" u 1:(fixValue(\$8/(\$2+\$4+\$6+\$8))):(fixValue(\$9/(\$2+\$4+\$6+\$8))) notitle w yerrorbars lt 4ps 0, \
 "" u 1:(fixValue(\$8/(\$2+\$4+\$6+\$8))) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white"
+
+pause -1
+EOF
+	
+	cp $energyDir/ecompTable$$.dat $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+	$M3C_GNUPLOT_EXEC .plotEComp-$iFile$$ 2> /dev/null
+	
+	rm $energyDir/ecompTable$$.dat
+	rm .plotEComp-$iFile$$
+}
+
+####################################
+#
+####################################
+function weightComponentsDiagram()
+{
+	local iFile=$1
+	local energyDir=$2
+	
+	pushd . > /dev/null 2> /dev/null
+	cd $energyDir
+	
+	for f in `ls E_*.histogram`
+	do
+		energy=`echo ${f%.*} | sed 's/E_//g'`
+		
+		grep "Weight components (arb.)" -A9 $f | tail -n6 | awk 'BEGIN{printf "%10.5f",'$energy'}{printf "%10.5f%10.5f",$(NF-1),$NF}END{print ""}'
+	
+	done | sort -k1 -n > ecompTable$$.dat
+	
+	popd > /dev/null 2> /dev/null
+	
+	cat > .plotEComp-$iFile$$ << EOF
+$M3C_PLOT_TERMINAL
+set termopt enhanced
+set encoding iso_8859_1
+
+set size $M3C_PLOT_SIZE
+set key out bottom
+
+set xlabel "Energy (eV)"
+set ylabel "Weight (arb.)"
+
+plot $M3C_PLOT_XRANGE \
+"$energyDir/ecompTable$$.dat" u 1:2 t "LnWe" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
+"" u 1:2:3 notitle w yerrorbars lt 1 ps 0, \
+"" u 1:2 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:4 t "LnWv" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 2, \
+"" u 1:4:5 notitle w yerrorbars lt 2 ps 0, \
+"" u 1:4 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:6 t "LnWn" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 3, \
+"" u 1:6:7 notitle w yerrorbars lt 3 ps 0, \
+"" u 1:6 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:8 t "LnWr" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 4, \
+"" u 1:8:9 notitle w yerrorbars lt 4 ps 0, \
+"" u 1:8 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:10 t "LnWt" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 5, \
+"" u 1:10:11 notitle w yerrorbars lt 5 ps 0, \
+"" u 1:10 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:12 t "LnW" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lc rgb "black", \
+"" u 1:12:13 notitle w yerrorbars ps 0 lc rgb "black", \
+"" u 1:12 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white"
+
+pause -1
+EOF
+	
+	cp $energyDir/ecompTable$$.dat $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+	$M3C_GNUPLOT_EXEC .plotEComp-$iFile$$ 2> /dev/null
+	
+	rm $energyDir/ecompTable$$.dat
+	rm .plotEComp-$iFile$$
+}
+
+####################################
+#
+####################################
+function weightComponentsPercentageDiagram()
+{
+	local iFile=$1
+	local energyDir=$2
+	
+	pushd . > /dev/null 2> /dev/null
+	cd $energyDir
+	
+	for f in `ls E_*.histogram`
+	do
+		energy=`echo ${f%.*} | sed 's/E_//g'`
+		
+		grep "Weight components (arb.)" -A9 $f | tail -n6 | awk 'BEGIN{printf "%10.5f",'$energy'}{printf "%10.5f%10.5f",$(NF-1),$NF}END{print ""}'
+	
+	done | sort -k1 -n > ecompTable$$.dat
+	
+	popd > /dev/null 2> /dev/null
+	
+	cat > .plotEComp-$iFile$$ << EOF
+$M3C_PLOT_TERMINAL
+set termopt enhanced
+set encoding iso_8859_1
+
+set size $M3C_PLOT_SIZE
+set key out bottom
+
+set xlabel "Energy (eV)"
+set ylabel "Percentage (%)"
+set format y "%.0f"
+
+fixValue(x) = ( 100*x<0.0 ? 0.0 : ( 100*x>100.0 ? 100.0 : 100*x ))
+
+plot $M3C_PLOT_XRANGE [-2:102] \
+"$energyDir/ecompTable$$.dat" u 1:(fixValue(\$2/\$12)) t "LnWe" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
+"" u 1:(fixValue(\$2/\$12)):(fixValue(\$3/\$12)) notitle w yerrorbars lt 1 ps 0, \
+"" u 1:(fixValue(\$2/\$12)) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:(fixValue(\$4/\$12)) t "LnWv" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 2, \
+"" u 1:(fixValue(\$4/\$12)):(fixValue(\$5/\$12)) notitle w yerrorbars lt 2 ps 0, \
+"" u 1:(fixValue(\$4/\$12)) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:(fixValue(\$6/\$12)) t "LnWn" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 3, \
+"" u 1:(fixValue(\$6/\$12)):(fixValue(\$7/\$12)) notitle w yerrorbars lt 3 ps 0, \
+"" u 1:(fixValue(\$6/\$12)) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:(fixValue(\$8/\$12)) t "LnWr" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 4, \
+"" u 1:(fixValue(\$8/\$12)):(fixValue(\$9/\$12)) notitle w yerrorbars lt 4 ps 0, \
+"" u 1:(fixValue(\$8/\$12)) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:(fixValue(\$10/\$12)) t "LnWt" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 5, \
+"" u 1:(fixValue(\$10/\$12)):(fixValue(\$9/\$12)) notitle w yerrorbars lt 5 ps 0, \
+"" u 1:(fixValue(\$10/\$12)) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white"
 
 pause -1
 EOF
@@ -1439,7 +1591,7 @@ unset key
 set xlabel "Internal Energy (eV)"
 set ylabel "Temperature (eV)"
 
-plot [:] [:] \
+plot $M3C_PLOT_XRANGE [:] \
 "$energyDir/temperatureTable$$.dat" u 1:2 w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
 "" u 1:2:3 notitle w yerrorbars lt 1 ps 0, \
 "" u 1:2 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white"
@@ -2283,6 +2435,18 @@ function main()
 		exit
 	fi
 	
+	if [ "$2" = "Wcomp" ]
+	then
+		weightComponentsDiagram ${iFile%.*}.m3c "${iFile%.*}.data/"
+		exit
+	fi
+	
+	if [ "$2" = "Wcomp%" ]
+	then
+		weightComponentsPercentageDiagram ${iFile%.*}.m3c "${iFile%.*}.data/"
+		exit
+	fi
+	
 	if [ "$2" = "T" ]
 	then
 		temperatureDiagram ${iFile%.*}.m3c "${iFile%.*}.data/"
@@ -2347,7 +2511,6 @@ function main()
 	fi
 	
 	target=$2
-	typeEcorr=$4
 	case "$target" in
 		energy)
 			if [ -n "$id" ]
@@ -2462,14 +2625,43 @@ function main()
 			then
 				if [[ $id =~ [0-9]+ ]]
 				then
-					energyCorrelationDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.ehistory $typeEcorr #"Et.vs.Ev"
+					typeCorr=$4 #"Er.vs.Et"
+					withLabels=$5
+					freqLabels=$6
+					
+					energyCorrelationDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.ehistory $typeCorr $withLabels $freqLabels
 				else
-					typeEcorr=$3
+					typeCorr=$3 #"Er.vs.Et"
+					withLabels=$4
+					freqLabels=$5
+					
 					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:energyHistoryFile`
-					energyCorrelationDiagram $dataFile $typeEcorr #"Er.vs.Et"
+					energyCorrelationDiagram $dataFile $typeCorr $withLabels $freqLabels
 				fi
 			fi
 			;;
+			
+		Wcorr)
+			if [ -n "$id" ]
+			then
+				if [[ $id =~ [0-9]+ ]]
+				then
+					typeCorr=$4 #"LnWr.vs.LnWt"
+					withLabels=$5
+					freqLabels=$6
+					
+					weightCorrelationDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.whistory $typeCorr $withLabels $freqLabels
+				else
+					typeCorr=$3 #"LnWr.vs.LnWt"
+					withLabels=$4
+					freqLabels=$5
+					
+					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:weightHistoryFile`
+					weightCorrelationDiagram $dataFile $typeCorr $withLabels $freqLabels
+				fi
+			fi
+			;;
+			
 # 		all)
 # 			if [ -n "$id" ]
 # 			then
