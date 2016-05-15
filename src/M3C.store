@@ -35,11 +35,13 @@
 ##############################
 # Usage menu
 ##############################
-function textbb(){
+function textbb()
+{
 	echo -n `tput bold`$1`tput sgr0`
 }
 
-function usage(){
+function usage()
+{
 	if [ -z "$REFERENCE" ]
 	then
 		echo ""
@@ -70,65 +72,16 @@ function usage(){
 		echo "     `textbb add`"
 		echo "          Includes a new molecule into the store (check M3C_STORE variable)."
 		echo ""
-		echo "          `textbb add` molecule"
+		echo "          `textbb add` [molecule|list]"
 		echo ""
 		echo "                  molecule: XYZ file of the molecule to be included into the store."
+		echo "                      list: list of XYZ files of the molecules to be included into the store."
+		echo "                            Wildcards are accepted like *.rxyz"
 		echo ""
 		echo ""
 		exit
 	fi
 }
-
-##############################
-# Catching parameters
-##############################
-COMMAND=$1
-
-case $COMMAND in
-	makeDB)
-		REFERENCE=$2
-		MAXVIB_NSTEPS=$3
-		DEBUG=$4
-		SPIN_CONSERVATION=$5
-		
-		if [ -z "$REFERENCE" ]
-		then
-			echo ""
-			echo "### ERROR ### molRefence is a required parameter" 
-			echo ""
-			echo "List of available molecules:"
-			echo ""
-			
-			printf "%10s %30s%20s\n" "" "fileName" "Energy (a.u.)"
-			printf "%10s %30s%20s\n" "" "--------" "-------------"
-			
-			i=1
-			for f in `ls $M3C_STORE`
-			do
-				if [[ "$f" =~ ".rxyz" ]]
-				then
-					printf "%10d)%30s%20.6f\n" $i $f `grep Energy $M3C_STORE/$f | awk '{print $3}'`
-					i=$(( $i+1 ))
-				fi
-			done
-			
-			exit
-		fi
-		
-		[ -z "$MAXVIB_NSTEPS" ] && MAXVIB_NSTEPS=10
-		[ -z "$DEBUG" ] && DEBUG="FALSE"
-		[ -z "$SPIN_CONSERVATION" ] && SPIN_CONSERVATION="FALSE"
-		
-		;;
-	add)
-		NEW_MOLECULE=$2
-		
-		;;
-	*)
-		usage
-		exit
-		;;
-esac
 
 ##############################
 # Global variables
@@ -261,7 +214,7 @@ declare -A MAXVIBCHANNEL
 
 ##############################
 
-showDataBase()
+function showDataBase()
 {
 	local maxVibChannelsFile=$1
 	
@@ -350,7 +303,10 @@ showDataBase()
 	cd $WORKDIR
 }
 
-main()
+##############################
+# @brief
+##############################
+function makeDB()
 {
 	cat /dev/null > $TEMPDIR/.input-$$.m3c
 	cat /dev/null > $TEMPDIR/.channels$$
@@ -420,6 +376,155 @@ main()
 	fi
 	
 	rm $TEMPDIR/.input-$$.m3c $TEMPDIR/.input-$$.out $TEMPDIR/.vibBlock$$ $TEMPDIR/.channels$$
+}
+
+##############################
+# @brief
+##############################
+function addMolecules()
+{
+	local listTarget=$*
+	
+	for target in $listTarget
+	do
+		categoryTarget=${target%-*}
+		
+		isNew="TRUE"
+		for item in `ls $M3C_STORE/*.rxyz`
+		do
+			categoryItem=`echo $item | sed 's/^.*\///g'`
+			categoryItem=${categoryItem%-*}
+			
+			if [ "$categoryTarget" != "$categoryItem" ]
+			then
+				continue
+			fi
+
+			nAtoms1=`gawk 'BEGIN{i=0;nb=0}(NR>2 && $0~/^[[:blank:]]*$/){nb++}(NR>2 && nb<1){i++}END{print i}' $target`
+			nAtoms2=`gawk 'BEGIN{i=0;nb=0}(NR>2 && $0~/^[[:blank:]]*$/){nb++}(NR>2 && nb<1){i++}END{print i}' $item`
+
+			if [ "$nAtoms1" -ne "$nAtoms2" ]
+			then
+				echo "### ERROR ### Files $target and $item have not the same number of atoms"
+				exit
+			fi
+			
+			valueF=`molecule.compare $target $item 1.5 | grep "Chemical"`
+			valueR=`molecule.compare $target $item 1.5 | grep "Radius"`
+			valueI=`molecule.compare $target $item 1.5 | grep "Inertia"`
+			
+			if [ "$nAtoms1" -ge 2 ]
+			then
+				
+				if [ "$valueF" = "Chemical formula ...  OK" ]
+				then
+					if [[ "$valueR" =~ "Radius ...  OK" ]]
+					then
+						if [[ "$valueI" =~ "Inertia moment ...  OK" ]]
+						then
+							echo "-------------------------------------------------------------------------------------------------------"
+							echo "This fragment already exist"
+							echo "  $target --> $item"
+							echo "-------------------------------------------------------------------------------------------------------"
+							paste $target $item | pr -t -e60
+							echo "-------------------------------------------------------------------------------------------------------"
+							
+							isNew="FALSE"
+							
+							continue
+						fi
+					fi
+				fi
+				
+			else # single atoms
+			
+				if [ "$valueF" = "Chemical formula ...  OK" ]
+				then
+					echo "-------------------------------------------------------------------------------------------------------"
+					echo "This fragment already exist"
+					echo "  $target --> $item"
+					echo "-------------------------------------------------------------------------------------------------------"
+					paste $target $item | pr -t -e60
+					echo "-------------------------------------------------------------------------------------------------------"
+					
+					isNew="FALSE"
+					
+					continue
+				fi
+				
+			fi
+			
+		done
+		
+		if [ "$isNew" = "TRUE" ]
+		then
+			lastID=`ls $M3C_STORE/ | grep "$categoryTarget.*.rxyz" | awk 'BEGIN{FS="[-.]+"}{print $4}' | sort -n | tail -n1`
+			
+			echo -n "Including file $target --> $categoryTarget-$(( $lastID + 1 )).rxyz ... "
+			
+			cp $target $M3C_STORE/$categoryTarget-$(( $lastID + 1 )).rxyz
+
+			echo "OK"
+		fi
+	done
+}
+
+##############################
+# @brief
+##############################
+function main()
+{
+	COMMAND=$1
+
+	case $COMMAND in
+		makeDB)
+			REFERENCE=$2
+			MAXVIB_NSTEPS=$3
+			DEBUG=$4
+			SPIN_CONSERVATION=$5
+			
+			if [ -z "$REFERENCE" ]
+			then
+				echo ""
+				echo "### ERROR ### molRefence is a required parameter" 
+				echo ""
+				echo "List of available molecules:"
+				echo ""
+				
+				printf "%10s %30s%20s\n" "" "fileName" "Energy (a.u.)"
+				printf "%10s %30s%20s\n" "" "--------" "-------------"
+				
+				i=1
+				for f in `ls $M3C_STORE`
+				do
+					if [[ "$f" =~ ".rxyz" ]]
+					then
+						printf "%10d)%30s%20.6f\n" $i $f `grep Energy $M3C_STORE/$f | awk '{print $3}'`
+						i=$(( $i+1 ))
+					fi
+				done
+				
+				exit
+			fi
+			
+			[ -z "$MAXVIB_NSTEPS" ] && MAXVIB_NSTEPS=10
+			[ -z "$DEBUG" ] && DEBUG="FALSE"
+			[ -z "$SPIN_CONSERVATION" ] && SPIN_CONSERVATION="FALSE"
+			
+			makeDB $*
+			
+			;;
+		add)
+			shift # Ommits first parameter, i.e. "add"
+			
+			addMolecules `echo $* | grep ".rxyz"`
+			
+			;;
+		*)
+			usage
+			exit
+			;;
+	esac
 }
 
 main $*
