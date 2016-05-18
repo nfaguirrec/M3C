@@ -1271,8 +1271,9 @@ EOF
 	
 	for (( i=1; i<=$nChannels; i++ ))
 	do
-		yCol="(\$$(( 2*$i ))*100)"
-		errCol="(\$$(( 2*$i+1 ))*100)"
+		yCol="(\$$(( 2*$i ))*100/( `seq -f "\$%.0f" -s "+" 2 2 $((2*$nChannels))` ))"
+# 		yCol="(\$$(( 2*$i ))*100)"
+		errCol="(\$$(( 2*$i+1 ))*100/( `seq -f "\$%.0f" -s "+" 2 2 $((2*$nChannels))` ))"
 		smoothCol="(abs(\$$(( 2*$i+1 ))))"
 		
 # 		if (( $i != $nChannels ))
