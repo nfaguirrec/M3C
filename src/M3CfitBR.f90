@@ -437,9 +437,10 @@ program M3CfitBR
 	call integrator.init( f, NIntegrator_BOOLE )
 	write(*,"(A15,F10.5)") "Integral = ", integrator.evaluate()
 	
-	if( integrator.evaluate() < 98.0_8 ) then
+	if( abs(integrator.evaluate()-100.0_8) > 2.0_8 ) then
 		write(*,*) ""
-		write(*,*) " ### ERROR ### The energy distribution function is not correctly normalized"
+		write(*,*) " @@@ WARNING @@@ The energy distribution function is not correctly normalized."
+		write(*,*) "                 Consider to use a finer energy grid"
 		write(*,*) ""
 		stop
 	end if

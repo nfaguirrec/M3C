@@ -1093,6 +1093,9 @@ function showSparseMatrix()
 {
 	local iFile=$1
 	local keys=$2
+	local normalize=$3
+	
+	[ -z "$normalize" ] && normalize="FALSE"
 	
 	grep -E "$FILTER" $iFile | \
 		gawk '
@@ -1110,10 +1113,24 @@ function showSparseMatrix()
 			for(i in iVec){
 				printf "%15.5f", i
 				
+				if( "'$normalize'" == "TRUE" ){
+					sum=0.0
+					for(j in jVec){
+						if( i","j in values ){
+							split( values[i","j], arr, ":" )
+							sum += arr[1]
+						}
+					}
+				}
+				
 				for(j in jVec){
 					if( i","j in values ){
 						split( values[i","j], arr, ":" )
-						printf "   %15.5f%15.5f   ", arr[1], arr[2]
+						
+						if( "'$normalize'" == "TRUE" )
+							printf "   %15.5f%15.5f   ", arr[1]/sum, arr[2]
+						else
+							printf "   %15.5f%15.5f   ", arr[1], arr[2]
 					}else{
 						printf "   %15.5f%15.5f   ", 0.0, 0.0
 					}
@@ -1142,6 +1159,7 @@ function energyDiagram()
 {
 	local energyDir=$1
 	local type=$2
+	local normalize=$3
 	
 	local filter="*.eblkC"
 	case $type in
@@ -1178,7 +1196,7 @@ function energyDiagram()
 	xMax=`gawk 'BEGIN{FS="#"}{print $1}' sparseMatrix.dat | sort -n | tail -n1`
 	
 	# Dentro de showSparseMatrix los datos son filtrados de acuerdo a FILTER
-	showSparseMatrix sparseMatrix.dat keys.dat > matrix.data
+	showSparseMatrix sparseMatrix.dat keys.dat $normalize > matrix.data
 	rm sparseMatrix.dat
 	
 	sed -i -r '{s/[[:digit:]]+://g}' keys.dat # Eliminar el identificador de los clusters
@@ -1271,9 +1289,8 @@ EOF
 	
 	for (( i=1; i<=$nChannels; i++ ))
 	do
-		yCol="(\$$(( 2*$i ))*100/( `seq -f "\$%.0f" -s "+" 2 2 $((2*$nChannels))` ))"
-# 		yCol="(\$$(( 2*$i ))*100)"
-		errCol="(\$$(( 2*$i+1 ))*100/( `seq -f "\$%.0f" -s "+" 2 2 $((2*$nChannels))` ))"
+		yCol="(\$$(( 2*$i ))*100)"
+		errCol="(\$$(( 2*$i+1 ))*100)"
 		smoothCol="(abs(\$$(( 2*$i+1 ))))"
 		
 # 		if (( $i != $nChannels ))
@@ -1704,6 +1721,7 @@ function channelBRDiagram()
 	local iFile=$1
 	local energyDir=$2
 	local diagram=$3
+	local normalize=$4
 	
 	local BRFile=`getValueFromIFIle ${iFile%.*}.m3c "BRANCHING_RATIOS:BRfile"`
 	
@@ -1739,7 +1757,7 @@ function channelBRDiagram()
 	done
 	
 	# Dentro de showSparseMatrix los datos son filtrados de acuerdo a FILTER
-	showSparseMatrix sparseMatrix.dat keys.dat > matrix.dat
+	showSparseMatrix sparseMatrix.dat keys.dat $normalize > matrix.dat
 	rm sparseMatrix.dat
 	
 	sed -i -r '{s/[[:digit:]]+://g}' keys.dat # Eliminar el identificador de los clusters
@@ -1806,6 +1824,7 @@ function channelFitBRDiagram()
 	local iFile=$1
 	local energyDir=$2
 	local diagram=$3
+	local normalize=$4
 	
 	local BRFile=`getValueFromIFIle ${iFile%.*}.m3c "FIT_BRANCHING_RATIOS:BRfile"`
 	
@@ -1841,7 +1860,7 @@ function channelFitBRDiagram()
 	done
 	
 	# Dentro de showSparseMatrix los datos son filtrados de acuerdo a FILTER
-	showSparseMatrix sparseMatrix.dat keys.dat > matrix.dat
+	showSparseMatrix sparseMatrix.dat keys.dat $normalize > matrix.dat
 	rm sparseMatrix.dat
 	
 	sed -i -r '{s/[[:digit:]]+://g}' keys.dat # Eliminar el identificador de los clusters
@@ -1910,6 +1929,7 @@ function speciesFitBRDiagram()
 {
 	local iFile=$1
 	local energyDir=$2
+	local normalize=$3
 	
 	local BRFile=`getValueFromIFIle ${iFile%.*}.m3c "FIT_BRANCHING_RATIOS:BRfile"`
 	
@@ -1924,7 +1944,7 @@ function speciesFitBRDiagram()
 	
 	# Dentro de showSparseMatrix los datos son filtrados de acuerdo a FILTER
 	FILTER="p"
-	showSparseMatrix sparseMatrix.dat keys.dat > matrix.dat
+	showSparseMatrix sparseMatrix.dat keys.dat $normalize > matrix.dat
 	rm sparseMatrix.dat
 	
 	sed -i -r '{s/[[:digit:]]+://g}' keys.dat # Eliminar el identificador de los clusters
@@ -1939,7 +1959,7 @@ function speciesFitBRDiagram()
 	
 	M3CfitBR -i $iFile -d matrix.dat -k keys.dat
 # 	M3CBR -i $iFile -d matrix.dat -k keys.dat
-	rm matrix.dat keys.dat
+# 	rm matrix.dat keys.dat # <<<<< OJJOJOJ
 	
 	cp $BRFile tmp-$$
 	gawk '
@@ -2044,6 +2064,7 @@ function energyDistDiagram()
 	local iFile=$1
 	local energyDir=$2
 	local diagram=$3
+	local normalize=$4
 	
 	local eDistFile=`getValueFromIFIle ${iFile%.*}.m3c "FIT_BRANCHING_RATIOS:eDistfile"`
 	
@@ -2081,7 +2102,7 @@ function energyDistDiagram()
 	xMax=`gawk 'BEGIN{FS="#"}{print $1}' sparseMatrix.dat | sort -n | tail -n1`
 	
 	# Dentro de showSparseMatrix los datos son filtrados de acuerdo a FILTER
-	showSparseMatrix sparseMatrix.dat keys.dat > matrix.dat
+	showSparseMatrix sparseMatrix.dat keys.dat $normalize > matrix.dat
 	rm sparseMatrix.dat
 	
 	sed -i -r '{s/[[:digit:]]+://g}' keys.dat # Eliminar el identificador de los clusters
@@ -2136,6 +2157,7 @@ function speciesEnergyDistDiagram()
 {
 	local iFile=$1
 	local energyDir=$2
+	local normalize=$3
 	
 	local eDistFile=`getValueFromIFIle ${iFile%.*}.m3c "FIT_BRANCHING_RATIOS:eDistfile"`
 	
@@ -2152,7 +2174,7 @@ function speciesEnergyDistDiagram()
 	
 	# Dentro de showSparseMatrix los datos son filtrados de acuerdo a FILTER
 	FILTER="p"
-	showSparseMatrix sparseMatrix.dat keys.dat > matrix.dat
+	showSparseMatrix sparseMatrix.dat keys.dat $normalize > matrix.dat
 	rm sparseMatrix.dat
 	
 	sed -i -r '{s/[[:digit:]]+://g}' keys.dat # Eliminar el identificador de los clusters
@@ -2420,7 +2442,7 @@ function main()
 			FILTER="$3"
 		fi
 		
-		energyDiagram "${iFile%.*}.data/" "$2"
+		energyDiagram "${iFile%.*}.data/" "$2" "$4"
 		exit
 	fi
 	
@@ -2462,25 +2484,25 @@ function main()
 	
 	if [ "$2" = "fit_BR" ]
 	then
-		channelFitBRDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" `getValueFromIFIle ${iFile%.*}.m3c "EXPERIMENTAL_BRANCHING_RATIOS:diagram"`
+		channelFitBRDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" `getValueFromIFIle ${iFile%.*}.m3c "EXPERIMENTAL_BRANCHING_RATIOS:diagram"` "TRUE"  # << Last is normalize
 		exit
 	fi
 	
 	if [ "$2" = "fit_sBR" ]
 	then
-		speciesFitBRDiagram ${iFile%.*}.m3c "${iFile%.*}.data/"
+		speciesFitBRDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" "TRUE"  # << Last is normalize
 		exit
 	fi
 	
 	if [ "$2" = "fit_fE" ]
 	then
-		energyDistDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" `getValueFromIFIle ${iFile%.*}.m3c "EXPERIMENTAL_BRANCHING_RATIOS:diagram"`
+		energyDistDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" `getValueFromIFIle ${iFile%.*}.m3c "EXPERIMENTAL_BRANCHING_RATIOS:diagram"` "TRUE"  # << Last is normalize
 		exit
 	fi
 	
 	if [ "$2" = "fit_sfE" ]
 	then
-		speciesEnergyDistDiagram ${iFile%.*}.m3c "${iFile%.*}.data/"
+		speciesEnergyDistDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" "TRUE"  # << Last is normalize
 		exit
 	fi
 	
