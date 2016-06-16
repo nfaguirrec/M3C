@@ -39,71 +39,60 @@ function filterIsomers()
 {
 	local resultsDir=$1
 	
-	local i=""
-	local j=""
+	local id1=""
+	local id2=""
 	local value=""
 	local nAtoms1=""
 	local nAtoms2=""
 	
-	cd $resultsDir
+	local files=(`ls *.$FILTER 2> /dev/null`)
 	
-	local list=(`ls *.$FILTER 2> /dev/null`)
-	
-	for i in `seq 0 $(( ${#list[@]}-2 ))`
+	for id1 in `seq 0 $(( ${#files[@]} - 1 ))`
 	do
-		for j in `seq $(($i+1)) $(( ${#list[@]}-1 ))`
+		for id2 in `seq $(( $id1 + 1 )) $(( ${#files[@]} - 1 ))`
 		do
-			category1=${list[$i]%-*}
-			category2=${list[$j]%-*}
-			
-			if [ "$category1" != "$category2" ]
-			then
-				continue
-			fi
-
-			# Check that target file has not been removed yet
-			if [ ! -f "${list[$i]}" -o ! -f "${list[$j]}" ]
+			if [ ! -f ${files[$id1]} -o ! -f ${files[$id2]} ]
 			then
 				continue
 			fi
 			
-			nAtoms1=`gawk 'BEGIN{i=0;nb=0}(NR>2 && $0~/^[[:blank:]]*$/){nb++}(NR>2 && nb<1){i++}END{print i}' ${list[$i]}`
-			nAtoms2=`gawk 'BEGIN{i=0;nb=0}(NR>2 && $0~/^[[:blank:]]*$/){nb++}(NR>2 && nb<1){i++}END{print i}' ${list[$j]}`
-
-			if [ "$nAtoms1" -ne "$nAtoms2" ]
+			chemF1=`molecule.chemicalFormula ${files[$id1]}`
+			chemF2=`molecule.chemicalFormula ${files[$id2]}`
+			
+			q1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/q//g'`
+			q2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/q//g'`
+			
+			m1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/m//g'`
+			m2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/m//g'`
+			
+			if [ "$chemF1" = "$chemF2" -a  "$q1" = "$q2" -a "$m1" = "$m2" ]
 			then
-				echo "### ERROR ### Files ${list[$i]} and ${list[$j]} have not the same number of atoms"
-				exit
-			fi
-			
-			valueF=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Chemical"`
-			valueR=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Radius"`
-			valueI=`molecule.compare ${list[$i]} ${list[$j]} 1.5 | grep "Inertia"`
-			
-			if [ "$nAtoms1" -ge 2 ]
-			then
+				nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${files[$id1]}`
 				
-				if [ "$valueF" = "Chemical formula ...  OK" ]
+				case "$nAtoms" in
+					2)
+						gamma=10.0
+						;;
+					3)
+						gamma=5.0
+						;;
+					*)
+						gamma=1.0
+						;;
+				esac
+					
+				test=`molecule.compare ${files[$id1]} ${files[$id2]} $gamma | grep OK | wc -l`
+				
+				if [ "$test" -eq 3 ]
 				then
-					if [[ "$valueR" =~ "Radius ...  OK" ]]
-					then
-						if [[ "$valueI" =~ "Inertia moment ...  OK" ]]
-						then
-							rm "${list[$j]}"
-						fi
-					fi
+					rm ${files[$id1]}
+					break
 				fi
-				
-			else # single atoms
-			
-				if [ "$valueF" = "Chemical formula ...  OK" ]
-				then
-					rm "${list[$j]}"
-				fi
-				
 			fi
 		done
 	done
+	
+	# Hay que incluir algo aqui para renumerar los fiheros, ya que ahora sobreviran solo los ultimos
 	
 	cd ..
 }

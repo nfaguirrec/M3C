@@ -61,30 +61,30 @@ function filterIsomers()
                 	m1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/m//g'`
         	        m2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/m//g'`
                 
-	                if [ "$chemF1" = "$chemF2" -a  "$q1" = "$q2" -a "$m1" = "$m2" ]
-                	then
-				nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$i]}`
-                
-				case "$nAtoms" in
-					2)
-						gamma=10.0
-						;;
-					3)
-						gamma=5.0
-						;;
-					*)
-						gamma=1.0
-						;;
-				esac
-
-        	                test=`molecule.compare ${files[$id1]} ${files[$id2]} $gamma | grep OK | wc -l`
-
-	                        if [ "$test" -eq 3 ]
-                       		then
-        	                        rm ${files[$id1]}
-	                                break
-	                        fi
-	                fi
+					if [ "$chemF1" = "$chemF2" -a  "$q1" = "$q2" -a "$m1" = "$m2" ]
+					then
+						nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$i]}`
+						
+						case "$nAtoms" in
+							2)
+								gamma=10.0
+								;;
+							3)
+								gamma=5.0
+								;;
+							*)
+								gamma=1.0
+								;;
+						esac
+							
+						test=`molecule.compare ${files[$id1]} ${files[$id2]} $gamma | grep OK | wc -l`
+						
+						if [ "$test" -eq 3 ]
+						then
+								rm ${files[$id1]}
+								break
+						fi
+					fi
         	done
 	done
 
@@ -108,6 +108,8 @@ function generateIsomers()
 	local j=""
 	local nAtoms=""
 	local trial=""
+	local molRadius=""
+	local successRandom=""
 	
 	workDir="tmp-${iFileXYZ%.*}.q$charge.m$mult"
 	label="${iFileXYZ%.*}.q$charge.m$mult"
@@ -131,10 +133,12 @@ function generateIsomers()
 		for i in `seq 1 $NSTEPS`
 		do
 			optgGAUSSIANTemplate ../$GAUSSIAN_TEMPLATE $NPROCSHARED products.xyz $charge $mult > output.xyz
+			nAtomsEnd=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' output.xyz`
 			
 			cp products.out history-$label/$label-$j.out
+			cp products.com history-$label/$label-$j.com
 			
-			if [ -n "`cat output.xyz`" ]
+			if [ -n "`cat output.xyz`" -a "$nAtomsEnd" -eq "$nAtoms" ]
 			then
 				cp output.xyz results/$label-$j.xyz
 				cp products.xyz history-$label/$label-$j-init.xyz
@@ -147,16 +151,30 @@ function generateIsomers()
 			
 			cp ../$M3C_TEMPLATE reactorT.m3c
 			
+			#################################################
+			# Fixing the system radius
+			#------------------------------------------------
 			molRadius=`molecule.radius products.xyz`
+			
+			case "$nAtoms" in
+				2)
+					molRadius=`echo "$molRadius*3.0" | bc -l`
+					;;
+				3)
+					molRadius=`echo "$molRadius*1.5" | bc -l`
+					;;
+			esac
+			
 			if [ -n "`grep "systemRadius" reactorT.m3c`" ]
 			then
 				sed -i 's/systemRadius = .*/systemRadius = '"$molRadius"'/g' reactorT.m3c
 			else
-				sed -i 's/^\s*END GOPTIONS\s*$/        systemRadius = '"$molRadius"' #<< from M3C-gamess.geniso\nEND GOPTIONS/g' reactorT.m3c
+				sed -i 's/^\s*END GOPTIONS\s*$/        systemRadius = '"$molRadius"' #<< from M3C-gaussian.geniso\nEND GOPTIONS/g' reactorT.m3c
 			fi
+			#################################################
 			
 			successRandom="F"
-			for trial in `seq 1 100000`
+			for trial in `seq 1 10000`
 			do
 				M3C -i reactorT.m3c > M3C.log 2>&1
 				
@@ -169,7 +187,20 @@ function generateIsomers()
 			
 			if [ "$successRandom" = "F" ]
 			then
-				molecule.random -i products.xyz -gamma 0.7
+
+				case "$nAtoms" in
+					2)
+						molecule.random -i products.xyz -gamma 2.0 > newRand.xyz
+						;;
+					3)
+						molecule.random -i products.xyz -gamma 1.0 > newRand.xyz
+						;;
+					*)
+						molecule.random -i products.xyz -gamma 0.7 > newRand.xyz
+						;;
+				esac
+				
+				mv newRand.xyz products.xyz
 			fi
 		done
 		
@@ -219,7 +250,7 @@ function main()
 		 -z "$INIT_GEOM_DIR" -o \
 		 -z "$FINAL_GEOM_DIR" ]
 	then
-		echo "usage: M3C-gaussian.geniso database gamessTemplate M3CTemplate nSteps initGeomDir resultsGeomDir [ nProcShared ]"
+		echo "usage: M3C-gaussian.geniso database gaussianTemplate M3CTemplate nSteps initGeomDir resultsGeomDir [ nProcShared ]"
 		echo "                                                                                                        1       "
 		exit
 	fi
