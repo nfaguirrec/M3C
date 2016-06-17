@@ -263,8 +263,32 @@ function freqsGAUSSIANTemplate()
 		echo "Energy = $energy"
 		cat $xyzFile | gawk '(NR>2){print $0}'
 		echo ""
-		echo "FREQUENCIES   $fv"
+		
+		echo "FREQUENCIES $fv"
 		cat .freqs$SID
+		echo ""
+		
+		if [ "$nAtoms" -eq 1  ]
+		then
+			echo "SYMMETRY SO3"
+			echo "ELECTRONIC_STATE ??"
+		else
+			group=`grep "Full point group" input$SID.out | gawk '{print $4}'`
+			if [ "$group" = "Nop" -o "$group" = "NOp" ]
+			then
+				echo "SYMMETRY ??"
+			else
+				echo "SYMMETRY $group"
+			fi
+			
+			state=`grep "The electronic state is" input$SID.out | gawk '{print $5}' | sed 's/\.//'`
+			if [ -n "$state" ]
+			then
+				echo "ELECTRONIC_STATE $state"
+			else
+				echo "ELECTRONIC_STATE ??"
+			fi
+		fi
 	fi
 	
 	rm -rf .freqs$SID input$SID.com input$SID.out
