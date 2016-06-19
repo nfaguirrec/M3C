@@ -88,11 +88,24 @@ function makeLatexTableBase()
 	i=1
 	for f in $files
 	do
+		symm=`grep "SYMMETRY" ${f%.*}.$FILTER | gawk '{print $2}'`
+		estate=`grep "ELECTRONIC_STATE" ${f%.*}.$FILTER | gawk '{print $2}'`
+		
 		if (( $i%$NCOLUMNS != 0 && $i != $nFiles )) 
 		then
-			echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} &"
+			if [ -n "$symm" -a  -n "$estate" ]
+			then
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*} \hspace{5pt} $estate($symm)} &"
+			else
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*}} &"
+			fi
 		else
-			echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{5pt} ${f%.*}} "
+			if [ -n "$symm" -a  -n "$estate" ]
+			then
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*} \hspace{5pt} $estate($symm)} "
+			else
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*}} "
+			fi
 			
 			if (( $i != $nFiles ))
 			then
@@ -170,20 +183,43 @@ function makeLatexDocument()
 	i=1
 	for f in $files
 	do
+		symm=`grep "SYMMETRY" ${f%.*}.$FILTER | gawk '{print $2}'`
+		estate=`grep "ELECTRONIC_STATE" ${f%.*}.$FILTER | gawk '{print $2}'`
+		
 		if (( $i%$NCOLUMNS != 0 && $i != $nFiles ))
 		then
 			if [ "${highlighted[$i]}" = 1 ]
 			then
-				echo "\includegraphics[width=${effSize}cm]{$f} \textcolor{red}{\tiny{$i \hspace{5pt}${f%.*}}} &"
+				if [ -n "$symm" -a  -n "$estate" ]
+				then
+					echo "\includegraphics[width=${effSize}cm]{$f} \textcolor{red}{\tiny{$i \hspace{1cm}${f%.*} \hspace{5pt} $estate($symm)}} &"
+				else
+					echo "\includegraphics[width=${effSize}cm]{$f} \textcolor{red}{\tiny{$i \hspace{1cm}${f%.*}}} &"
+				fi
 			else
-				echo "\includegraphics[width=${effSize}cm]{$f} \tiny{$i \hspace{5pt} ${f%.*}} &"
+				if [ -n "$symm" -a  -n "$estate" ]
+				then
+					echo "\includegraphics[width=${effSize}cm]{$f} \tiny{$i \hspace{1cm} ${f%.*} \hspace{5pt} $estate($symm)} &"
+				else
+					echo "\includegraphics[width=${effSize}cm]{$f} \tiny{$i \hspace{1cm} ${f%.*}} &"
+				fi
 			fi
 		else
 			if [ "${highlighted[$i]}" = 1 ]
 			then
-				echo "\includegraphics[width=${effSize}cm]{$f} \textcolor{red}{\tiny{$i \hspace{5pt}${f%.*}}} "
+				if [ -n "$symm" -a  -n "$estate" ]
+				then
+					echo "\includegraphics[width=${effSize}cm]{$f} \textcolor{red}{\tiny{$i \hspace{1cm}${f%.*} \hspace{5pt} $estate($symm)}} "
+				else
+					echo "\includegraphics[width=${effSize}cm]{$f} \textcolor{red}{\tiny{$i \hspace{1cm}${f%.*}}} "
+				fi
 			else
-				echo "\includegraphics[width=${effSize}cm]{$f} \tiny{$i \hspace{5pt} ${f%.*}} "
+				if [ -n "$symm" -a  -n "$estate" ]
+				then
+					echo "\includegraphics[width=${effSize}cm]{$f} \tiny{$i \hspace{1cm} ${f%.*} \hspace{5pt} $estate($symm)} "
+				else
+					echo "\includegraphics[width=${effSize}cm]{$f} \tiny{$i \hspace{1cm} ${f%.*}} "
+				fi
 			fi
 			
 			if (( $i != $nFiles ))
@@ -502,8 +538,8 @@ function main()
 	NROWS=$4  # 14
 	ZOOM=$5  # IN | 30 | 50
 	SIZE=$6  # 100
-	ORIENT=$7 # FALSE
-	RANDOM_ORIENT=$8 # TRUE
+	ORIENT=$7 # TRUE
+	RANDOM_ORIENT=$8 # FALSE
 	local highlight=$9  # 1,4,5
 	####################################
 	
@@ -511,12 +547,12 @@ function main()
 	##### Defining default values ######
 	if [ -z "$oType" ] ; then oType="none"; fi
 	if [ -z "$FILTER" ] ; then FILTER="xyz";fi
-	if [ -z "$NCOLUMNS" ] ; then NCOLUMNS=8; fi
-	if [ -z "$NROWS" ] ; then NROWS=14; fi
-	if [ -z "$ZOOM" ] ; then ZOOM="IN"; fi
-	if [ -z "$SIZE" ] ; then SIZE=100; fi
-	if [ -z "$ORIENT" ] ; then ORIENT="FALSE"; fi
-	if [ -z "$RANDOM_ORIENT" ] ; then RANDOM_ORIENT="TRUE"; fi
+	if [ -z "$NCOLUMNS" ] ; then NCOLUMNS=6; fi
+	if [ -z "$NROWS" ] ; then NROWS=9; fi
+	if [ -z "$ZOOM" ] ; then ZOOM="120"; fi
+	if [ -z "$SIZE" ] ; then SIZE="120"; fi
+	if [ -z "$ORIENT" ] ; then ORIENT="TRUE"; fi
+	if [ -z "$RANDOM_ORIENT" ] ; then RANDOM_ORIENT="FALSE"; fi
 	####################################
 	
 	checkDependencies
@@ -559,7 +595,7 @@ function main()
 			;;
 		*)
 			echo "Usage: M3C.viewXYZ (u-pdf|s-pdf|pdf|gif) (xyz|rxyz) [number-of-columns] [number-of-rows] [zoom] [size] [orient] [random] [highlight-list]"
-			echo "defaults:                                                    8                  14         IN    100     FALSE    TRUE              "
+			echo "defaults:                                                    6                  9         120    120     TRUE    FALSE                  "
 			echo ""
 			echo "   @@ WARNING @@ Option to highlight molecules has been disabled in this version"
 			;;
