@@ -52,39 +52,39 @@ function filterIsomers()
 	do
 	        for id2 in `seq $(( $id1 + 1 )) $(( ${#files[@]} - 1 ))`
 	        do
-					chemF1=`molecule.chemicalFormula ${files[$id1]}`
-					chemF2=`molecule.chemicalFormula ${files[$id2]}`
+			chemF1=`molecule.chemicalFormula ${files[$id1]}`
+			chemF2=`molecule.chemicalFormula ${files[$id2]}`
 
-					q1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/q//g'`
-					q2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/q//g'`
+			q1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/q//g'`
+			q2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/q//g'`
 
-					m1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/m//g'`
-					m2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/m//g'`
+			m1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $3}' | sed 's/m//g'`
+			m2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $3}' | sed 's/m//g'`
+		
+			if [ "$chemF1" = "$chemF2" -a  "$q1" -eq "$q2" -a "$m1" -eq "$m2" ]
+			then
+				nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$i]}`
 				
-					if [ "$chemF1" = "$chemF2" -a  "$q1" = "$q2" -a "$m1" = "$m2" ]
-					then
-						nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$i]}`
-						
-						case "$nAtoms" in
-							2)
-								gamma=10.0
-								;;
-							3)
-								gamma=5.0
-								;;
-							*)
-								gamma=1.0
-								;;
-						esac
-							
-						test=`molecule.compare ${files[$id1]} ${files[$id2]} $gamma | grep OK | wc -l`
-						
-						if [ "$test" -eq 3 ]
-						then
-								rm ${files[$id1]}
-								break
-						fi
-					fi
+				case "$nAtoms" in
+					2)
+						gamma=10.0
+						;;
+					3)
+						gamma=5.0
+						;;
+					*)
+						gamma=1.0
+						;;
+				esac
+					
+				test=`molecule.compare ${files[$id1]} ${files[$id2]} $gamma | grep OK | wc -l`
+				
+				if [ "$test" -eq 3 ]
+				then
+						rm ${files[$id1]}
+						break
+				fi
+			fi
         	done
 	done
 
