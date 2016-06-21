@@ -45,6 +45,9 @@ function filterIsomers()
 	local nAtoms1=""
 	local nAtoms2=""
 	
+	pushd . &> /dev/null
+	cd $resultsDir
+	
 	local files=(`ls *.$FILTER 2> /dev/null`)
 	
 	for id1 in `seq 0 $(( ${#files[@]} - 1 ))`
@@ -94,7 +97,7 @@ function filterIsomers()
 	
 	# Hay que incluir algo aqui para renumerar los fiheros, ya que ahora sobreviran solo los ultimos
 	
-	cd ..
+	popd &> /dev/null
 }
 
 ##
