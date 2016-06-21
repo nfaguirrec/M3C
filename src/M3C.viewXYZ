@@ -42,6 +42,8 @@ SIZE="100"
 ORIENT="FALSE"
 RANDOM_ORIENT="TRUE"
 
+TABLE_HEADER="" # Internal variable
+
 ##
 # @brief
 ##
@@ -77,6 +79,7 @@ function makeLatexTableBase()
 	local effSize=`echo "1.6*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
 	local i=0
 	
+	echo "\vspace{0.5cm}"
 	echo "\begin{tabular}{|"
 	for i in `seq 1 $NCOLUMNS`
 	do
@@ -84,7 +87,12 @@ function makeLatexTableBase()
 	done
 	echo "}"
 	echo "\hline"
-
+	
+	if [ -n "$TABLE_HEADER" ]
+	then
+		echo "\multicolumn{`echo "$NCOLUMNS $nFiles" | gawk '{print $1<$2?$1:$2}'`}{|c|}{$TABLE_HEADER} \\\\\hline"
+	fi
+	
 	i=1
 	for f in $files
 	do
@@ -95,14 +103,14 @@ function makeLatexTableBase()
 		then
 			if [ -n "$symm" -a  -n "$estate" ]
 			then
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*} \hspace{5pt} $estate($symm)} &"
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*} \hspace{5pt} $estate~($symm)} &"
 			else
 				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*}} &"
 			fi
 		else
 			if [ -n "$symm" -a  -n "$estate" ]
 			then
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*} \hspace{5pt} $estate($symm)} "
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*} \hspace{5pt} $estate~($symm)} "
 			else
 				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*}} "
 			fi
@@ -121,6 +129,7 @@ function makeLatexTableBase()
 	echo "\end{tabular}"
 	echo ""
 }
+
 ##
 # @brief
 ##
@@ -144,105 +153,6 @@ function makeLatexTable()
 ##
 # @brief
 ##
-function makeLatexDocument()
-{
-	local highlight=$1  # 1,4,5
-	shift
-	local files=$*
-
-	echo "\\documentclass[10pt]{article}"
-	echo "\\usepackage[dvips]{graphicx,color}"
-	echo "\\usepackage{numprint}"
-	echo "\voffset -2cm"
-	echo "\oddsidemargin 0.0cm"
-	echo "\evensidemargin -0.6cm"
-	echo "\textheight 23cm"
-	echo "\textwidth 16.5cm"
-	echo "\\begin{document}"
-
-	declare -A highlighted
-
-	for item in `echo $highlight | gawk 'BEGIN{RS=","}{print $1}'`
-	do
-		highlighted[$item]=1
-	done
-
-	local files=`ls *.eps`
-	local nFiles=`echo $files | wc -w`
-	local effSize=`echo "1.6*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
-
-	echo "\begin{center}"
-	echo "\begin{tabular}{|"
-	for i in `seq 1 $NCOLUMNS`
-	do
-		echo ">{\centering\arraybackslash}p{${effSize}cm}|"
-	done
-	echo "}"
-	echo "\hline"
-
-	i=1
-	for f in $files
-	do
-		symm=`grep "SYMMETRY" ${f%.*}.$FILTER | gawk '{print $2}'`
-		estate=`grep "ELECTRONIC_STATE" ${f%.*}.$FILTER | gawk '{print $2}'`
-		
-		if (( $i%$NCOLUMNS != 0 && $i != $nFiles ))
-		then
-			if [ "${highlighted[$i]}" = 1 ]
-			then
-				if [ -n "$symm" -a  -n "$estate" ]
-				then
-					echo "\includegraphics[width=${effSize}cm]{$f} \textcolor{red}{\tiny{$i \hspace{1cm}${f%.*} \hspace{5pt} $estate($symm)}} &"
-				else
-					echo "\includegraphics[width=${effSize}cm]{$f} \textcolor{red}{\tiny{$i \hspace{1cm}${f%.*}}} &"
-				fi
-			else
-				if [ -n "$symm" -a  -n "$estate" ]
-				then
-					echo "\includegraphics[width=${effSize}cm]{$f} \tiny{$i \hspace{1cm} ${f%.*} \hspace{5pt} $estate($symm)} &"
-				else
-					echo "\includegraphics[width=${effSize}cm]{$f} \tiny{$i \hspace{1cm} ${f%.*}} &"
-				fi
-			fi
-		else
-			if [ "${highlighted[$i]}" = 1 ]
-			then
-				if [ -n "$symm" -a  -n "$estate" ]
-				then
-					echo "\includegraphics[width=${effSize}cm]{$f} \textcolor{red}{\tiny{$i \hspace{1cm}${f%.*} \hspace{5pt} $estate($symm)}} "
-				else
-					echo "\includegraphics[width=${effSize}cm]{$f} \textcolor{red}{\tiny{$i \hspace{1cm}${f%.*}}} "
-				fi
-			else
-				if [ -n "$symm" -a  -n "$estate" ]
-				then
-					echo "\includegraphics[width=${effSize}cm]{$f} \tiny{$i \hspace{1cm} ${f%.*} \hspace{5pt} $estate($symm)} "
-				else
-					echo "\includegraphics[width=${effSize}cm]{$f} \tiny{$i \hspace{1cm} ${f%.*}} "
-				fi
-			fi
-			
-			if (( $i != $nFiles ))
-			then
-				echo "\\\\\hline"
-			else
-				echo "\\\\\cline{1-$(($i%$NCOLUMNS))}"
-			fi
-		fi
-		
-		i=$(( $i+1 ))
-	done
-
-	echo "\end{tabular}"
-	echo "\end{center}"
-	echo ""
-
-	echo "\\end{document}"
-}
-
-##
-# @brief
-##
 function buildGifFiles()
 {
 	local iFile=""
@@ -256,9 +166,15 @@ function buildGifFiles()
 	
 	for iFile in `ls *.$FILTER`
 	do
-		sID=$RANDOM
-		
 		echo -n "$iFile ... "
+		
+		if [ -f ${iFile%.*}.gif ]
+		then
+			echo "OK*"
+			continue
+		fi
+		
+		sID=$RANDOM
 		
 		if [ "$RANDOM_ORIENT" == "TRUE" ]
 		then
@@ -305,9 +221,15 @@ function buildEPSFiles()
 	
 	for iFile in `ls *.$FILTER`
 	do
-		sID=$RANDOM
-		
 		echo -n "$iFile ... "
+		
+		if [ -f ${iFile%.*}.eps ]
+		then
+			echo "OK*"
+			continue
+		fi
+		
+		sID=$RANDOM
 		
 		if [ "$RANDOM_ORIENT" == "TRUE" ]
 		then
@@ -400,6 +322,8 @@ function geometriesByCategories()
 	for item in $categories
 	do
 		list=`grep " $item[.].*" .molValues$$ | gawk '{print $2}'`
+		
+		TABLE_HEADER=`echo $item | sed -r 's/([[:alpha:]]+)([[:digit:]]+)/\1\\$_\2\\$/g'`
 		makeLatexTable $list >> geometries-$$.tex
 	done
 	rm .molValues$$
@@ -464,32 +388,6 @@ function geometries()
 ##
 # @brief
 ##
-# function geometries()
-# {
-# 	local highlight=$1  # 1,4,5
-# 
-# 	echo "-----------------------------------"
-# 	echo " Generating report: geometries.pdf "
-# 	echo "-----------------------------------"
-# 
-# 	echo -n "Generating Latex document ... "
-# 	makeLatexDocument "$highlight" `ls *.eps` > geometries-$$.tex
-# 	echo "OK"
-# 
-# 	echo -n "Compiling Latex document ... "
-# 	latex geometries-$$.tex > /dev/null 2>&1
-# 	dvipdf geometries-$$.dvi > /dev/null 2>&1
-# 	rm geometries-$$.tex geometries-$$.aux geometries-$$.log geometries-$$.dvi
-# 	echo "OK"
-# 
-# 	mv geometries-$$.pdf geometries.pdf
-# 
-# 	if [ -n "$DISPLAY" ]
-# 	then
-# 		okular geometries.pdf > /dev/null 2>&1 &
-# 	fi
-# }
-
 function checkDependencies()
 {
 	JAVA_INTERP=""
@@ -548,7 +446,7 @@ function main()
 	if [ -z "$oType" ] ; then oType="none"; fi
 	if [ -z "$FILTER" ] ; then FILTER="xyz";fi
 	if [ -z "$NCOLUMNS" ] ; then NCOLUMNS=6; fi
-	if [ -z "$NROWS" ] ; then NROWS=9; fi
+	if [ -z "$NROWS" ] ; then NROWS=8; fi
 	if [ -z "$ZOOM" ] ; then ZOOM="120"; fi
 	if [ -z "$SIZE" ] ; then SIZE="120"; fi
 	if [ -z "$ORIENT" ] ; then ORIENT="TRUE"; fi
@@ -595,7 +493,7 @@ function main()
 			;;
 		*)
 			echo "Usage: M3C.viewXYZ (u-pdf|s-pdf|pdf|gif) (xyz|rxyz) [number-of-columns] [number-of-rows] [zoom] [size] [orient] [random] [highlight-list]"
-			echo "defaults:                                                    6                  9         120    120     TRUE    FALSE                  "
+			echo "defaults:                                                    6                  8         120    120     TRUE    FALSE                  "
 			echo ""
 			echo "   @@ WARNING @@ Option to highlight molecules has been disabled in this version"
 			;;
