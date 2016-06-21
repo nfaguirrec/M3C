@@ -48,28 +48,25 @@ function filterIsomers()
 	pushd . &> /dev/null
 	cd $resultsDir
 	
-	local files=(`ls *.$FILTER 2> /dev/null`)
+	local categories=`ls *.$FILTER | awk 'BEGIN{FS="[-]"}{map[$1]=1}END{for(item in map) print item}'`
 	
-	for id1 in `seq 0 $(( ${#files[@]} - 1 ))`
+	for category in $categories
 	do
-		for id2 in `seq $(( $id1 + 1 )) $(( ${#files[@]} - 1 ))`
+		echo "   Group $category"
+		
+		local files=(`ls $category-*.$FILTER 2> /dev/null`)
+		
+		for id1 in `seq 0 $(( ${#files[@]} - 1 ))`
 		do
-			if [ ! -f ${files[$id1]} -o ! -f ${files[$id2]} ]
-			then
-				continue
-			fi
-			
-			chemF1=`molecule.chemicalFormula ${files[$id1]}`
-			chemF2=`molecule.chemicalFormula ${files[$id2]}`
-			
-			q1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/q//g'`
-			q2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/q//g'`
-			
-			m1=`echo ${files[$id1]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/m//g'`
-			m2=`echo ${files[$id2]} | awk 'BEGIN{FS="[.-]"}{print $2}' | sed 's/m//g'`
-			
-			if [ "$chemF1" = "$chemF2" -a  "$q1" = "$q2" -a "$m1" = "$m2" ]
-			then
+			for id2 in `seq $(( $id1 + 1 )) $(( ${#files[@]} - 1 ))`
+			do
+				if [ ! -f ${files[$id1]} -o ! -f ${files[$id2]} ]
+				then
+					continue
+				fi
+				
+				echo -n "      Comparing ${files[$id1]} <-> ${files[$id2]} ... "
+				
 				nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${files[$id1]}`
 				
 				case "$nAtoms" in
@@ -88,14 +85,17 @@ function filterIsomers()
 				
 				if [ "$test" -eq 3 ]
 				then
+					echo "Equal"
 					rm ${files[$id1]}
 					break
+				else
+					echo "Different"
 				fi
-			fi
+			done
 		done
+		
+		echo ""
 	done
-	
-	# Hay que incluir algo aqui para renumerar los fiheros, ya que ahora sobreviran solo los ultimos
 	
 	popd &> /dev/null
 }
@@ -133,6 +133,12 @@ function main()
 	fi
 	mkdir merge
 	
+	echo ""
+	echo "-------------------"
+	echo " Combining isomers "
+	echo "-------------------"
+	echo ""
+	
 	for category in $categories
 	do
 		i=1
@@ -146,10 +152,10 @@ function main()
 				do
 					if [ "$FILTER" != "rxyz0" ]
 					then
-						printf "%60s%10s%40s\n" "$target"  "---->"  "merge/$category-$i.$FILTER"
+						echo "   $target"  " ----> "  "merge/$category-$i.$FILTER"
 						cp $target merge/$category-$i.$FILTER
 					else
-						printf "%60s%10s%40s\n" "$target"  "---->"  "merge/$category-$i.rxyz"
+						echo "   $target"  " ----> "  "merge/$category-$i.rxyz"
 						cp $target merge/$category-$i.rxyz
 					fi
 					
@@ -158,7 +164,6 @@ function main()
 			fi
 		done
 		echo ""
-		echo ""
 	done
 	
 	if [ "$FILTER" = "rxyz0" ]
@@ -166,9 +171,11 @@ function main()
 		FILTER="rxyz"
 	fi
 	
-	echo -n "Filtering of repeated isomers ... "
+	echo "-------------------------------"
+	echo " Checking for repeated isomers "
+	echo "-------------------------------"
+	echo ""
 	filterIsomers merge
-	echo "OK"
 }
 
 main $*
