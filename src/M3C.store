@@ -138,8 +138,10 @@ RSYMN["D6"]=12
 RSYMN["D6D"]=12
 RSYMN["D6H"]=12
 RSYMN["T"]=12
+RSYMN["TH"]=12
 RSYMN["TD"]=12
 RSYMN["OH"]=24
+RSYMN["IH"]=60
 
 declare -A OMEGAL  # Labels of the irreducible representations
 OMEGAL["S"]=1 # << Atoms
@@ -208,6 +210,17 @@ OMEGAL["SGU"]=1
 # OMEGAL["T2"]=0
 # OMEGAL["T2G"]=0
 # OMEGAL["T2U"]=0
+OMEGAL["FU"]=3    # mios, no de gaussian
+OMEGAL["F1\'"]=3  # mios, no de gaussian
+OMEGAL["F1G\'"]=3 # mios, no de gaussian
+OMEGAL["F2\'"]=3  # mios, no de gaussian
+OMEGAL["F2G"]=3   # mios, no de gaussian
+OMEGAL["F1U\'"]=3 # mios, no de gaussian
+OMEGAL["F2U"]=3   # mios, no de gaussian
+OMEGAL["GG\'"]=4  # mios, no de gaussian
+OMEGAL["HG\'"]=5  # mios, no de gaussian
+OMEGAL["GU"]=4    # mios, no de gaussian
+OMEGAL["HU"]=5    # mios, no de gaussian
 OMEGAL["??"]=1
 
 declare -A MAXVIBCHANNEL
@@ -384,6 +397,9 @@ function makeDB()
 function addMolecules()
 {
 	local listTarget=$*
+	
+	echo "### ERROR ### Esto hay que arreglarlo. hay que realizar la busqueda por categoria y luego dentro de la categoría verificar si el archivo existe o no. EL algoritmo sería similar a filterIsomers de M3C.geniso"
+	exit
 	
 	for target in $listTarget
 	do
