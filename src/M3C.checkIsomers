@@ -1,0 +1,192 @@
+#!/bin/bash
+##################################################################
+#
+#  This file is part of M3C
+#  Copyright (C) by authors (2016-2016)
+#  
+#  Authors:
+#    * Dr. Néstor F. Aguirre (2016-2016)
+#          nestor.aguirre@uam.es
+#  
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the
+#  following conditions are met:
+#  
+#   * Redistributions of binary or source code must retain
+#     the above copyright notice and this list of conditions
+#     and/or other materials provided with the distribution.
+#   * All advertising materials mentioning features or use of
+#     this software must display the following acknowledgement:
+#     
+#     This product includes software from M3C project.
+#
+##################################################################
+
+FILTER="xyz"
+
+##
+# @brief
+# @todo Esta función se utiliza en varios script, así que hay que centralizarla. OJO en este fichero no tiene el rm
+##
+function filterIsomers()
+{
+	local resultsDir=$1
+	
+	local id1=""
+	local id2=""
+	local value=""
+	local nAtoms1=""
+	local nAtoms2=""
+	
+	pushd . &> /dev/null
+	cd $resultsDir
+	
+	local categories=`ls *.$FILTER | awk 'BEGIN{FS="[-]"}{map[$1]=1}END{for(item in map) print item}'`
+	
+	for category in $categories
+	do
+		echo "   Group $category"
+		
+		local files=(`ls $category-*.$FILTER 2> /dev/null`)
+		
+		for id1 in `seq 0 $(( ${#files[@]} - 1 ))`
+		do
+			for id2 in `seq $(( $id1 + 1 )) $(( ${#files[@]} - 1 ))`
+			do
+				if [ ! -f ${files[$id1]} -o ! -f ${files[$id2]} ]
+				then
+					continue
+				fi
+				
+				echo -n "      Comparing ${files[$id1]} <-> ${files[$id2]} ... "
+				
+				nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${files[$id1]}`
+				
+				case "$nAtoms" in
+					2)
+						gamma=10.0
+						;;
+					3)
+						gamma=5.0
+						;;
+					*)
+						gamma=1.0
+						;;
+				esac
+					
+				test=`molecule.compare ${files[$id1]} ${files[$id2]} $gamma | grep OK | wc -l`
+				
+				if [ "$test" -eq 3 ]
+				then
+					echo "Equal"
+# 					rm ${files[$id1]}
+					break
+				else
+					echo "Different"
+				fi
+			done
+		done
+		
+		echo ""
+	done
+	
+	popd &> /dev/null
+}
+
+##
+# @brief
+##
+function checkConsistence()
+{
+	for ifile in `ls *.$FILTER`
+	do
+		echo -n "Checking $ifile ... "
+		
+		formulaFromFileName=`echo $ifile | awk 'BEGIN{FS="[.-]"}{print $1}'`
+		chargeID=`echo $ifile | awk 'BEGIN{FS="[.-]"}{print $2}'`
+		multID=`echo $ifile | awk 'BEGIN{FS="[.-]"}{print $3}'`
+		isomerID=`echo $ifile | awk 'BEGIN{FS="[.-]"}{print $4}'`
+		
+		if [ "$formulaFromFileName" != "`molecule.chemicalFormula $ifile`" ]
+		then
+			echo ""
+			echo "### ERROR ### Inconsistency in filename ( $formulaFromFileName --> `molecule.chemicalFormula $ifile` )"
+			kill $$
+		fi
+		
+		if [[ ! "$chargeID" =~ ^q[0-9]+$ ]]
+		then
+			echo ""
+			echo "### ERROR ### Inconsistency in chargeID ( $chargeID --> q[0-9]+ )"
+			kill $$
+		fi
+		
+# 		if [[ ! "$multID" =~ ^m[1-9]+$ ]]
+# 		then
+# 			echo ""
+# 			echo "### ERROR ### Inconsistency in multID ( $multID --> m[1-9]+ )"
+# 			kill $$
+# 		fi
+		
+		if [[ ! "$isomerID" =~ ^[0-9]+$ ]]
+		then
+			echo ""
+			echo "### ERROR ### Inconsistency in isomerID ( $isomerID --> [0-9]+ )"
+			kill $$
+		fi
+		
+		if [ "$FILTER" = "rxyz" ]
+		then
+			nFreqFromFile=`grep FREQUENCIES $ifile | awk '{print $2}'`
+			nFreqExpected=`molecule.fv $ifile | awk '{print $1}'`
+			
+			if [ "$nFreqFromFile" -ne "$nFreqExpected" ]
+			then
+				echo ""
+				echo "### ERROR ### Inconsistency in number of frequencies ( $nFreqFromFile --> $nFreqExpected )"
+				kill $$
+			fi
+			
+			energyFromFile=`grep Energy $ifile | awk '{print $3}'`
+			
+			if [[ ! "$energyFromFile" =~ ^[-]*[0-9]+.[0-9]+$ ]]
+			then
+				echo ""
+				echo "### ERROR ### Inconsistency in value of energy ( $energyFromFile )"
+				kill $$
+			fi
+		fi
+		
+		echo "OK"
+	done
+}
+
+##
+# @brief
+##
+function main()
+{
+	if [ "$1" = "xyz" -o "$1" = "rxyz" -o "$1" = "rxyz0" ]
+	then
+		FILTER=$1
+	else
+		echo "usage:"
+		echo "    M3C.checkIsomers [xyz|rxyz|rxyz0]"
+		echo "                           xyz       "
+		exit
+	fi
+	
+	echo "-------------------------------"
+	echo " Checking format consistence   "
+	echo "-------------------------------"
+	echo ""
+	checkConsistence
+	
+	echo "-------------------------------"
+	echo " Checking for repeated isomers "
+	echo "-------------------------------"
+	echo ""
+	filterIsomers .
+}
+
+main $*
