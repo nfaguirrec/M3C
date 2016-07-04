@@ -76,7 +76,7 @@ function makeLatexTableBase()
 	local files=$*
 	
 	local nFiles=`echo $files | wc -w`
-	local effSize=`echo "1.6*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
+	local effSize=`echo "1.8*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
 	local i=0
 	
 	echo "\vspace{0.5cm}"
@@ -143,7 +143,7 @@ function makeLatexTable()
 	local files=$*
 	
 	local nFiles=`echo $files | wc -w`
-	local effSize=`echo "1.6*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
+	local effSize=`echo "1.8*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
 	local list=""
 	
 	echo $files | awk 'BEGIN{RS=" "; id=1; n=1}{print $1 > sprintf("%05d.mkgroup",id); if(n%'$(($NCOLUMNS*$NROWS))'==0){ id=id+1;}; n=n+1}'
@@ -437,8 +437,8 @@ function main()
 	###### Reading from input line######
 	local oType=$1  # unsorted|sorted|gif
 	FILTER=$2  # xyz
-	NCOLUMNS=$3  # 8
-	NROWS=$4  # 14
+	NCOLUMNS=$3  # 6
+	NROWS=$4  # 7
 	ZOOM=$5  # IN | 30 | 50
 	SIZE=$6  # 100
 	ORIENT=$7 # TRUE
@@ -451,7 +451,7 @@ function main()
 	if [ -z "$oType" ] ; then oType="none"; fi
 	if [ -z "$FILTER" ] ; then FILTER="xyz";fi
 	if [ -z "$NCOLUMNS" ] ; then NCOLUMNS=6; fi
-	if [ -z "$NROWS" ] ; then NROWS=8; fi
+	if [ -z "$NROWS" ] ; then NROWS=7; fi
 	if [ -z "$ZOOM" ] ; then ZOOM="120"; fi
 	if [ -z "$SIZE" ] ; then SIZE="120"; fi
 	if [ -z "$ORIENT" ] ; then ORIENT="TRUE"; fi
@@ -498,7 +498,7 @@ function main()
 			;;
 		*)
 			echo "Usage: M3C.viewXYZ (u-pdf|s-pdf|pdf|gif) (xyz|rxyz) [number-of-columns] [number-of-rows] [zoom] [size] [orient] [random] [highlight-list]"
-			echo "defaults:                                                    6                  8         120    120     TRUE    FALSE                  "
+			echo "defaults:                                                    6                  7         120    120     TRUE    FALSE                  "
 			echo ""
 			echo "   @@ WARNING @@ Option to highlight molecules has been disabled in this version"
 			;;

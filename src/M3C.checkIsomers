@@ -135,7 +135,7 @@ function checkConsistence()
 			kill $$
 		fi
 		
-		if [ "$FILTER" = "rxyz" ]
+		if [ "$FILTER" = "rxyz" -o "$FILTER" = "rxyz0" ]
 		then
 			nFreqFromFile=`grep FREQUENCIES $ifile | awk '{print $2}'`
 			nFreqExpected=`molecule.fv $ifile | awk '{print $1}'`
