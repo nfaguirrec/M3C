@@ -42,7 +42,9 @@ SIZE="100"
 ORIENT="FALSE"
 RANDOM_ORIENT="TRUE"
 
-TABLE_HEADER="" # Internal variable
+# Internal variables
+TABLE_HEADER="" 
+MOL_ITERATOR=1
 
 ##
 # @brief
@@ -76,7 +78,8 @@ function makeLatexTableBase()
 	local files=$*
 	
 	local nFiles=`echo $files | wc -w`
-	local effSize=`echo "1.8*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
+	local effSize=`echo "2.0*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
+	local effSizeBlank=`echo "0.5*$effSize" | bc -l`
 	local i=0
 	
 	echo "\vspace{0.5cm}"
@@ -90,7 +93,12 @@ function makeLatexTableBase()
 	
 	if [ -n "$TABLE_HEADER" ]
 	then
-		echo "\multicolumn{`echo "$NCOLUMNS $nFiles" | gawk '{print $1<$2?$1:$2}'`}{|c|}{$TABLE_HEADER} \\\\\hline"
+		if [ $MOL_ITERATOR -eq 1 ]
+		then
+			echo "\multicolumn{`echo "$NCOLUMNS $nFiles" | gawk '{print $1<$2?$1:$2}'`}{|c|}{$TABLE_HEADER} \\\\\hline"
+		else
+			echo "\multicolumn{`echo "$NCOLUMNS $nFiles" | gawk '{print $1<$2?$1:$2}'`}{|c|}{$TABLE_HEADER (\textit{Continued from previous page})} \\\\\hline"
+		fi
 	fi
 	
 	i=1
@@ -103,16 +111,16 @@ function makeLatexTableBase()
 		then
 			if [ -n "$symm" -a  -n "$estate" ]
 			then
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*} \hspace{5pt} $estate~($symm)} &"
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} ${f%.*} \hspace{5pt} $estate~($symm)} &"
 			else
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*}} &"
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} ${f%.*}} &"
 			fi
 		else
 			if [ -n "$symm" -a  -n "$estate" ]
 			then
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*} \hspace{5pt} $estate~($symm)} "
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} ${f%.*} \hspace{5pt} $estate~($symm)} "
 			else
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{$i \hspace{1cm} ${f%.*}} "
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} ${f%.*}} "
 			fi
 			
 			if (( $i != $nFiles ))
@@ -129,6 +137,7 @@ function makeLatexTableBase()
 		fi
 		
 		i=$(( $i+1 ))
+		MOL_ITERATOR=$(( ${MOL_ITERATOR}+1 ))
 	done
 
 	echo "\end{tabular}"
@@ -143,15 +152,18 @@ function makeLatexTable()
 	local files=$*
 	
 	local nFiles=`echo $files | wc -w`
-	local effSize=`echo "1.8*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
+	local effSize=`echo "2.0*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
 	local list=""
 	
 	echo $files | awk 'BEGIN{RS=" "; id=1; n=1}{print $1 > sprintf("%05d.mkgroup",id); if(n%'$(($NCOLUMNS*$NROWS))'==0){ id=id+1;}; n=n+1}'
+	
 	for item in `ls *.mkgroup`
 	do
 		list=`cat $item`
+		
 		makeLatexTableBase $list
 	done
+	
 	rm *.mkgroup
 }
 
@@ -324,13 +336,17 @@ function geometriesByCategories()
 	done
 	
 	categories=`sort -k1 -n .molValues$$ | gawk '{ gsub("[.].*","",$2); if( $2 in map ){ a=1 }else{ print $2 }; map[$2]=1 }'`
+	
 	for item in $categories
 	do
 		list=`grep " $item[.].*" .molValues$$ | gawk '{print $2}'`
 		
 		TABLE_HEADER=`echo $item | sed -r 's/([[:alpha:]]+)([[:digit:]]+)/\1\\$_\2\\$/g'`
+		
+		MOL_ITERATOR=1
 		makeLatexTable $list >> geometries-$$.tex
 	done
+	
 	rm .molValues$$
 	
 	makeLatexFooter >> geometries-$$.tex
@@ -367,6 +383,7 @@ function geometries()
 	
 	makeLatexHeader > geometries-$$.tex
 	
+	MOL_ITERATOR=1
 	makeLatexTable `ls *.$FILTER` >> geometries-$$.tex
 	
 	makeLatexFooter >> geometries-$$.tex
@@ -437,7 +454,7 @@ function main()
 	###### Reading from input line######
 	local oType=$1  # unsorted|sorted|gif
 	FILTER=$2  # xyz
-	NCOLUMNS=$3  # 6
+	NCOLUMNS=$3  # 5
 	NROWS=$4  # 7
 	ZOOM=$5  # IN | 30 | 50
 	SIZE=$6  # 100
@@ -450,7 +467,7 @@ function main()
 	##### Defining default values ######
 	if [ -z "$oType" ] ; then oType="none"; fi
 	if [ -z "$FILTER" ] ; then FILTER="xyz";fi
-	if [ -z "$NCOLUMNS" ] ; then NCOLUMNS=6; fi
+	if [ -z "$NCOLUMNS" ] ; then NCOLUMNS=5; fi
 	if [ -z "$NROWS" ] ; then NROWS=7; fi
 	if [ -z "$ZOOM" ] ; then ZOOM="120"; fi
 	if [ -z "$SIZE" ] ; then SIZE="120"; fi
@@ -498,7 +515,7 @@ function main()
 			;;
 		*)
 			echo "Usage: M3C.viewXYZ (u-pdf|s-pdf|pdf|gif) (xyz|rxyz) [number-of-columns] [number-of-rows] [zoom] [size] [orient] [random] [highlight-list]"
-			echo "defaults:                                                    6                  7         120    120     TRUE    FALSE                  "
+			echo "defaults:                                                    5                  7         120    120     TRUE    FALSE                  "
 			echo ""
 			echo "   @@ WARNING @@ Option to highlight molecules has been disabled in this version"
 			;;
