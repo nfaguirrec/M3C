@@ -756,7 +756,7 @@ module Reactor_
 			warningNegativeEnergy = .false.
 			minValue = Math_INF
 			minNegativeValue = Math_INF
-			do dN=1,reactives.nAtoms()
+			do dN=1,2 ! Maximum number of fragments is 3
 				call this.setType( "S:"//trim(FString_fromInteger(dN)) )
 				
 				call fragmentsHistogram.init()
