@@ -1282,7 +1282,7 @@ EOF
 	
 cat >> .plotMtj-$iFile$$ << EOF
 "../$eDistFile" u 1:(100*\$2/$y2Max) axis x1y2 notitle smooth csplines w l ls 0 lw 4 lc rgb "gray60", \\
-"../$eDistFile" u 1:(100*\$2/$y2Max) axis x1y2 notitle smooth cspline w filledcurve ls 0 lc rgb "gray90", \\
+"../$eDistFile" u 1:(100*\$2/$y2Max) axis x1y2 notitle smooth cspline w filledcurve y2 ls 0 lc rgb "gray90", \\
 EOF
 	fi
 	####################################################

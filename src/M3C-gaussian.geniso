@@ -160,8 +160,8 @@ function generateIsomers()
 				2)
 					molRadius=`echo "$molRadius*3.0" | bc -l`
 					;;
-				3)
-					molRadius=`echo "$molRadius*1.5" | bc -l`
+				*)
+					molRadius=`echo "$molRadius*2.0" | bc -l`
 					;;
 			esac
 			
