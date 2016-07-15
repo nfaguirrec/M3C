@@ -5,10 +5,11 @@ SCIFT_HOME = /home/nestor/Develop/scift
 
 all:
 	cd src; make; cd ..
-# 	cd examples; make; cd ..
+	cd utils/libmsym/; make; cd ../../
 
 clean:
-	cd src; make clean
+	cd src; make clean; cd ..
+	cd utils/libmsym/; make clean; cd ../../
 	
 # doc: doxyfile src/libscift.a
 # 	doxygen doxyfile

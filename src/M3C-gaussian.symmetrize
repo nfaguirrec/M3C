@@ -74,7 +74,7 @@ main()
 	rm symmetrize/* 2> /dev/null
 	for f in `ls *.rxyz`
 	do
-		../../checkSym $f > .tmpXYZ 2> /dev/null
+		molecule.symmetrize $f > .tmpXYZ 2> /dev/null
 		
 		if [ -n "`cat .tmpXYZ | gawk '{print $1}'`" ]
 		then
