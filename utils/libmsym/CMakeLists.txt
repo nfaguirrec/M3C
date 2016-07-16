@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(msym)
-add_definitions(-std=c99 -I. -static -static-libgcc)
+#add_definitions(-std=c99 -I. -static -static-libstdc++ -static-libgcc)
+
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -I. -static -static-libgcc -static-libstdc++")
 
 add_library(msym STATIC
 basis_function.c   character_table.h  debug.c     elements.h         geometry.h  msym.c        msym.h         point_group.c  rsh.h       symmetrize.c  symmetry.h
