@@ -70,6 +70,8 @@ main()
 	fi
 	nThreads=$(( $nThreads/$NPROCSHARED ))
 	
+	echo "Changes in symmetry"
+	echo "-------------------"
 	mkdir symmetrize 2> /dev/null
 	rm symmetrize/* 2> /dev/null
 	for f in `ls *.rxyz`
@@ -78,13 +80,12 @@ main()
 		
 		if [ -n "`cat .tmpXYZ | gawk '{print $1}'`" ]
 		then
-			echo $f
-			echo "---------------------"
 			oldSym=`grep SYMMETRY $f | gawk '{print $2}'`
 			newSym=`cat .tmpXYZ | gawk '(NR==2){print $1}'`
 			
 			if [ "$oldSym" != "$newSym" ]
 			then
+				echo "$f: $oldSym-->$newSym"
 				cp .tmpXYZ symmetrize/${f%.*}.xyz
 				sed -i 's/'"$newSym"'/'"$oldSym"'-->'"$newSym"'/g' symmetrize/${f%.*}.xyz
 			fi
@@ -93,6 +94,7 @@ main()
 		rm .tmpXYZ
 	done
 	cd symmetrize
+	echo ""
 	
 	if [ -d "history.freqs" ]
 	then
