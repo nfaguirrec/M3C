@@ -52,8 +52,8 @@ frequencies()
 	local mult=$3
 	
 	freqsGAUSSIANTemplate $GAUSSIAN_TEMPLATE $NPROCSHARED $iFileXYZ $charge $mult $DEBUG > ${iFileXYZ%.*}.rxyz
-	mv ${iFileXYZ%.*}.out history.symmetrize/ 2> /dev/null
-	mv ${iFileXYZ%.*}.com history.symmetrize/ 2> /dev/null
+	mv ${iFileXYZ%.*}.out history.freqs/ 2> /dev/null
+	mv ${iFileXYZ%.*}.com history.freqs/ 2> /dev/null
 }
 
 main()
@@ -203,6 +203,7 @@ main()
 			echo "$f:  $oldEnergy --> $newEnergy"
 			cp ../$f ../$f.nosym
 			cp $f ../
+			cp history.freqs/${f%.*}.* ../history.freqs/
 		fi
 	done
 }
