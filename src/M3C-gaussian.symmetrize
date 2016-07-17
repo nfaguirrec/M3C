@@ -205,7 +205,11 @@ main()
 			echo "$f:  $oldEnergy --> $newEnergy"
 			cp ../$f ../$f.nosym
 			cp $f ../
-			cp history.freqs/${f%.*}.* ../history.freqs/
+			
+			if [ -d ../history.freqs/ ]
+			then
+				cp history.freqs/${f%.*}.* ../history.freqs/
+			fi
 		fi
 	done
 }
