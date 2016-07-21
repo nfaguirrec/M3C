@@ -87,7 +87,6 @@ main()
 			then
 				echo "$f: $oldSym-->$newSym"
 				cp .tmpXYZ symmetrize/${f%.*}.xyz
-				sed -i 's/'"$newSym"'/'"$oldSym"'-->'"$newSym"'/g' symmetrize/${f%.*}.xyz
 			fi
 		fi
 		
