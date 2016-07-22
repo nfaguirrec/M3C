@@ -299,8 +299,8 @@ function showDataBase()
 					[ -z "$channel" ] && channel="NONE"
 					
 					printf "\t%21s%5d%3d%3d%5d%30s%20.6f%30s%s%8.2f  %s\n" \
-						"$finalLabel" $charge $mult "${OMEGAL[${elecState#*-}]}" "${RSYMN[$groupSym]}" $fileName $energy $channel \
-						"    #" $channelEnergy "$groupSym($elecState)"
+						"$finalLabel" "$charge" "$mult" "${OMEGAL[${elecState#*-}]}" "${RSYMN[$groupSym]}" "$fileName" "$energy" "$channel" \
+						"    #" "$channelEnergy" "$groupSym($elecState)"
 				else
 					printf "\t%21s%5d%3d%3d%5d%30s%20.6f%30s\n" "$finalLabel" $charge $mult 0 1 $fileName $energy 0.0000
 				fi
