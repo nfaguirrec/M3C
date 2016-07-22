@@ -341,7 +341,7 @@ function geometriesByCategories()
 	do
 		list=`grep " $item[.].*" .molValues$$ | gawk '{print $2}'`
 		
-		TABLE_HEADER=`echo $item | sed -r 's/([[:alpha:]]+)([[:digit:]]+)/\1\\$_\2\\$/g'`
+		TABLE_HEADER=`echo $item | sed -r 's/([[:alpha:]]+)([[:digit:]]+)/\1\\$_{\2}\\$/g'`
 		
 		MOL_ITERATOR=1
 		makeLatexTable $list >> geometries-$$.tex
