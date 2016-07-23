@@ -261,6 +261,7 @@ function buildEPSFiles()
 		fi
 		
 		cat > geom$sID.jmol << EOF
+set bondTolerance 0.75
 load "rand${iFile}${sID}"
 background [255,255,255]
 wireframe 0.15; spacefill 23%
@@ -326,20 +327,22 @@ function geometriesByCategories()
 		fileName=`echo $line | gawk '{print $1}'`
 		charge=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
 		mult=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
+		id=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $4}'`
 		nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}(NR>3 && $0~/^[[:blank:]]*$/){exit}END{print i}' $fileName`
 		mass=`molecule.mass $fileName | gawk '{print int($1/1822.88853)}'`
 		
 		if [ -z "$charge" ]; then charge=0; fi
 		if [ -z "$mult" ]; then mult=0; fi
+		if [ -z "$id" ]; then id=0; fi
 		
-		echo $((1000000*$charge+100000*$nAtoms+10*$mass+$mult)) $fileName $energy >> .molValues$$
+		echo $((100000000*$charge+10000000*$nAtoms+1000*$mass+100*$mult+$id)) $fileName $energy >> .molValues$$
 	done
 	
 	categories=`sort -k1 -n .molValues$$ | gawk '{ gsub("[.].*","",$2); if( $2 in map ){ a=1 }else{ print $2 }; map[$2]=1 }'`
 	
 	for item in $categories
 	do
-		list=`grep " $item[.].*" .molValues$$ | gawk '{print $2}'`
+		list=`grep " $item[.].*" .molValues$$ | sort -k1 -n | gawk '{print $2}'`
 		
 		TABLE_HEADER=`echo $item | sed -r 's/([[:alpha:]]+)([[:digit:]]+)/\1\\$_{\2}\\$/g'`
 		
