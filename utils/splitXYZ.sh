@@ -9,7 +9,7 @@ BEGIN{
 {
 	if($0==$1){
 		n=$1
-		fname=sprintf("mol-%d.xyz",id)
+		fname=sprintf("mol-%05d.xyz",id)
 		
 		printf( "Generating ... %s ", fname )
 		

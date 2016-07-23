@@ -95,9 +95,9 @@ showDataBase()
 		
 		if [ -z "$charge" ]; then charge=0; fi
 		if [ -z "$mult" ]; then mult=0; fi
-
-		echo $((10000000*$charge+1000000*$nAtoms+100*$mass+10*$id+$mult)) $fileName $energy >> .molValues$$
+		if [ -z "$id" ]; then id=0; fi
 		
+		echo $((100000000*$charge+10000000*$nAtoms+1000*$mass+100*$mult+$id)) $fileName $energy >> .molValues$$
 	fi
   done
   

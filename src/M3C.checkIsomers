@@ -23,6 +23,7 @@
 ##################################################################
 
 FILTER="xyz"
+REMOVE_DUPLICATES="FALSE"
 
 ##
 # @brief
@@ -78,8 +79,16 @@ function filterIsomers()
 				
 				if [ "$test" -eq 3 ]
 				then
-					echo "Equal"
-# 					rm ${files[$id1]}
+					echo -n "Equal"
+					
+					if [ "$REMOVE_DUPLICATES" = "TRUE" ]
+					then
+						echo "--> Removed (${files[$id1]})"
+						rm ${files[$id1]}
+					else
+						echo ""
+					fi
+					
 					break
 				else
 					echo "Different"
@@ -171,10 +180,12 @@ function main()
 		FILTER=$1
 	else
 		echo "usage:"
-		echo "    M3C.checkIsomers [xyz|rxyz|rxyz0]"
-		echo "                           xyz       "
+		echo "    M3C.checkIsomers [xyz|rxyz|rxyz0] [removeDuplicates]"
+		echo "                           xyz              FALSE"
 		exit
 	fi
+	
+	REMOVE_DUPLICATES=$2
 	
 	echo "-------------------------------"
 	echo " Checking format consistence   "
