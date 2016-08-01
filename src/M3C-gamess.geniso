@@ -37,6 +37,10 @@ else
 	source $M3C_HOME/src/gamessDriver.sh
 fi
 
+BONDING_TOL_SCALE=1.2  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
+# SIMILARITY_THR=0.92 # coarse
+SIMILARITY_THR=0.97 # fine
+
 ##
 # @brief
 ##
@@ -63,21 +67,9 @@ function filterIsomers()
 		
 			if [ "$chemF1" = "$chemF2" -a  "$q1" -eq "$q2" -a "$m1" -eq "$m2" ]
 			then
-				nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${list[$i]}`
+				echo -n "      Comparing ${files[$id1]} <-> ${files[$id2]} ... "
 				
-				case "$nAtoms" in
-					2)
-						gamma=10.0
-						;;
-					3)
-						gamma=5.0
-						;;
-					*)
-						gamma=1.0
-						;;
-				esac
-					
-				test=`molecule.compare ${files[$id1]} ${files[$id2]} $gamma | grep OK | wc -l`
+				test=`molecule.compare ${files[$id1]} ${files[$id2]} false $SIMILARITY_THR $BONDING_TOL_SCALE | grep OK | wc -l`
 				
 				if [ "$test" -eq 3 ]
 				then
