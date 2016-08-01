@@ -25,6 +25,10 @@
 FILTER="xyz"
 REMOVE_DUPLICATES="FALSE"
 
+BONDING_TOL_SCALE=1.2  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
+# SIMILARITY_THR=0.92 # coarse
+SIMILARITY_THR=0.97 # fine
+
 ##
 # @brief
 # @todo Esta función se utiliza en varios script, así que hay que centralizarla. OJO en este fichero no tiene el rm
@@ -61,21 +65,7 @@ function filterIsomers()
 				
 				echo -n "      Comparing ${files[$id1]} <-> ${files[$id2]} ... "
 				
-				nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' ${files[$id1]}`
-				
-				case "$nAtoms" in
-					2)
-						gamma=10.0
-						;;
-					3)
-						gamma=5.0
-						;;
-					*)
-						gamma=1.0
-						;;
-				esac
-					
-				test=`molecule.compare ${files[$id1]} ${files[$id2]} $gamma | grep OK | wc -l`
+				test=`molecule.compare ${files[$id1]} ${files[$id2]} false $SIMILARITY_THR $BONDING_TOL_SCALE | grep OK | wc -l`
 				
 				if [ "$test" -eq 3 ]
 				then
@@ -130,12 +120,12 @@ function checkConsistence()
 			kill $$
 		fi
 		
-# 		if [[ ! "$multID" =~ ^m[1-9]+$ ]]
-# 		then
-# 			echo ""
-# 			echo "### ERROR ### Inconsistency in multID ( $multID --> m[1-9]+ )"
-# 			kill $$
-# 		fi
+		if [[ ! "$multID" =~ ^m[1-9]+$ ]]
+		then
+			echo ""
+			echo "### ERROR ### Inconsistency in multID ( $multID --> m[1-9]+ )"
+			kill $$
+		fi
 		
 		if [[ ! "$isomerID" =~ ^[0-9]+$ ]]
 		then
@@ -180,8 +170,8 @@ function main()
 		FILTER=$1
 	else
 		echo "usage:"
-		echo "    M3C.checkIsomers [xyz|rxyz|rxyz0] [removeDuplicates]"
-		echo "                           xyz              FALSE"
+		echo "    M3C.check [xyz|rxyz|rxyz0] [removeDuplicates]"
+		echo "                    xyz              FALSE"
 		exit
 	fi
 	

@@ -261,7 +261,7 @@ function buildEPSFiles()
 		fi
 		
 		cat > geom$sID.jmol << EOF
-set bondTolerance 0.75
+# set bondTolerance 0.75
 load "rand${iFile}${sID}"
 background [255,255,255]
 wireframe 0.15; spacefill 23%
