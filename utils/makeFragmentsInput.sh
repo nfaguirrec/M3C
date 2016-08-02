@@ -11,7 +11,7 @@ do
 	for f in `ls init/*.xyz`
 	do
 		name=`echo $f | sed 's/init\\///g'`
-		mult=`molecule.minMult $f`
+		mult=`molecule.minMult $f $q`
 		
 		printf "%20s%8d%5d\n" $name $q $mult
 	done
@@ -21,7 +21,7 @@ do
 	for f in `ls init/*.xyz`
 	do
 		name=`echo $f | sed 's/init\\///g'`
-		mult=`molecule.minMult $f`
+		mult=`molecule.minMult $f $q`
 		
 		printf "%20s%8d%5d\n" $name $q $(( $mult + 2 ))
 	done
