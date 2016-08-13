@@ -2,19 +2,11 @@
 ##################################################################
 #
 #  This file is part of M3C
-#  Copyright (C) by authors (2012-2016)
+#  Copyright (C) by authors (2016-2016)
 #  
 #  Authors:
-#    * Dr. Néstor F. Aguirre (2012-2016)
+#    * Dr. Néstor F. Aguirre (2016-2016)
 #          nestor.aguirre@uam.es
-#    * Dr. Sergio Díaz-Tendero (2012-2015)
-#          sergio.diaztendero@uam.es
-#    * Prof. M. Paul-Antoine Hervieux (2012-2015)
-#          Paul-Antoine.Hervieux@ipcms.unistra.fr
-#    * Prof. Fernando Martín (2012-2015)
-#          fernando.martin@uam.es
-#    * Prof. Manuel Alcamí (2012-2015)
-#          manuel.alcami@uam.es
 #  
 #  Redistribution and use in source and binary forms, with or
 #  without modification, are permitted provided that the
@@ -57,7 +49,7 @@ function main()
 		exit
 	fi
 	
-	categories2=`ls $dir2 | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
+	categories1=`ls $dir1 | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
 	
 	if [ -d "difference" ]
 	then
@@ -66,15 +58,18 @@ function main()
 	fi
 	mkdir difference
 	
+	echo ""
+	echo -n "Copying files from $dir1 to difference ... "
 	cp $dir1/*.$FILTER difference/
+	echo "OK"
 	
 	echo ""
-	echo "-------------------"
-	echo " Combining isomers "
-	echo "-------------------"
+	echo "----------------------"
+	echo " Checking differences "
+	echo "----------------------"
 	echo ""
 	
-	for category in $categories2
+	for category in $categories1
 	do
 		pointerFiles=`ls $dir2/$category*.$FILTER 2> /dev/null`
 		targetFiles=`ls difference/$category*.$FILTER 2> /dev/null`
@@ -91,21 +86,18 @@ function main()
 						continue
 					fi
 					
-					echo -n "      Comparing $dir2/$pointer --> $dir1/$target ... "
+					echo -n "      Comparing $pointer --> $target ... "
 					
-					echo -n "      Comparing ${files[$id1]} <-> ${files[$id2]} ... "
-					
-					test=`molecule.compare $dir2/$pointer difference/$target false $SIMILARITY_THR $BONDING_TOL_SCALE | grep OK | wc -l`
+					test=`molecule.compare $pointer $target false $SIMILARITY_THR $BONDING_TOL_SCALE | grep OK | wc -l`
 					
 					if [ "$test" -eq 3 ]
 					then
 						echo "Equal"
-						rm ${files[$id1]}
+						rm $target
 						break
 					else
 						echo "Different"
 					fi
-
 				done
 			done
 		fi
