@@ -1207,7 +1207,7 @@ function energyDiagram()
 	'"`cat $M3C_HOME/utils/M3CUtils.gawk`"'   # Debería ser la anterior linea, pero solo está disponible para gawk >= 2011
 	{
 		print reduceM3CLabel($1)
-	}' tmp-$$ > keys.dat
+	}' tmp-$$ | sed '{s/\(C\)\([0-9]\)/\1_\2/g;s/p/^{+}/g}' > keys.dat
 	rm tmp-$$
 
 	if [ "$type" = "Cd.vs.E" -o "$type" = "Sd.vs.E" ]
