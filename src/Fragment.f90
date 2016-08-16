@@ -818,9 +818,11 @@ module Fragment_
 	subroutine updateLnWv( this )
 		class(Fragment) :: this
 		
-		real(8) :: averVibFreq
+		integer :: i, eff_fv
+		real(8) :: ssum
+! 		real(8) :: averVibFreq
 		
-		averVibFreq = product(this.vibFrequencies)**(1.0_8/size(this.vibFrequencies))
+! 		averVibFreq = product(this.vibFrequencies)**(1.0_8/size(this.vibFrequencies))
 		
 		if( this.nAtoms() == 1 .or. this.frozen ) then
 			this.LnWv_ = 0.0_8
@@ -829,8 +831,20 @@ module Fragment_
 				write(*,*) "frozen"
 			end if
 		else
-			this.LnWv_ = real(this.fv()-1,8)*log(this.vibrationalEnergy_) &
-						-log(Gamma(real(this.fv(),8))) - sum(log(this.vibFrequencies))
+			ssum = 0.0_8
+			eff_fv = 0
+			do i=1,size(this.vibFrequencies)
+				if( this.vibFrequencies(i) > 0.0_8 ) then
+					ssum = ssum + log(this.vibFrequencies(i))
+					eff_fv = eff_fv + 1
+				end if
+			end do
+			
+			this.LnWv_ = real(eff_fv-1,8)*log(this.vibrationalEnergy_) &
+						-log(Gamma(real(eff_fv,8))) - ssum
+			
+! 			this.LnWv_ = real(this.fv()-1,8)*log(this.vibrationalEnergy_) &
+! 						-log(Gamma(real(this.fv(),8))) - sum(log(this.vibFrequencies))
 
 ! 			this.LnWv_ = real(this.fv()-1,8)*log(this.vibrationalEnergy_) &
 ! 						-log(Gamma(real(this.fv(),8))) - real(this.fv(),8)*log( averVibFreq ) ! Estilo Sergio
