@@ -1207,7 +1207,7 @@ function energyDiagram()
 	'"`cat $M3C_HOME/utils/M3CUtils.gawk`"'   # Debería ser la anterior linea, pero solo está disponible para gawk >= 2011
 	{
 		print reduceM3CLabel($1)
-	}' tmp-$$ | sed '{s/\(C\)\([0-9]\)/\1_\2/g;s/p/^{+}/g}' > keys.dat
+	}' tmp-$$ | sed '{s/\([CFS]\)\([0-9]\)/\1_\2/g;s/p/^{+}/g}' > keys.dat
 	rm tmp-$$
 
 	if [ "$type" = "Cd.vs.E" -o "$type" = "Sd.vs.E" ]
@@ -1286,7 +1286,7 @@ EOF
 	y2Max=`gawk '{printf "%15.6f%15.6f\n",$1,$2}' ../$eDistFile | sort -k 2 -n | tail -n1 | gawk '{print $2}'`
 	
 cat >> .plotMtj-$iFile$$ << EOF
-"../$eDistFile" u 1:(100*\$2/$y2Max) axis x1y2 notitle smooth csplines w l ls 0 lw 4 lc rgb "gray60", \\
+"../$eDistFile" u 1:(100*\$2/$y2Max) axis x1y2 notitle smooth cspline w l ls 0 lw 4 lc rgb "gray60", \\
 "../$eDistFile" u 1:(100*\$2/$y2Max) axis x1y2 notitle smooth cspline w filledcurve y2 ls 0 lc rgb "gray90", \\
 EOF
 	fi
@@ -1784,7 +1784,7 @@ function channelBRDiagram()
 	'"`cat $M3C_HOME/utils/M3CUtils.gawk`"'   # Debería ser la anterior linea, pero solo está disponible para gawk >= 2011
 	($1!~/^#/){
 		print reduceM3CLabel($1), $2, $3, $4
-	}' tmp-$$ | sed '{s/\(C\)\([0-9]\)/\1_\2/g;s/p/^{+}/g}' > $BRFile
+	}' tmp-$$ | sed '{s/\([CFS]\)\([0-9]\)/\1_\2/g;s/p/^{+}/g}' > $BRFile
 	rm tmp-$$
 	
 	yMax=`gawk '($0!~/#/){printf "%s\n%s\n",$2,$3}' $BRFile | sort -k 1 -n | tail -n1`
@@ -1886,7 +1886,7 @@ function channelFitBRDiagram()
 	'"`cat $M3C_HOME/utils/M3CUtils.gawk`"'   # Debería ser la anterior linea, pero solo está disponible para gawk >= 2011
 	($1!~/^#/){
 		print reduceM3CLabel($1), $2, $3, $4
-	}' tmp-$$ | sed '{s/\(C\)\([0-9]\)/\1_\2/g;s/p/^{+}/g}' > $BRFile
+	}' tmp-$$ | sed '{s/\(CFS\)\([0-9]\)/\1_\2/g;s/p/^{+}/g}' > $BRFile
 	rm tmp-$$
 	
 	yMax=`gawk '($0!~/#/){printf "%s\n%s\n",$2,$3}' $BRFile | sort -k 1 -n | tail -n1`
