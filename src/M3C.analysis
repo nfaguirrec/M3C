@@ -1276,6 +1276,11 @@ EOF
 	#---------------------------------------------------
 	eDistFile=`getValueFromIFIle ../${iFile%.*}.m3c "FIT_BRANCHING_RATIOS:eDistfile"`
 	
+	if [ -z "$eDistFile" ]
+	then
+		eDistFile=`getValueFromIFIle ../${iFile%.*}.m3c "BRANCHING_RATIOS:eDistOFile"`
+	fi
+	
 	if [ -f "../$eDistFile" ]
 	then
 	y2Max=`gawk '{printf "%15.6f%15.6f\n",$1,$2}' ../$eDistFile | sort -k 2 -n | tail -n1 | gawk '{print $2}'`
@@ -2066,7 +2071,7 @@ function energyDistDiagram()
 	local diagram=$3
 	local normalize=$4
 	
-	local eDistFile=`getValueFromIFIle ${iFile%.*}.m3c "FIT_BRANCHING_RATIOS:eDistfile"`
+# 	local eDistFile=`getValueFromIFIle ${iFile%.*}.m3c "FIT_BRANCHING_RATIOS:eDistfile"`
 	
 	pushd . > /dev/null 2> /dev/null
 	cd $energyDir
@@ -2159,7 +2164,7 @@ function speciesEnergyDistDiagram()
 	local energyDir=$2
 	local normalize=$3
 	
-	local eDistFile=`getValueFromIFIle ${iFile%.*}.m3c "FIT_BRANCHING_RATIOS:eDistfile"`
+# 	local eDistFile=`getValueFromIFIle ${iFile%.*}.m3c "FIT_BRANCHING_RATIOS:eDistfile"`
 	
 	pushd . > /dev/null 2> /dev/null
 	cd $energyDir
