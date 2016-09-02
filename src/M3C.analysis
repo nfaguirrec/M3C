@@ -37,6 +37,7 @@ FILTER=".*"
 [ -z "$M3C_PLOT_SIZE"     ] && M3C_PLOT_SIZE="square"
 [ -z "$M3C_PLOT_LW"       ] && M3C_PLOT_LW="2.0"
 [ -z "$M3C_PLOT_XRANGE"   ] && M3C_PLOT_XRANGE="[:]"
+[ -z "$M3C_HISTOGRAM_NBINS"   ] && M3C_HISTOGRAM_NBINS="100"
 
 LOCAL_DIR=$PWD  # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 
@@ -377,16 +378,16 @@ EOF
 ####################################
 #
 ####################################
-function histogram2D()
+function histogram1D()
 {
 	local iFile=$1
-	local cols=$2
-	local nBars=$3
+	local col=$2
+	local nBins=$3
+	local normalize=$4
 
-	if [ -z "$nBars" ]
-	then
-		nBars="40,40"
-	fi
+	[ -z "$nBins" ] && nBins="60"
+	[ -z "$normalize" ] && normalize="TRUE"
+	
 
 	# Se eliminan los espacios en blanco y los comentarios
 	# por lo tanto, todos los experimentos entran en el
@@ -394,14 +395,85 @@ function histogram2D()
 	sed '/^[[:blank:]]*$/d;/#/d' $iFile > .tmpFile$$
 	
 	# Se capturan los parámetros para el histograma
+	col1=`echo $col | gawk 'BEGIN{FS=","}{print $1}'`
+	nbars1=`echo $nBins | gawk 'BEGIN{FS=","}{print $1}'`
+	min1=`cat .tmpFile$$ | sort -k $col1 -n | head -n1 | gawk '{print $'$col1'}'`
+	max1=`cat .tmpFile$$ | sort -k $col1 -n | tail -n1 | gawk '{print $'$col1'}'`
+	h1=`echo "($max1-($min1))/$nbars1" | bc -l`
+	
+	gawk '
+	BEGIN{
+		xb='`echo $min1`'
+		xe='`echo $max1`'
+		hx='`echo $h1`'
+	}
+
+	{
+		nx=int(($'`echo $col1`'-xb)/hx)
+		
+		if( nx in mymap ){
+			mymap[nx]+=1
+		}else{
+			mymap[nx]=1
+		}
+	}
+
+	END{
+		sum=0.0
+		
+		x=xb
+		for( nx=0; x<=xe; nx++ ){
+			x = xb + nx*hx
+			
+			if( nx in mymap )
+				sum += mymap[nx]
+		}
+		
+		x=xb
+		for( nx=0; x<=xe; nx++ ){
+			x = xb + nx*hx
+			
+			if( nx in mymap )
+				if ( "'$normalize'" == "TRUE" )
+					printf "%20.10f%20.10f\n", x, mymap[nx]/(hx*sum)
+				else
+					printf "%20.10f%20.10f\n", x, mymap[nx]
+			else
+				printf "%20.10f%20.10f\n", x, 0.0
+		}
+	}
+	' .tmpFile$$
+	
+	rm .tmpFile$$
+}
+
+####################################
+#
+####################################
+function histogram2D()
+{
+	local iFile=$1
+	local cols=$2
+	local nBins=$3
+	local normalize=$4
+
+	[ -z "$nBins" ] && nBins="60,60"
+	[ -z "$normalize" ] && normalize="TRUE"
+	
+	# Se eliminan los espacios en blanco y los comentarios
+	# por lo tanto, todos los experimentos entran en el
+	# mismo análisis
+	sed '/^[[:blank:]]*$/d;/#/d' $iFile > .tmpFile$$
+	
+	# Se capturan los parámetros para el histograma
 	col1=`echo $cols | gawk 'BEGIN{FS=","}{print $1}'`
-	nbars1=`echo $nBars | gawk 'BEGIN{FS=","}{print $1}'`
+	nbars1=`echo $nBins | gawk 'BEGIN{FS=","}{print $1}'`
 	min1=`cat .tmpFile$$ | sort -k $col1 -n | head -n1 | gawk '{print $'$col1'}'`
 	max1=`cat .tmpFile$$ | sort -k $col1 -n | tail -n1 | gawk '{print $'$col1'}'`
 	h1=`echo "($max1-($min1))/$nbars1" | bc -l`
 	
 	col2=`echo $cols | gawk 'BEGIN{FS=","}{print $2}'`
-	nbars2=`echo $nBars | gawk 'BEGIN{FS=","}{print $2}'`
+	nbars2=`echo $nBins | gawk 'BEGIN{FS=","}{print $2}'`
 	min2=`cat .tmpFile$$ | sort -k $col2 -n | head -n1 | gawk '{print $'$col2'}'`
 	max2=`cat .tmpFile$$ | sort -k $col2 -n | tail -n1 | gawk '{print $'$col2'}'`
 	h2=`echo "($max2-($min2))/$nbars2" | bc -l`
@@ -453,8 +525,10 @@ function histogram2D()
 				y = yb + ny*hy
 				
 				if( (nx,ny) in mymap )
-					printf "%20.10f%20.10f%20.10f\n", x, y, mymap[nx,ny]/(hx*hy*sum)
-# 					printf "%20.10f%20.10f%20.10f\n", x, y, mymap[nx,ny]
+					if( "'$normalize'" == "TRUE" )
+						printf "%20.10f%20.10f%20.10f\n", x, y, mymap[nx,ny]/(hx*hy*sum)
+					else
+						printf "%20.10f%20.10f%20.10f\n", x, y, mymap[nx,ny]
 				else
 					printf "%20.10f%20.10f%20.10f\n", x, y, 0.0
 			}
@@ -551,8 +625,8 @@ EOF
 		echo "splot \"-\" u 1:2::3 w p ps 0" >> .plotE-$$
 	fi
 	
-	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "60,60" >> .plotE-$$
-	echo "e" >> .plotE-$$
+	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
 	
 	echo "pause -1" >> .plotE-$$
 	
@@ -684,8 +758,88 @@ EOF
 # 		fi
 	fi
 	
-	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "60,60" >> .plotE-$$
-	echo "e" >> .plotE-$$
+	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	
+	echo "pause -1" >> .plotE-$$
+	
+	cp $iFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+	cp .plotE-$$ $LOCAL_DIR/figure.gnuplot
+	
+	$M3C_GNUPLOT_EXEC .plotE-$$
+
+	rm .plotE-$$
+}
+
+####################################
+#
+####################################
+function weightHistogram()
+{
+	local iFile=$1
+	
+	cat > .plotE-$$ << EOF
+$M3C_PLOT_TERMINAL
+set termopt enhanced
+set encoding iso_8859_1
+set size $M3C_PLOT_SIZE
+set format y "10^{%T}"
+set format x "%.1f"
+
+set grid front
+unset grid
+set logscale y
+set key
+
+set ytics font "Serif,8"
+set mytics 5
+set xlabel "LnW_i"
+set ylabel "Counts"
+
+set xrange $M3C_PLOT_XRANGE
+
+#              LnWe           LnWv           LnWn           LnWr           LnWt            LnW     formula
+#                 2              3              4              5              6              7           8
+
+EOF
+	
+	echo "plot [] [1e-4:] \\" >> .plotE-$$
+	echo "\"-\" t 'LnWe' w impulses lw 2 lt 1, \\" >> .plotE-$$
+	echo "\"-\" notitle smooth mcsplines w l lw 2 lt 1, \\" >> .plotE-$$
+	echo "\"-\" t 'LnWv' w impulses lw 2 lt 2, \\" >> .plotE-$$
+	echo "\"-\" notitle smooth mcsplines w l lw 2 lt 2, \\" >> .plotE-$$
+	echo "\"-\" t 'LnWn' w impulses lw 2 lt 3, \\" >> .plotE-$$
+	echo "\"-\" notitle smooth mcsplines w l lw 2 lt 3, \\" >> .plotE-$$
+	echo "\"-\" t 'LnWr' w impulses lw 2 lt 6, \\" >> .plotE-$$
+	echo "\"-\" notitle smooth mcsplines w l lw 2 lt 6, \\" >> .plotE-$$
+	echo "\"-\" t 'LnWt' w impulses lw 2 lt 7, \\" >> .plotE-$$
+	echo "\"-\" notitle smooth mcsplines w l lw 2 lt 7, \\" >> .plotE-$$
+	echo "\"-\" t  'LnW' w impulses lw 2 lc rgb 'black', \\" >> .plotE-$$
+	echo "\"-\" notitle smooth mcsplines w l lw 2 lc rgb 'black'" >> .plotE-$$
+	histogram1D $iFile "2" "$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	histogram1D $iFile "2" "$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	histogram1D $iFile "3" "$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	histogram1D $iFile "3" "$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	histogram1D $iFile "4" "$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	histogram1D $iFile "4" "$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	histogram1D $iFile "5" "$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	histogram1D $iFile "5" "$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	histogram1D $iFile "6" "$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	histogram1D $iFile "6" "$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	histogram1D $iFile "7" "$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	histogram1D $iFile "7" "$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
 	
 	echo "pause -1" >> .plotE-$$
 	
@@ -2681,6 +2835,18 @@ function main()
 					
 					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:weightHistoryFile`
 					weightCorrelationDiagram $dataFile $typeCorr $withLabels $freqLabels
+				fi
+			fi
+			;;
+		Whist)
+			if [ -n "$id" ]
+			then
+				if [[ $id =~ [0-9]+ ]]
+				then
+					weightHistogram ${iFile%.*}.data/E_${availableEnergies[$id]}.whistory
+				else
+					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:weightHistoryFile`
+					weightHistogram $dataFile
 				fi
 			fi
 			;;
