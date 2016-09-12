@@ -37,6 +37,7 @@ FILTER=".*"
 [ -z "$M3C_PLOT_SIZE"     ] && M3C_PLOT_SIZE="square"
 [ -z "$M3C_PLOT_LW"       ] && M3C_PLOT_LW="2.0"
 [ -z "$M3C_PLOT_XRANGE"   ] && M3C_PLOT_XRANGE="[:]"
+[ -z "$M3C_PLOT_CBRANGE"   ] && M3C_PLOT_CBRANGE="[:]"
 [ -z "$M3C_HISTOGRAM_NBINS"   ] && M3C_HISTOGRAM_NBINS="100"
 
 LOCAL_DIR=$PWD  # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
@@ -421,7 +422,7 @@ function histogram1D()
 	END{
 		sum=0.0
 		
-		x=xb
+		x = xb
 		for( nx=0; x<=xe; nx++ ){
 			x = xb + nx*hx
 			
@@ -438,8 +439,8 @@ function histogram1D()
 					printf "%20.10f%20.10f\n", x, mymap[nx]/(hx*sum)
 				else
 					printf "%20.10f%20.10f\n", x, mymap[nx]
-			else
-				printf "%20.10f%20.10f\n", x, 0.0
+# 			else
+# 				printf "%20.10f%20.10f\n", x, 0.0
 		}
 	}
 	' .tmpFile$$
@@ -503,11 +504,11 @@ function histogram2D()
 	END{
 		sum=0.0
 		
-		x=xb
+		x = xb
 		for( nx=0; x<=xe; nx++ ){
 			x = xb + nx*hx
 			
-			y=yb
+			y = yb
 			for( ny=0; y<=ye; ny++ ){
 				y = yb + ny*hy
 				
@@ -516,11 +517,11 @@ function histogram2D()
 			}
 		}
 		
-		x=xb
+		x = xb
 		for( nx=0; x<=xe; nx++ ){
 			x = xb + nx*hx
 			
-			y=yb
+			y = yb
 			for( ny=0; y<=ye; ny++ ){
 				y = yb + ny*hy
 				
@@ -529,8 +530,124 @@ function histogram2D()
 						printf "%20.10f%20.10f%20.10f\n", x, y, mymap[nx,ny]/(hx*hy*sum)
 					else
 						printf "%20.10f%20.10f%20.10f\n", x, y, mymap[nx,ny]
-				else
-					printf "%20.10f%20.10f%20.10f\n", x, y, 0.0
+# 				else
+# 					printf "%20.10f%20.10f%20.10f\n", x, y, 0.0
+			}
+			
+			print ""
+		}
+	}
+	' .tmpFile$$
+	
+	rm .tmpFile$$
+}
+
+####################################
+#
+####################################
+function histogram3D()
+{
+	local iFile=$1
+	local cols=$2
+	local nBins=$3
+	local normalize=$4
+
+	[ -z "$nBins" ] && nBins="60,60,60"
+	[ -z "$normalize" ] && normalize="TRUE"
+	
+	# Se eliminan los espacios en blanco y los comentarios
+	# por lo tanto, todos los experimentos entran en el
+	# mismo análisis
+	sed '/^[[:blank:]]*$/d;/#/d' $iFile > .tmpFile$$
+	
+	# Se capturan los parámetros para el histograma
+	col1=`echo $cols | gawk 'BEGIN{FS=","}{print $1}'`
+	nbars1=`echo $nBins | gawk 'BEGIN{FS=","}{print $1}'`
+	min1=`cat .tmpFile$$ | sort -k $col1 -n | head -n1 | gawk '{print $'$col1'}'`
+	max1=`cat .tmpFile$$ | sort -k $col1 -n | tail -n1 | gawk '{print $'$col1'}'`
+	h1=`echo "($max1-($min1))/$nbars1" | bc -l`
+	
+	col2=`echo $cols | gawk 'BEGIN{FS=","}{print $2}'`
+	nbars2=`echo $nBins | gawk 'BEGIN{FS=","}{print $2}'`
+	min2=`cat .tmpFile$$ | sort -k $col2 -n | head -n1 | gawk '{print $'$col2'}'`
+	max2=`cat .tmpFile$$ | sort -k $col2 -n | tail -n1 | gawk '{print $'$col2'}'`
+	h2=`echo "($max2-($min2))/$nbars2" | bc -l`
+	
+	col3=`echo $cols | gawk 'BEGIN{FS=","}{print $3}'`
+	nbars3=`echo $nBins | gawk 'BEGIN{FS=","}{print $3}'`
+	min3=`cat .tmpFile$$ | sort -k $col3 -n | head -n1 | gawk '{print $'$col3'}'`
+	max3=`cat .tmpFile$$ | sort -k $col3 -n | tail -n1 | gawk '{print $'$col3'}'`
+	h3=`echo "($max3-($min3))/$nbars3" | bc -l`
+	
+	gawk '
+	BEGIN{
+		xb='`echo $min1`'
+		xe='`echo $max1`'
+		hx='`echo $h1`'
+		
+		yb='`echo $min2`'
+		ye='`echo $max2`'
+		hy='`echo $h2`'
+		
+		zb='`echo $min3`'
+		ze='`echo $max3`'
+		hz='`echo $h3`'
+	}
+
+	{
+		nx=int(($'`echo $col1`'-xb)/hx)
+		ny=int(($'`echo $col2`'-yb)/hy)
+		nz=int(($'`echo $col3`'-zb)/hz)
+		
+		
+		if( (nx,ny,nz) in mymap ){
+			mymap[nx,ny,nz]+=1
+		}else{
+			mymap[nx,ny,nz]=1
+		}
+	}
+
+	END{
+		sum=0.0
+		
+		x = xb
+		for( nx=0; x<=xe; nx++ ){
+			x = xb + nx*hx
+			
+			y = yb
+			for( ny=0; y<=ye; ny++ ){
+				y = yb + ny*hy
+				
+				z = zb
+				for( nz=0; z<=ze; nz++ ){
+					z = zb + nz*hz
+					
+					if( (nx,ny,nz) in mymap )
+						sum += mymap[nx,ny,nz]
+				}
+			}
+		}
+		
+		x = xb
+		for( nx=0; x<=xe; nx++ ){
+			x = xb + nx*hx
+			
+			y = yb
+			for( ny=0; y<=ye; ny++ ){
+				y = yb + ny*hy
+				
+				z = zb
+				for( nz=0; z<=ze; nz++ ){
+					z = zb + nz*hz
+					
+					if( (nx,ny,nz) in mymap )
+						if( "'$normalize'" == "TRUE" )
+							printf "%20.10f%20.10f%20.10f%20.10f\n", x, y, z, mymap[nx,ny,nz]/(hx*hy*hz*sum)
+						else
+							printf "%20.10f%20.10f%20.10f%20.10f\n", x, y, z, mymap[nx,ny,nz]
+# 					else
+# 						printf "%20.10f%20.10f%20.10f%20.10f\n", x, y, z, 0.0
+				}
 			}
 			
 			print ""
@@ -566,15 +683,15 @@ set format cb "10^{%T}"
 set logscale cb
 
 unset key
-set palette defined ( 0 "white", 1 "blue", 2 "green", 3 "orange", 4 "yellow", 5 "red" )
-set pm3d implicit at s
+# set palette defined ( 0 "white", 1 "blue", 2 "green", 3 "orange", 4 "yellow", 5 "red" )
+set palette defined ( 0 "blue", 1 "green", 2 "orange", 3 "yellow", 4 "red" )
 set xtics rotate by -45 font "Serif,8"
 set ytics font "Serif,8"
 set cbtics font "Serif,8"
-set pointsize 0.3
-set view map
+set pointsize 0.4
 
 set xrange $M3C_PLOT_XRANGE
+set cbrange $M3C_PLOT_CBRANGE
 
 #             trans       intermol            vib            rot            tot     formula
 #               2            3                 4              5              6         7
@@ -619,13 +736,157 @@ EOF
 	
 	if [ "$withLabels" = "TRUE" ]
 	then
-		echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
+		echo "plot \"-\" u 1:2:3 w p palette pt 7, \\" >> .plotE-$$
 		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
 	else
-		echo "splot \"-\" u 1:2::3 w p ps 0" >> .plotE-$$
+		echo "plot \"-\" u 1:2::3 w p palette pt 7" >> .plotE-$$
 	fi
 	
 	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	
+	echo "pause -1" >> .plotE-$$
+	
+	cp $iFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+	cp .plotE-$$ $LOCAL_DIR/figure.gnuplot
+	
+	$M3C_GNUPLOT_EXEC .plotE-$$
+
+	rm .plotE-$$
+}
+
+####################################
+#
+####################################
+function energyTernaryCorrelationDiagram()
+{
+	local iFile=$1
+	local task=$2
+	local withLabels=$3
+	local freqLabels=$4
+	
+	test -z "$withLabels"   && withLabels="FALSE"
+	test -z "$freqLabels"   && freqLabels=10
+	
+	cat > .plotE-$$ << EOF
+$M3C_PLOT_TERMINAL
+set termopt enhanced
+set encoding iso_8859_1
+set bmargin 3
+set lmargin 3
+set rmargin 3
+set tmargin 3
+set size ratio 0.866
+set yrange [0:0.866]
+set xrange [0:1]
+set noborder
+set noxtics
+set noytics
+
+set format cb "10^{%T}"
+set logscale cb
+set cbrange $M3C_PLOT_CBRANGE
+
+# set palette defined ( 0 "white", 1 "blue", 2 "green", 3 "orange", 4 "yellow", 5 "red" )
+set palette defined ( 0 "blue", 1 "green", 2 "orange", 3 "yellow", 4 "red" )
+set pm3d implicit at s
+set cbtics font "Serif,8"
+set pointsize 0.3
+
+set style line 1 lt 1 lw 3 pt -1 ps 1
+set style line 2 lt 5 lw 1 pt -1 ps 1
+
+# x
+set arrow  1 front from 0.0,0 to 1.00,0.0000 nohead linestyle 1 lc rgb "black" lw 0.7
+set arrow  2 front from 0.1,0 to 0.55,0.7790 nohead linestyle 0
+set arrow  3 front from 0.2,0 to 0.60,0.6930 nohead linestyle 0
+set arrow  4 front from 0.3,0 to 0.65,0.6060 nohead linestyle 0
+set arrow  5 front from 0.4,0 to 0.70,0.5200 nohead linestyle 0
+set arrow  6 front from 0.5,0 to 0.75,0.4330 nohead linestyle 0
+set arrow  7 front from 0.6,0 to 0.80,0.3460 nohead linestyle 0
+set arrow  8 front from 0.7,0 to 0.85,0.2600 nohead linestyle 0
+set arrow  9 front from 0.8,0 to 0.90,0.1730 nohead linestyle 0
+set arrow 10 front from 0.9,0 to 0.95,0.0866 nohead linestyle 0
+
+# z
+set arrow 11 front from 1.00,0.0000 to 0.50,0.8660 nohead linestyle 1 lc rgb "black" lw 0.7
+set arrow 12 front from 0.95,0.0866 to 0.05,0.0866 nohead linestyle 0
+set arrow 13 front from 0.90,0.1730 to 0.10,0.1730 nohead linestyle 0
+set arrow 14 front from 0.85,0.2600 to 0.15,0.2600 nohead linestyle 0
+set arrow 15 front from 0.80,0.3460 to 0.20,0.3460 nohead linestyle 0
+set arrow 16 front from 0.75,0.4330 to 0.25,0.4330 nohead linestyle 0
+set arrow 17 front from 0.70,0.5200 to 0.30,0.5200 nohead linestyle 0
+set arrow 18 front from 0.65,0.6060 to 0.35,0.6060 nohead linestyle 0
+set arrow 19 front from 0.60,0.6930 to 0.40,0.6930 nohead linestyle 0
+set arrow 20 front from 0.55,0.7790 to 0.45,0.7790 nohead linestyle 0
+
+# y
+set arrow 21 front from 0.50,0.8660 to 0.0,0 nohead linestyle 1 lc rgb "black" lw 0.7
+set arrow 22 front from 0.05,0.0866 to 0.1,0 nohead linestyle 0
+set arrow 23 front from 0.10,0.1730 to 0.2,0 nohead linestyle 0
+set arrow 24 front from 0.15,0.2600 to 0.3,0 nohead linestyle 0
+set arrow 25 front from 0.20,0.3460 to 0.4,0 nohead linestyle 0
+set arrow 26 front from 0.25,0.4330 to 0.5,0 nohead linestyle 0
+set arrow 27 front from 0.30,0.5200 to 0.6,0 nohead linestyle 0
+set arrow 28 front from 0.35,0.6060 to 0.7,0 nohead linestyle 0
+set arrow 29 front from 0.40,0.6930 to 0.8,0 nohead linestyle 0
+set arrow 30 front from 0.45,0.7790 to 0.9,0 nohead linestyle 0
+
+Xp(x,y,z) = 0.5*(x+2*z)/(x+y+z)
+Yp(x,y,z)=sqrt(3.0)*x/(x+y+z)/2.0
+
+#             trans       intermol            vib            rot            tot     formula
+#               2            3                 4              5              6         7
+
+EOF
+
+	declare -A axisLabel
+	declare -A column
+	
+	axisLabel["Et"]="Translational energy (eV)"
+	axisLabel["U"]="Intermolecular potential (eV)"
+	axisLabel["Ev"]="Vibrational energy (eV)"
+	axisLabel["Er"]="Rotational energy (eV)"
+	axisLabel["E"]="Total energy (eV)"
+	
+	column["Et"]=2
+	column["U"]=3
+	column["Ev"]=4
+	column["Er"]=5
+	column["E"]=6
+	
+	coord1=`echo $task | awk 'BEGIN{FS="."}{print $1}'`
+	coord2=`echo $task | awk 'BEGIN{FS="."}{print $3}'`
+	coord3=`echo $task | awk 'BEGIN{FS="."}{print $5}'`
+	
+	echo "              Available options:"
+	echo "                  Et.vs.U   |  U.vs.Et"
+	echo "                  Et.vs.Ev  | Ev.vs.Et"
+	echo "                  Et.vs.Er  | Er.vs.Et"
+	echo "                   U.vs.Ev  | Ev.vs.U"
+	echo "                   U.vs.Er  | Er.vs.U"
+	echo "                  Ev.vs.Er  | Er.vs.Ev"
+
+	if [ -z "$task" ]
+	then
+		echo ""
+		echo "### ERROR ### Energy ternary correlation diagram. Unknown option $task"
+		exit
+	fi
+	
+	echo "set label '${axisLabel[$coord1]}' at 0.0, -0.030 center font 'Serif,9'" >> .plotE-$$
+	echo "set label '${axisLabel[$coord2]}' at 1.0, -0.030 center font 'Serif,9'" >> .plotE-$$
+	echo "set label '${axisLabel[$coord3]}' at 0.5,  0.886 center font 'Serif,9'" >> .plotE-$$
+	
+	if [ "$withLabels" = "TRUE" ]
+	then
+		echo "plot \"-\" u (Xp(\$1,\$2,\$3)):(Yp(\$1,\$2,\$3)):4 notitle w p palette pt 7, \\" >> .plotE-$$
+		echo "'$iFile' u (Xp(\$${column[$coord1]},\$${column[$coord2]},\$${column[$coord3]})):(Yp(\$${column[$coord1]},\$${column[$coord2]},\$${column[$coord3]})):7 every $freqLabels notitle w labels font ',5'" >> .plotE-$$
+	else
+		echo "plot \"-\" u (Xp(\$1,\$2,\$3)):(Yp(\$1,\$2,\$3)):4 notitle w p palette pt 7" >> .plotE-$$
+	fi
+	
+	histogram3D $iFile "${column[$coord1]},${column[$coord2]},${column[$coord3]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" >> .plotE-$$
 	echo "EOF" >> .plotE-$$
 	
 	echo "pause -1" >> .plotE-$$
@@ -663,15 +924,15 @@ set format cb "10^{%T}"
 set logscale cb
 
 unset key
-set palette defined ( 0 "white", 1 "blue", 2 "green", 3 "orange", 4 "yellow", 5 "red" )
-set pm3d implicit at s
+# set palette defined ( 0 "white", 1 "blue", 2 "green", 3 "orange", 4 "yellow", 5 "red" )
+set palette defined ( 0 "blue", 1 "green", 2 "orange", 3 "yellow", 4 "red" )
 set xtics rotate by -45 font "Serif,8"
 set ytics font "Serif,8"
 set cbtics font "Serif,8"
-set pointsize 0.3
-set view map
+set pointsize 0.4
 
 set xrange $M3C_PLOT_XRANGE
+set cbrange $M3C_PLOT_CBRANGE
 
 #              LnWe           LnWv           LnWn           LnWr           LnWt            LnW     formula
 #                 2              3              4              5              6              7           8
@@ -727,7 +988,7 @@ EOF
 	
 	if [ "$withLabels" = "TRUE" ]
 	then
-		echo "splot \"-\" u 1:2:3 w p ps 0, \\" >> .plotE-$$
+		echo "plot \"-\" u 1:2:3 w p palette pt 7, \\" >> .plotE-$$
 		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:(0.0):8 every $freqLabels w labels font ',5'" >> .plotE-$$
 		
 # 		#Esto es un apaño que ya no se hace necesario
@@ -744,7 +1005,7 @@ EOF
 # 			echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:(0.0):8 every $freqLabels w labels font ',5'" >> .plotE-$$
 # 		fi
 	else
-		echo "splot \"-\" u 1:2:3 w p ps 0" >> .plotE-$$
+		echo "plot \"-\" u 1:2:3 w p palette pt 7" >> .plotE-$$
 
 # 		#Esto es un apaño que ya no se hace necesario
 # 		if [ "$coord1" = "LnWr" ]
@@ -759,6 +1020,164 @@ EOF
 	fi
 	
 	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	echo "EOF" >> .plotE-$$
+	
+	echo "pause -1" >> .plotE-$$
+	
+	cp $iFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+	cp .plotE-$$ $LOCAL_DIR/figure.gnuplot
+	
+	$M3C_GNUPLOT_EXEC .plotE-$$
+
+	rm .plotE-$$
+}
+
+####################################
+#
+####################################
+function weightTernaryCorrelationDiagram()
+{
+	local iFile=$1
+	local task=$2
+	local withLabels=$3
+	local freqLabels=$4
+	
+	test -z "$withLabels"   && withLabels="FALSE"
+	test -z "$freqLabels"   && freqLabels=10
+	
+	cat > .plotE-$$ << EOF
+$M3C_PLOT_TERMINAL
+set termopt enhanced
+set encoding iso_8859_1
+set bmargin 3
+set lmargin 3
+set rmargin 3
+set tmargin 3
+set size ratio 0.866
+set yrange [0:0.866]
+set xrange [0:1]
+set noborder
+set noxtics
+set noytics
+
+# set colorbox origin 0.2,0.866
+set format cb "10^{%T}"
+set logscale cb
+
+# set palette defined ( 0 "white", 1 "blue", 2 "green", 3 "orange", 4 "yellow", 5 "red" )
+set palette defined ( 0 "blue", 1 "green", 2 "orange", 3 "yellow", 4 "red" )
+set pm3d implicit at s
+set cbtics font "Serif,8"
+set pointsize 0.3
+
+set style line 1 lt 1 lw 3 pt -1 ps 1
+set style line 2 lt 5 lw 1 pt -1 ps 1
+
+# x
+set arrow  1 from 0.0,0 to 1.00,0.0000 nohead linestyle 1 lc rgb "black" lw 0.7
+set arrow  2 from 0.1,0 to 0.55,0.7790 nohead linestyle 0
+set arrow  3 from 0.2,0 to 0.60,0.6930 nohead linestyle 0
+set arrow  4 from 0.3,0 to 0.65,0.6060 nohead linestyle 0
+set arrow  5 from 0.4,0 to 0.70,0.5200 nohead linestyle 0
+set arrow  6 from 0.5,0 to 0.75,0.4330 nohead linestyle 0
+set arrow  7 from 0.6,0 to 0.80,0.3460 nohead linestyle 0
+set arrow  8 from 0.7,0 to 0.85,0.2600 nohead linestyle 0
+set arrow  9 from 0.8,0 to 0.90,0.1730 nohead linestyle 0
+set arrow 10 from 0.9,0 to 0.95,0.0866 nohead linestyle 0
+
+# z
+set arrow 11 from 1.00,0.0000 to 0.50,0.8660 nohead linestyle 1 lc rgb "black" lw 0.7
+set arrow 12 from 0.95,0.0866 to 0.05,0.0866 nohead linestyle 0
+set arrow 13 from 0.90,0.1730 to 0.10,0.1730 nohead linestyle 0
+set arrow 14 from 0.85,0.2600 to 0.15,0.2600 nohead linestyle 0
+set arrow 15 from 0.80,0.3460 to 0.20,0.3460 nohead linestyle 0
+set arrow 16 from 0.75,0.4330 to 0.25,0.4330 nohead linestyle 0
+set arrow 17 from 0.70,0.5200 to 0.30,0.5200 nohead linestyle 0
+set arrow 18 from 0.65,0.6060 to 0.35,0.6060 nohead linestyle 0
+set arrow 19 from 0.60,0.6930 to 0.40,0.6930 nohead linestyle 0
+set arrow 20 from 0.55,0.7790 to 0.45,0.7790 nohead linestyle 0
+
+# y
+set arrow 21 from 0.50,0.8660 to 0.0,0 nohead linestyle 1 lc rgb "black" lw 0.7
+set arrow 22 from 0.05,0.0866 to 0.1,0 nohead linestyle 0
+set arrow 23 from 0.10,0.1730 to 0.2,0 nohead linestyle 0
+set arrow 24 from 0.15,0.2600 to 0.3,0 nohead linestyle 0
+set arrow 25 from 0.20,0.3460 to 0.4,0 nohead linestyle 0
+set arrow 26 from 0.25,0.4330 to 0.5,0 nohead linestyle 0
+set arrow 27 from 0.30,0.5200 to 0.6,0 nohead linestyle 0
+set arrow 28 from 0.35,0.6060 to 0.7,0 nohead linestyle 0
+set arrow 29 from 0.40,0.6930 to 0.8,0 nohead linestyle 0
+set arrow 30 from 0.45,0.7790 to 0.9,0 nohead linestyle 0
+
+Xp(x,y,z) = 0.5*(x+2*z)/(x+y+z)
+Yp(x,y,z)=sqrt(3.0)*x/(x+y+z)/2.0
+
+set xrange $M3C_PLOT_XRANGE
+set cbrange $M3C_PLOT_CBRANGE
+
+#              LnWe           LnWv           LnWn           LnWr           LnWt            LnW     formula
+#                 2              3              4              5              6              7           8
+
+EOF
+	
+	declare -A axisLabel
+	declare -A column
+	
+	axisLabel["LnWe"]="LnWe (arb.)"
+	axisLabel["LnWv"]="LnWv (arb.)"
+	axisLabel["LnWn"]="LnWn (arb.)"
+	axisLabel["LnWr"]="LnWr (arb.)"
+	axisLabel["LnWt"]="LnWt (arb.)"
+	axisLabel["LnW"]="LnW (arb.)"
+	
+	column["LnWe"]=2
+	column["LnWv"]=3
+	column["LnWn"]=4
+	column["LnWr"]=5
+	column["LnWt"]=6
+	column["LnW"]=7
+	
+	coord1=`echo $task | awk 'BEGIN{FS="."}{print $1}'`
+	coord2=`echo $task | awk 'BEGIN{FS="."}{print $3}'`
+	coord3=`echo $task | awk 'BEGIN{FS="."}{print $5}'`
+	
+	echo "              Available options:"
+	echo "                  LnWe.vs.LnWv   |  LnWv.vs.LnWe"
+	echo "                  LnWe.vs.LnWn   |  LnWn.vs.LnWe"
+	echo "                  LnWe.vs.LnWr   |  LnWr.vs.LnWe"
+	echo "                  LnWe.vs.LnWt   |  LnWt.vs.LnWe"
+	echo "                  LnWe.vs.LnW    |   LnW.vs.LnWe"
+	echo "                  LnWv.vs.LnWn   |  LnWn.vs.LnWv"
+	echo "                  LnWv.vs.LnWr   |  LnWr.vs.LnWv"
+	echo "                  LnWv.vs.LnWt   |  LnWt.vs.LnWv"
+	echo "                  LnWv.vs.LnW    |   LnW.vs.LnWv"
+	echo "                  LnWn.vs.LnWr   |  LnWr.vs.LnWn"
+	echo "                  LnWn.vs.LnWt   |  LnWt.vs.LnWn"
+	echo "                  LnWn.vs.LnW    |   LnW.vs.LnWn"
+	echo "                  LnWr.vs.LnWt   |  LnWt.vs.LnWr"
+	echo "                  LnWr.vs.LnW    |   LnW.vs.LnWr"
+	echo "                  LnWt.vs.LnW    |   LnW.vs.LnWt"
+
+	if [ -z "$task" ]
+	then
+		echo ""
+		echo "### ERROR ### Weight ternary correlation diagram. Unknown option $task"
+		exit
+	fi
+	
+	echo "set label '${axisLabel[$coord1]}' at 0.0, -0.030 center font 'Serif,9'" >> .plotE-$$
+	echo "set label '${axisLabel[$coord2]}' at 1.0, -0.030 center font 'Serif,9'" >> .plotE-$$
+	echo "set label '${axisLabel[$coord3]}' at 0.5,  0.886 center font 'Serif,9'" >> .plotE-$$
+	
+	if [ "$withLabels" = "TRUE" ]
+	then
+		echo "plot \"-\" u (Xp(\$1,\$2,\$3)):(Yp(\$1,\$2,\$3)):4 notitle w p palette pt 7, \\" >> .plotE-$$
+		echo "'$iFile' u (Xp(\$${column[$coord1]},\$${column[$coord2]},\$${column[$coord3]})):(Yp(\$${column[$coord1]},\$${column[$coord2]},\$${column[$coord3]})):8 every $freqLabels notitle w labels font ',5'" >> .plotE-$$
+	else
+		echo "plot \"-\" u (Xp(\$1,\$2,\$3)):(Yp(\$1,\$2,\$3)):4 notitle w p palette pt 7" >> .plotE-$$
+	fi
+	
+	histogram3D $iFile "${column[$coord1]},${column[$coord2]},${column[$coord3]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" >> .plotE-$$
 	echo "EOF" >> .plotE-$$
 	
 	echo "pause -1" >> .plotE-$$
@@ -2823,6 +3242,27 @@ function main()
 			fi
 			;;
 			
+		Ecorr3)
+			if [ -n "$id" ]
+			then
+				if [[ $id =~ [0-9]+ ]]
+				then
+					typeCorr=$4 #"Er.vs.Et.vs.Ev"
+					withLabels=$5
+					freqLabels=$6
+					
+					energyTernaryCorrelationDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.ehistory $typeCorr $withLabels $freqLabels
+				else
+					typeCorr=$3 #"Er.vs.Et"
+					withLabels=$4
+					freqLabels=$5
+					
+					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:energyHistoryFile`
+					energyTernaryCorrelationDiagram $dataFile $typeCorr $withLabels $freqLabels
+				fi
+			fi
+			;;
+			
 		Wcorr)
 			if [ -n "$id" ]
 			then
@@ -2843,6 +3283,28 @@ function main()
 				fi
 			fi
 			;;
+			
+		Wcorr3)
+			if [ -n "$id" ]
+			then
+				if [[ $id =~ [0-9]+ ]]
+				then
+					typeCorr=$4 #"LnWr.vs.LnWt.vs.LnWv"
+					withLabels=$5
+					freqLabels=$6
+					
+					weightTernaryCorrelationDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.whistory $typeCorr $withLabels $freqLabels
+				else
+					typeCorr=$3 #"LnWr.vs.LnWt.vs.LnWv"
+					withLabels=$4
+					freqLabels=$5
+					
+					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:weightHistoryFile`
+					weightTernaryCorrelationDiagram $dataFile $typeCorr $withLabels $freqLabels
+				fi
+			fi
+			;;
+			
 		Whist)
 			if [ -n "$id" ]
 			then
