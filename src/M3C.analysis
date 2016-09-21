@@ -2380,10 +2380,16 @@ set key font "Helvetica Bold,10"
 set mytics 5
 # set grid y
 
-plot [-$nChannels*0.1:$nChannels*1.1] [-$yMax*0.1:$yMax*1.1] \
-"$BRFile" u :3:4 t "experimental" w yerrorbars pt 7 lt 3, \
-"" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
-"" u :2:xtic(1) t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+# plot [-$nChannels*0.1:$nChannels*1.1] [-$yMax*0.1:$yMax*1.1] \
+# "$BRFile" u :3:4 t "experimental" w yerrorbars pt 7 lt 3, \
+# "" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
+# "" u :2:xtic(1) t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+
+set style fill transparent pattern 7 bo
+plot [-1.5:$nChannels+1.5] [-$yMax*0.1:$yMax*1.1] \
+"$BRFile" u :2:(0.5):xtic(1) t "Theoretical" w boxes lt 1 lw 1.0 lc rgb "red", \
+"" u :3:(0.8) notitle w boxes lt 1 lw 1.5 lc rgb "black", \
+"" u :3:4 t "Experimental" w yerrorbars pt 7 ps 0.5 lw 2.0 lc rgb "black"
 
 pause -1
 EOF
@@ -2452,6 +2458,7 @@ function channelFitBRDiagram()
 	rm matrix.dat keys.dat
 	
 	nChannels=`awk '($0!~/^[[:blank:]]*#.*$/){print $0}' $BRFile | wc -l`
+	nChannels=$(( $nChannels-1 ))
 	
 	cp $BRFile tmp-$$
 	gawk '
@@ -2483,13 +2490,19 @@ set key font "Helvetica Bold,10" spacing 1.2
 set mytics 5
 # set grid y
 
-plot [-1:$(($nChannels-1))+1] [-$yMax*0.1:$yMax*1.1] \
-"$BRFile" u :3:4:xtic(1) t "experimental" w yerrorbars pt 7 lt 3, \
-"$BRFile" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
-"$BRFile" u :2 t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+# plot [-1:$nChannels+1] [-$yMax*0.1:$yMax*1.1] \
+# "$BRFile" u :3:4:xtic(1) t "experimental" w yerrorbars pt 7 lt 3, \
+# "$BRFile" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
+# "$BRFile" u :2 t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+# 
+# # "$BRFile" u :2 t "theoretical + U(R)" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+# #"old.dat" u :2 t "theoretical" w lp ps 2.0 pt 3 lt 0 lw 2 lc rgb "forest-green", \
 
-# "$BRFile" u :2 t "theoretical + U(R)" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
-#"old.dat" u :2 t "theoretical" w lp ps 2.0 pt 3 lt 0 lw 2 lc rgb "forest-green", \
+set style fill transparent pattern 7 bo
+plot [-1.5:$nChannels+1.5] [-$yMax*0.1:$yMax*1.1] \
+"$BRFile" u :2:(0.5):xtic(1) t "Theoretical" w boxes lt 1 lw 1.0 lc rgb "red", \
+"" u :3:(0.8) notitle w boxes lt 1 lw 1.5 lc rgb "black", \
+"" u :3:4 t "Experimental" w yerrorbars pt 7 ps 0.5 lw 2.0 lc rgb "black"
 
 pause -1
 EOF
