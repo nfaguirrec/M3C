@@ -2387,9 +2387,9 @@ set mytics 5
 
 set style fill transparent pattern 7 bo
 plot [-1.5:$nChannels+1.5] [-$yMax*0.1:$yMax*1.1] \
-"$BRFile" u :2:(0.5):xtic(1) t "Theoretical" w boxes lt 1 lw 1.0 lc rgb "red", \
+"$BRFile" u :2:(0.5):xtic(1) t "Theo." w boxes lt 1 lw 1.0 lc rgb "red", \
 "" u :3:(0.8) notitle w boxes lt 1 lw 1.5 lc rgb "black", \
-"" u :3:4 t "Experimental" w yerrorbars pt 7 ps 0.5 lw 2.0 lc rgb "black"
+"" u :3:4 t "Exp." w yerrorbars pt 7 ps 0.5 lw 2.0 lc rgb "black"
 
 pause -1
 EOF
@@ -2500,9 +2500,9 @@ set mytics 5
 
 set style fill transparent pattern 7 bo
 plot [-1.5:$nChannels+1.5] [-$yMax*0.1:$yMax*1.1] \
-"$BRFile" u :2:(0.5):xtic(1) t "Theoretical" w boxes lt 1 lw 1.0 lc rgb "red", \
+"$BRFile" u :2:(0.5):xtic(1) t "Theo." w boxes lt 1 lw 1.0 lc rgb "red", \
 "" u :3:(0.8) notitle w boxes lt 1 lw 1.5 lc rgb "black", \
-"" u :3:4 t "Experimental" w yerrorbars pt 7 ps 0.5 lw 2.0 lc rgb "black"
+"" u :3:4 t "Exp." w yerrorbars pt 7 ps 0.5 lw 2.0 lc rgb "black"
 
 pause -1
 EOF
