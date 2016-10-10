@@ -989,7 +989,11 @@ EOF
 	if [ "$withLabels" = "TRUE" ]
 	then
 		echo "plot \"-\" u 1:2:3 w p palette pt 7, \\" >> .plotE-$$
+<<<<<<< HEAD
 		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:(0.0):8 every $freqLabels w labels font ',5'" >> .plotE-$$
+=======
+		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:8 every $freqLabels w labels font ',5'" >> .plotE-$$
+>>>>>>> 9baed6b3fae1eac6e422ef3ff2fdf6621abb80b6
 		
 # 		#Esto es un apaño que ya no se hace necesario
 # 		if [ "$coord1" = "LnWr" ]
@@ -1780,13 +1784,17 @@ function energyDiagram()
 	'"`cat $M3C_HOME/utils/M3CUtils.gawk`"'   # Debería ser la anterior linea, pero solo está disponible para gawk >= 2011
 	{
 		print reduceM3CLabel($1)
-	}' tmp-$$ | sed '{s/\([CFS]\)\([0-9]\)/\1_\2/g;s/p/^{+}/g}' > keys.dat
+	}' tmp-$$ | sed '{s/\([CFS]\)\([0-9]\)/\1_\2/g}' > keys.dat
+# 	}' tmp-$$ | sed '{s/\([CFS]\)\([0-9]\)/\1_\2/g;s/p/^{+}/g}' > keys.dat
 	rm tmp-$$
 
+	sed -i -r '{s/(_)([[:digit:]]+)p/@_{\2}^{+}/g}' keys.dat  # Escribir bien los superindices, caso C_2p(??)
+	sed -i -r '{s/([[:alpha:]]+)p/\1^{+}/g}' keys.dat  # Escribir bien los superindices, caso Cp(??)
+	sed -i -r '{s/(_)([[:digit:]]+)/_{\2}/g}' keys.dat  # Escribir bien los superindices, caso C_2(??)
+	
 	if [ "$type" = "Cd.vs.E" -o "$type" = "Sd.vs.E" ]
 	then
-		sed -i -r '{s/(_)([[:digit:]]+)/@_{\2}/g}' keys.dat  # Escribir bien los superindices
-		sed -i -r '{s/(\()([[:digit:],]+)(\))/^{\2}/g}' keys.dat # Poner carga, espin y geometria como superindice
+		sed -i -r '{s/(\()([[:digit:],]+)(\))/^{\2}/g}' keys.dat # Poner carga, espin y geometria como superindice << @todo No lo entiendo
 		sed -i -r '{s/,//g}' keys.dat # Eliminar las comas entre carga, espin y geometria
 	fi
 	
@@ -2380,10 +2388,16 @@ set key font "Helvetica Bold,10"
 set mytics 5
 # set grid y
 
-plot [-$nChannels*0.1:$nChannels*1.1] [-$yMax*0.1:$yMax*1.1] \
-"$BRFile" u :3:4 t "experimental" w yerrorbars pt 7 lt 3, \
-"" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
-"" u :2:xtic(1) t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+# plot [-$nChannels*0.1:$nChannels*1.1] [-$yMax*0.1:$yMax*1.1] \
+# "$BRFile" u :3:4 t "experimental" w yerrorbars pt 7 lt 3, \
+# "" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
+# "" u :2:xtic(1) t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+
+set style fill transparent pattern 7 bo
+plot [-1.5:$nChannels+1.5] [-$yMax*0.1:$yMax*1.1] \
+"$BRFile" u :2:(0.5):xtic(1) t "Theo." w boxes lt 1 lw 1.0 lc rgb "red", \
+"" u :3:(0.8) notitle w boxes lt 1 lw 1.5 lc rgb "black", \
+"" u :3:4 t "Exp." w yerrorbars pt 7 ps 0.5 lw 2.0 lc rgb "black"
 
 pause -1
 EOF
@@ -2452,6 +2466,7 @@ function channelFitBRDiagram()
 	rm matrix.dat keys.dat
 	
 	nChannels=`awk '($0!~/^[[:blank:]]*#.*$/){print $0}' $BRFile | wc -l`
+	nChannels=$(( $nChannels-1 ))
 	
 	cp $BRFile tmp-$$
 	gawk '
@@ -2483,13 +2498,19 @@ set key font "Helvetica Bold,10" spacing 1.2
 set mytics 5
 # set grid y
 
-plot [-1:$(($nChannels-1))+1] [-$yMax*0.1:$yMax*1.1] \
-"$BRFile" u :3:4:xtic(1) t "experimental" w yerrorbars pt 7 lt 3, \
-"$BRFile" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
-"$BRFile" u :2 t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+# plot [-1:$nChannels+1] [-$yMax*0.1:$yMax*1.1] \
+# "$BRFile" u :3:4:xtic(1) t "experimental" w yerrorbars pt 7 lt 3, \
+# "$BRFile" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
+# "$BRFile" u :2 t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+# 
+# # "$BRFile" u :2 t "theoretical + U(R)" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
+# #"old.dat" u :2 t "theoretical" w lp ps 2.0 pt 3 lt 0 lw 2 lc rgb "forest-green", \
 
-# "$BRFile" u :2 t "theoretical + U(R)" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
-#"old.dat" u :2 t "theoretical" w lp ps 2.0 pt 3 lt 0 lw 2 lc rgb "forest-green", \
+set style fill transparent pattern 7 bo
+plot [-1.5:$nChannels+1.5] [-$yMax*0.1:$yMax*1.1] \
+"$BRFile" u :2:(0.5):xtic(1) t "Theo." w boxes lt 1 lw 1.0 lc rgb "red", \
+"" u :3:(0.8) notitle w boxes lt 1 lw 1.5 lc rgb "black", \
+"" u :3:4 t "Exp." w yerrorbars pt 7 ps 0.5 lw 2.0 lc rgb "black"
 
 pause -1
 EOF

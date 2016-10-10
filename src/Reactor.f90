@@ -58,7 +58,8 @@ module Reactor_
 			procedure :: setType
 			procedure :: run
 			procedure, private :: changeComposition
-			procedure, private, NOPASS :: changeAllComposition
+			procedure, private, NOPASS :: changeCompositionRandomly
+			procedure, private, NOPASS :: changeCompositionSequentialFragmentation
 			procedure, private, NOPASS :: isSpinForbidden
 			procedure, private, NOPASS :: reactorConstraint
 			
@@ -67,7 +68,7 @@ module Reactor_
 			procedure :: executeGenerateAllChannels
 	end type Reactor
 	
-	integer, private :: internalReactivesComposition(AtomicElementsDB_nElems) = 0 !< For convenience in changeAllComposition procedure
+	integer, private :: internalReactivesComposition(AtomicElementsDB_nElems) = 0 !< For convenience in changeCompositionRandomly procedure
 	integer, private :: internalMassNumber = 0
 	integer, private :: internalCharge = 0
 	integer, private :: internalNTrials = 0
@@ -236,13 +237,23 @@ module Reactor_
 			write(*,"(A10,I20,5X,A)") "dN", this.dNFrag(n), "used for reactor"
 		end if
 		
-		call changeAllComposition( this.reactives, this.products, this.dNFrag(n) )
+		select case( trim(GOptionsM3C_structureSamplingMethod.fstr) )
+			case( "RANDOM" )
+				call changeCompositionRandomly( this.reactives, this.products, this.dNFrag(n) )
+			case( "SEQUENTIAL" )
+				call changeCompositionSequentialFragmentation( this.reactives, this.products, this.dNFrag(n) )
+			case default
+				call GOptions_error( &
+					"Unknown change composition sampling method"//" ("//trim(GOptionsM3C_structureSamplingMethod.fstr)//")", &
+					"Reactor.changeComposition()", &
+					"Implemented methods: RANDOM, SEQUENTIAL" &
+					)
+		end select
 		
-		return
 	end subroutine changeComposition
 	
 	!>
-	!! This is only necessary for changeAllComposition
+	!! This is only necessary for changeCompositionRandomly
 	!!
 	function isSpinForbidden( multisetPositions, current ) result( output )
 		integer, allocatable, intent(in) :: multisetPositions(:)
@@ -306,7 +317,7 @@ module Reactor_
 	end function isSpinForbidden
 
 	!>
-	!! This is only necessary for changeAllComposition
+	!! This is only necessary for changeCompositionRandomly
 	!!
 	function reactorConstraint( multisetPositions, current ) result( output )
 		integer, allocatable, intent(in) :: multisetPositions(:)
@@ -322,9 +333,9 @@ module Reactor_
 		totalCharge = 0
 		productsComposition = 0
 		do i=1,current
-				totalMass = totalMass + FragmentsDB_instance.clusters( multisetPositions(i) ).mass()
-				totalCharge = totalCharge + FragmentsDB_instance.clusters( multisetPositions(i) ).charge
-				productsComposition = productsComposition + FragmentsDB_instance.clusters( multisetPositions(i) ).composition
+			totalMass = totalMass + FragmentsDB_instance.clusters( multisetPositions(i) ).mass()
+			totalCharge = totalCharge + FragmentsDB_instance.clusters( multisetPositions(i) ).charge
+			productsComposition = productsComposition + FragmentsDB_instance.clusters( multisetPositions(i) ).composition
 		end do
 		
 		if( current == size(multisetPositions) ) then
@@ -363,7 +374,7 @@ module Reactor_
 	!>
 	!! @brief Change the composition of the system
 	!!
-	subroutine changeAllComposition( reactives, products, dNfrag )
+	subroutine changeCompositionRandomly( reactives, products, dNfrag )
 		type(FragmentsList), intent(in) :: reactives
 		type(FragmentsList), intent(inout) :: products
 		integer, intent(in) :: dNfrag
@@ -385,7 +396,7 @@ module Reactor_
 			if( GOptions_printLevel >= 2 ) then
 				call GOptions_info( &
 					"The fragmentation limit has been reached", &
-					"Reactor.changeAllComposition()", &
+					"Reactor.changeCompositionRandomly()", &
 					"The reactives composition is kept." &
 				)
 			end if
@@ -400,7 +411,7 @@ module Reactor_
 			if( GOptions_printLevel >= 2 ) then
 				call GOptions_info( &
 					"The fussion limit has been reached", &
-					"Reactor.changeAllComposition()", &
+					"Reactor.changeCompositionRandomly()", &
 					"The reactives composition is kept." &
 				)
 			end if
@@ -453,7 +464,7 @@ module Reactor_
 			if( GOptions_printLevel >= 2 ) then
 				call GOptions_info( &
 					"Impossible to satisfy the constrain during fragmentation", &
-					"Reactor.changeAllComposition()", &
+					"Reactor.changeCompositionRandomly()", &
 					"The reactives composition is kept." &
 				)
 			end if
@@ -487,7 +498,160 @@ module Reactor_
 		! Se libera la memoria solicitada
 		deallocate( channelInfo )
 		
-	end subroutine changeAllComposition
+	end subroutine changeCompositionRandomly
+	
+	!>
+	!! @brief Change the composition of the system
+	!!
+	subroutine changeCompositionSequentialFragmentation( reactives, products, dNfrag )
+		type(FragmentsList), intent(in) :: reactives
+		type(FragmentsList), intent(inout) :: products
+		integer, intent(in) :: dNfrag
+		
+		integer, allocatable :: ids(:)
+		integer, allocatable :: channelInfo(:) ! Ids para camino de reacción aleatorio
+		integer :: nChannels ! number of channels
+		integer :: nProducts ! number of products in one channel
+		integer :: i, j, targetMolecule
+		
+		logical :: successFrag
+		
+		! La molecula a fragmentar se selecciona de forma aleatoria
+		targetMolecule = RandomUtils_uniform( [ 1, reactives.nMolecules() ] )
+		
+		if( dNfrag > 1 ) then
+			call GOptions_error( &
+				"dNfrag > 1 is not implemented yet", &
+				"Reactor.changeCompositionSequentialFragmentation()" &
+			)
+		end if
+		
+		nProducts = dNfrag+1
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Si el cluster no se puede fragmentar mas, mantenga los reactivos
+		if( nProducts > reactives.clusters(targetMolecule).nAtoms() ) then
+! 		if( nProducts > 3 ) then   ! @todo Hay que calcular el número máximo de fragmentos al inicio del programa
+			if( GOptions_printLevel >= 2 ) then
+				call GOptions_info( &
+					"The fragmentation limit has been reached", &
+					"Reactor.changeCompositionSequentialFragmentation()", &
+					"The reactives composition is kept." &
+				)
+			end if
+			
+			products = reactives
+			return
+		end if
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Se reserva la memoria necesaria para almacenar
+		! todos los canales
+		nChannels = Math_multisetNumber( FragmentsDB_instance.nMolecules(), nProducts ) ! El tamaño es multiset( N_db, N_prod )
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Si solo hay un canal es porque los reactivos
+		! son los mismos productos
+! 		if( nChannels <= 1 ) then
+! 			products = reactives
+! 			return
+! 		end if
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Se calcula la masa y carga total las cuales se utilizarán
+		! en las retricciones de conservación
+		allocate( ids(FragmentsDB_instance.nMolecules()) )
+		
+		internalMassNumber = reactives.clusters(targetMolecule).massNumber()
+		internalCharge = reactives.clusters(targetMolecule).charge
+		internalReactivesComposition = reactives.clusters(targetMolecule).composition
+		
+		internalReactivesSpinAvail = reactives.clusters(targetMolecule).spinAvailable()
+		internalNTrials = 0
+		
+		do i=1,FragmentsDB_instance.nMolecules()
+			ids(i) = i
+		end do
+		
+		call RandomUtils_randomMultiset( ids, nProducts, channelInfo, reactorConstraint, success=successFrag )
+		deallocate(ids)
+		call internalReactivesSpinAvail.clear()
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Si los clusters no pueden satisfacer el constrain, se mantienen los rectivos
+		if( .not. successFrag ) then
+			if( GOptions_printLevel >= 2 ) then
+				call GOptions_info( &
+					"Impossible to satisfy the constrain during fragmentation", &
+					"Reactor.changeCompositionSequentialFragmentation()", &
+					"The reactives composition is kept." &
+				)
+			end if
+			
+			products = reactives
+			return
+		end if
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Se muestran lo valores importantes
+		if( GOptions_printLevel >= 2 ) then
+			write(*,"(A10,I20,5X,A)") "massNumber", internalMassNumber, "used for reactor"
+			write(*,"(A10,I20,5X,A)") "charge", internalCharge, "used for reactor"
+			write(*,"(A10,I20,5X,A)") "nTrials", internalNTrials, "used for reactor"
+		end if
+		
+! 		write(*,*) "Molecula inicial"
+! 		do i=1,reactives.nMolecules()
+! 			write(*,*) " --> ", trim(reactives.clusters(i).label())
+! 		end do
+		
+		call products.init( reactives.nMolecules() + dNfrag )
+		
+! 		write(*,*) "dNFrag = ", dNfrag
+! 		write(*,*) "nProducts = ", nProducts
+! 		write(*,*) "nReactives", reactives.nMolecules()
+! 		write(*,*) "products.nMolecules()", products.nMolecules()
+! 		write(*,*) "nProducts* = ", reactives.nMolecules() + dNfrag
+		
+! 		write(*,*) "-- Agregando canales iniciales"
+		j = 1
+		do i=1,reactives.nMolecules()
+			if( i /= targetMolecule  ) then
+! 				write(*,*) "Agregando originales ", j
+				call products.set( j, reactives.clusters(i) )
+				j = j + 1
+			end if
+		end do
+! 		write(*,*) "-- END"
+		
+! 		write(*,*) "-- Agregando nuevos canales"
+		do i=1,dNfrag+1
+! 			write(*,*) "Agregando", j-1+i, i, channelInfo(i)
+! 			write(*,*) " --> ", trim(FragmentsDB_instance.clusters( channelInfo(i) ).label())
+			call products.set( j-1+i, FragmentsDB_instance.clusters( channelInfo(i) ) )
+		end do
+! 		write(*,*) "-- END"
+		
+! 		write(*,*) "-- Canal final"
+! 		do i=1,products.nMolecules()
+! 			write(*,*) i, trim(products.clusters(i).label())
+! 		end do
+! 		write(*,*) "-- END"
+		
+		if( GOptions_printLevel >= 2 ) then
+			write(*,*) ""
+			write(*,"(5X,A)")      "Choosen channel: "
+			write(*,"(5X,A,5X,A)") "                 ", trim(reactives.label())//" --> "//trim(products.label())
+			write(*,*) ""
+		end if
+
+! 		write(*,*) "Hola 4"
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Se libera la memoria solicitada
+		deallocate( channelInfo )
+		
+	end subroutine changeCompositionSequentialFragmentation
 
 	!>
 	!! @brief Override run method
