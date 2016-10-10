@@ -989,7 +989,7 @@ EOF
 	if [ "$withLabels" = "TRUE" ]
 	then
 		echo "plot \"-\" u 1:2:3 w p palette pt 7, \\" >> .plotE-$$
-		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:(0.0):8 every $freqLabels w labels font ',5'" >> .plotE-$$
+		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:8 every $freqLabels w labels font ',5'" >> .plotE-$$
 		
 # 		#Esto es un apaño que ya no se hace necesario
 # 		if [ "$coord1" = "LnWr" ]
