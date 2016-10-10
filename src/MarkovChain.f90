@@ -272,15 +272,41 @@ module MarkovChain_
 		
 		integer :: nTimesBlocked ! si se bloquea 2 veces consecutivas fuerza a random
 		integer :: historyFrequency
-		character(10), allocatable :: taskTokens(:)
-		character(10), allocatable :: bufferTokens(:)
-		character(10) :: currentTask
+		character(100), allocatable :: taskTokens(:)
+		character(100), allocatable :: bufferTokens(:)
+		character(100) :: currentTask
 		integer :: taskMult
 		real(8) :: p, Pi
 		integer :: n, i, j, k, nExp, iBuffer
 		type(String) :: sBuffer
 		character(100) :: geometryFileName
 		character(2) :: origin
+		
+		!!--------------------------------------------------------------------
+		!! Este bloque expande los operadores n*(XXX) a XXX,XXX,XXX,...,XXX
+		!! @todo El codigo funciona bien, pero no me gusta.
+		!!--------------------------------------------------------------------
+		character(100), allocatable :: taskTokens2(:)
+		
+		call this.task.split( taskTokens, "()" )
+		
+		do i=1,size(taskTokens)
+			sBuffer = trim(taskTokens(i))
+			call sBuffer.split( taskTokens2, ",*" )
+			
+			if( FString_isInteger( trim(taskTokens2(size(taskTokens2))) ) ) then
+				taskMult = FString_toInteger( taskTokens2(size(taskTokens2)) )
+				currentTask = trim(adjustl( taskTokens(i+1) ))
+				
+				sBuffer = ""
+				do j=1,taskMult
+					sBuffer = trim(sBuffer.fstr)//trim(currentTask)//","
+				end do
+				
+				call this.task.replace( trim(FString_fromInteger(taskMult))//"*("//trim(currentTask)//")", trim(sBuffer.fstr) )
+			end if
+		end do
+		!!--------------------------------------------------------------------
 		
 ! 		call this.energyHistory.clear()
 ! 		call this.weightHistory.clear()
