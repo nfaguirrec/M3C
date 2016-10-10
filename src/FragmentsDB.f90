@@ -2,17 +2,17 @@
 !! @brief
 !!
 module FragmentsDB_
-	use BlocksIFileParser_
-	
+	use UnitsConverter_
 	use Math_
 	use IOStream_
 	use String_
-	use UnitsConverter_
+	use BlocksIFileParser_
 	use RandomUtils_
 	use GOptions_
+	use AtomicElementsDB_
+	
 	use Fragment_
 	use ModelPotential_
-	
 	use GOptionsM3C_
 	
 	implicit none
@@ -21,14 +21,14 @@ module FragmentsDB_
 	public :: &
 		FragmentsDB_test
 		
-	integer, parameter, private :: MAXPOTPP = 5
-	
 	type, public :: FragmentsDB
 		type(Fragment), allocatable :: clusters(:)
-		type(ModelPotential), allocatable :: potentials(:,:,:)
+		type(ModelPotential), allocatable :: potentials(:,:)
+		type(ModelPotential) :: atomicPotentials( AtomicElementsDB_nElems, AtomicElementsDB_nElems )
 		type(String), allocatable :: forbidden(:)
 		
 		real(8), private :: energyReference_
+		logical, private :: useAtomicPotentials
 		
 		contains
 			generic :: init => initDefault, fromMassTable
@@ -37,6 +37,7 @@ module FragmentsDB_
 			procedure :: fromMassTable
 			procedure :: fromInputFile
 			procedure :: setPotentialTable
+			procedure :: setAtomicPotentialTable
 			final :: destroyFragmentsDB
 			procedure :: nMolecules
 			procedure :: getIdFromName
@@ -44,7 +45,6 @@ module FragmentsDB_
 			procedure :: extendFragmentsListName
 			procedure :: potential
 			procedure :: isThereAModel
-			procedure :: randomIdPotential
 			procedure :: isForbidden
 			procedure :: energyReference
 			procedure :: setEnergyReference
@@ -159,6 +159,8 @@ module FragmentsDB_
 		
 		deallocate(massTable)
 		
+		this.useAtomicPotentials = .false.
+		
 		!-------------------------------------------------------------------
 		! Loading the intermolecular potential table
 		!-------------------------------------------------------------------
@@ -198,7 +200,7 @@ module FragmentsDB_
 				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "----", "-----", "-----"
 				maxMass = 0
 				do i=1,this.nMolecules()
-					if( this.clusters(i).nAtoms() > 1 ) then
+					if( this.clusters(i).nAtoms() > 0 ) then
 						write(oFile.unit,"(1X,F10.2,F20.8,5X,A)") this.clusters(i).radius( type=GOptionsM3C_radiusType )/angs, &
 							( this.clusters(i).electronicEnergy - this.energyReference() )/eV, &
 							trim(this.clusters(i).label())
@@ -222,17 +224,15 @@ module FragmentsDB_
 				do i=1,this.nMolecules()
 					do j=i,this.nMolecules()
 						if( this.clusters(i).massNumber()+this.clusters(j).massNumber() < maxMass ) then
-							do n=1,MAXPOTPP
-								if( this.potentials(i,j,n).getId() /= 0 ) then
-									write(oFile.unit,"(F10.2,F20.8,5X,A)") rMax/angs, &
-										( this.clusters(i).electronicEnergy &
-										+ this.clusters(j).electronicEnergy &
-										+ this.potential( i, j, rMax, n ) &
-										- this.energyReference() &
-										)/eV, &
-										trim(this.clusters(i).label())//"+"//trim(this.clusters(j).label())
-								end if
-							end do
+							if( this.potentials(i,j).getId() /= 0 ) then
+								write(oFile.unit,"(F10.2,F20.8,5X,A)") rMax/angs, &
+									( this.clusters(i).electronicEnergy &
+									+ this.clusters(j).electronicEnergy &
+									+ this.potential( i, j, rMax ) &
+									- this.energyReference() &
+									)/eV, &
+									trim(this.clusters(i).label())//"+"//trim(this.clusters(j).label())
+							end if
 						end if
 					end do
 				end do
@@ -246,52 +246,236 @@ module FragmentsDB_
 				do i=1,this.nMolecules()
 					do j=i,this.nMolecules()
 ! 					do j=i+1,this.nMolecules()
-						do n=1,MAXPOTPP
-! 							if( this.potentials(i,j,n).getId() /= 0 ) then
-							if( this.potentials(i,j,n).getId() > 1 ) then  ! Esto evita que imprima NONE y HARDSPHERE
+						if( this.potentials(i,j).getId() > 1 ) then  ! Esto evita que imprima NONE y HARDSPHERE
+						
+							write(*,"(A)") "#  " &
+								//this.clusters(i).name &
+								//"+" &
+								//this.clusters(j).name
 							
-								write(*,"(A)") "#  " &
+							if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+								write(oFile.unit,"(A)") "#  " &
 									//this.clusters(i).name &
 									//"+" &
 									//this.clusters(j).name
+							end if
+
+							r = rMin
+							do while( r <= rMax )
+								write(*,"(2F20.7)") r/angs, ( &
+									+ this.clusters(i).electronicEnergy &
+									+ this.clusters(j).electronicEnergy &
+									+ this.potential( i, j, r ) &
+									- this.energyReference() &
+									)/eV
 								
 								if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-									write(oFile.unit,"(A)") "#  " &
-										//this.clusters(i).name &
-										//"+" &
-										//this.clusters(j).name
-								end if
-
-								r = rMin
-								do while( r <= rMax )
-									write(*,"(2F20.7)") r/angs, ( &
+									write(oFile.unit,"(2F20.7)") r/angs, ( &
 										+ this.clusters(i).electronicEnergy &
 										+ this.clusters(j).electronicEnergy &
-										+ this.potential( i, j, r, n ) &
+										+ this.potential( i, j, r ) &
 										- this.energyReference() &
 										)/eV
-									
-									if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-										write(oFile.unit,"(2F20.7)") r/angs, ( &
-											+ this.clusters(i).electronicEnergy &
-											+ this.clusters(j).electronicEnergy &
-											+ this.potential( i, j, r, n ) &
-											- this.energyReference() &
-											)/eV
-									end if
-									
-									r = r + rStep
-								end do
-								write(*,"(A)") ""
-								write(*,"(A)") ""
-								
-								if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-									write(oFile.unit,"(A)") ""
-									write(oFile.unit,"(A)") ""
 								end if
 								
+								r = r + rStep
+							end do
+							write(*,"(A)") ""
+							write(*,"(A)") ""
+							
+							if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+								write(oFile.unit,"(A)") ""
+								write(oFile.unit,"(A)") ""
 							end if
-						end do
+							
+						end if
+					end do
+				end do
+				
+! 				do i=1,this.nMolecules()
+! 					do j=1,this.nMolecules()
+! 						do k=1,this.nMolecules()
+! 							if( this.potentials(i,j,k).getId() /= 0 ) then
+! 							
+! 								write(*,"(A)") "#  " &
+! 									//this.clusters(i).name &
+! 									//" + " &
+! 									//this.clusters(j).name &
+! 									//" -> " &
+! 									//this.clusters(k).name
+! 								
+! 								if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+! 									write(oFile.unit,"(A)") "#  " &
+! 										//this.clusters(i).name &
+! 										//" + " &
+! 										//this.clusters(j).name &
+! 										//" -> " &
+! 										//this.clusters(k).name
+! 								end if
+! 
+! 								r = rMin
+! 								do while( r <= rMax )
+! 									write(*,"(2F20.7)") r/angs, this.potential( i, j, k, r )/eV
+! 									
+! 									if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+! 										write(oFile.unit,"(2F20.7)") r/angs, this.potential( i, j, k, r )/eV
+! 									end if
+! 									
+! 									r = r + rStep
+! 								end do
+! 								write(*,"(A)") ""
+! 								write(*,"(A)") ""
+! 								
+! 								if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+! 									write(oFile.unit,"(A)") ""
+! 									write(oFile.unit,"(A)") ""
+! 								end if
+! 								
+! 							end if
+! 						end do
+! 					end do
+! 				end do
+				
+				if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+					call oFile.close()
+				end if
+				
+				stop
+			end if
+			
+			return ! Hay preferencia de los potentiales moleculares que atomicos
+		end if
+		
+		!-------------------------------------------------------------------
+		! Loading the intermolecular atomic potential table
+		!-------------------------------------------------------------------
+		if( iParser.isThereBlock( "ATOMIC_POTENTIAL_TABLE" ) ) then
+			this.useAtomicPotentials = .true.
+			
+			call iParser.getBlock( "ATOMIC_POTENTIAL_TABLE", potentialTable )
+			call this.setAtomicPotentialTable( potentialTable )
+			deallocate(potentialTable)
+			
+			if( iParser.getLogical( "ATOMIC_POTENTIAL_TABLE:check", def=.false. ) ) then
+				
+				rMin = iParser.getReal( "ATOMIC_POTENTIAL_TABLE:rMin", def=0.0_8 )*angs
+				rMax = iParser.getReal( "ATOMIC_POTENTIAL_TABLE:rMax", def=10.0_8 )*angs
+				rStep = iParser.getReal( "ATOMIC_POTENTIAL_TABLE:rStep", def=0.1_8 )*angs
+				sBuffer = iParser.getString( "ATOMIC_POTENTIAL_TABLE:outputFile", def="#@NONE@#" )
+				
+				write(*,*) ""
+				write(*,*) "-------------------------------"
+				write(*,*) " CHECKING ATOMIC POTENTIAL"
+				write(*,*) ""
+				write(*,"(A30,F10.5,A)") " rMin = ", rMin/angs, " A"
+				write(*,"(A30,F10.5,A)") " rMax = ", rMax/angs, " A"
+				write(*,"(A30,F10.5,A)") "rStep = ", rStep/angs, " A"
+				
+				if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+					write(*,"(A30,A)") "outputFile = ", sBuffer.fstr
+					call oFile.init( sBuffer.fstr )
+				end if
+				
+				write(*,"(A)") ""
+				write(*,"(A)") ""
+				
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				! Escribe la identidad de las moleculas
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				write(oFile.unit,"(A)") "# Molecules identity"
+				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "covR", "Ee-E0", "label"
+				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "----", "-----", "-----"
+				maxMass = 0
+				do i=1,this.nMolecules()
+					if( this.clusters(i).nAtoms() > 0 ) then
+						write(oFile.unit,"(1X,F10.2,F20.8,5X,A)") this.clusters(i).radius( type=GOptionsM3C_radiusType )/angs, &
+							( this.clusters(i).electronicEnergy - this.energyReference() )/eV, &
+							trim(this.clusters(i).label())
+							
+					end if
+					
+					if( this.clusters(i).massNumber() > maxMass ) then
+						maxMass = this.clusters(i).massNumber()
+					end if
+				end do
+				
+				write(oFile.unit,"(A)") ""
+				write(oFile.unit,"(A)") ""
+				
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				! Escribe la identidad de los limites disociativos
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				write(oFile.unit,"(A)") "# Dissociative limits"
+				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "Rmax", "V", "label"
+				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "----", "-----", "-----"
+				do i=1,this.nMolecules()
+					do j=i,this.nMolecules()
+						if( this.clusters(i).massNumber()+this.clusters(j).massNumber() < maxMass ) then
+							if( this.potentials(i,j).getId() /= 0 ) then
+								write(oFile.unit,"(F10.2,F20.8,5X,A)") rMax/angs, &
+									( this.clusters(i).electronicEnergy &
+									+ this.clusters(j).electronicEnergy &
+									+ this.potential( i, j, rMax ) &
+									- this.energyReference() &
+									)/eV, &
+									trim(this.clusters(i).label())//"+"//trim(this.clusters(j).label())
+							end if
+						end if
+					end do
+				end do
+				
+				write(oFile.unit,"(A)") ""
+				write(oFile.unit,"(A)") ""
+				
+				write(oFile.unit,"(A)") "# Dissociative limits"
+				write(oFile.unit,"(A1,2A20,5X,A)") "#", "r", "V(r)", "label"
+				write(oFile.unit,"(A1,2A20,5X,A)") "#", "---", "-----", "-----"
+				do i=1,this.nMolecules()
+					do j=i,this.nMolecules()
+! 					do j=i+1,this.nMolecules()
+						if( this.potentials(i,j).getId() > 1 ) then  ! Esto evita que imprima NONE y HARDSPHERE
+						
+							write(*,"(A)") "#  " &
+								//this.clusters(i).name &
+								//"+" &
+								//this.clusters(j).name
+							
+							if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+								write(oFile.unit,"(A)") "#  " &
+									//this.clusters(i).name &
+									//"+" &
+									//this.clusters(j).name
+							end if
+
+							r = rMin
+							do while( r <= rMax )
+								write(*,"(2F20.7)") r/angs, ( &
+									+ this.clusters(i).electronicEnergy &
+									+ this.clusters(j).electronicEnergy &
+									+ this.potential( i, j, r ) &
+									- this.energyReference() &
+									)/eV
+								
+								if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+									write(oFile.unit,"(2F20.7)") r/angs, ( &
+										+ this.clusters(i).electronicEnergy &
+										+ this.clusters(j).electronicEnergy &
+										+ this.potential( i, j, r ) &
+										- this.energyReference() &
+										)/eV
+								end if
+								
+								r = r + rStep
+							end do
+							write(*,"(A)") ""
+							write(*,"(A)") ""
+							
+							if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+								write(oFile.unit,"(A)") ""
+								write(oFile.unit,"(A)") ""
+							end if
+							
+						end if
 					end do
 				end do
 				
@@ -359,12 +543,11 @@ module FragmentsDB_
 		integer :: i, j, n, idR1, idR2
 		character(100), allocatable :: cols(:)
 		character(100), allocatable :: tokens(:)
-		real(8) :: reducedMass
 		logical :: firstTime
 		integer :: maxMass
 		
 		if( allocated(this.potentials) ) deallocate( this.potentials )
-		allocate( this.potentials(this.nMolecules(),this.nMolecules(),MAXPOTPP) )
+		allocate( this.potentials(this.nMolecules(),this.nMolecules()) )
 		
 		write(*,"(A)") ""
 		write(*,"(<GOptions_indentLength*1>X,A)") "-----------------------------------------------------------------------"
@@ -394,18 +577,14 @@ module FragmentsDB_
 				write(*,"(<GOptions_indentLength*1>X,A10,A10,5X,2I3)", advance="no") &
 						this.clusters(idR1).name, this.clusters(idR2).name, idR1, idR2
 						
-				reducedMass = this.clusters(idR1).mass()*this.clusters(idR2).mass()/( this.clusters(idR1).mass()+this.clusters(idR2).mass() )
-						
-				do n=1,size(this.potentials,dim=3)
-					if( this.potentials(idR1,idR2,n).getId() == 0 ) then
-						call this.potentials(idR1,idR2,n).init( cols(2), reducedMass )
-						call this.potentials(idR2,idR1,n).init( cols(2), reducedMass )
-						
-						write(*,"(A15,10F10.3)") &
-							trim(MODEL_NAME(this.potentials(idR1,idR2,n).getId())), this.potentials(idR1,idR2,n).potParams
-						exit
-					end if
-				end do
+				if( this.potentials(idR1,idR2).getId() == 0 ) then
+					call this.potentials(idR1,idR2).init( cols(2) )
+					call this.potentials(idR2,idR1).init( cols(2) )
+					
+					write(*,"(A15,10F10.3)") &
+						trim(MODEL_NAME(this.potentials(idR1,idR2).getId())), this.potentials(idR1,idR2).potParams
+					exit
+				end if
 			else
 				call GOptions_error( &
 						"Intermolecular potential table row incomplete, this row should have had 3 columns", &
@@ -426,7 +605,7 @@ module FragmentsDB_
 		firstTime = .true.
 		do i=1,this.nMolecules()
 			do j=i,this.nMolecules()
-				if( this.potentials(i,j,1).getId() == 0 ) then
+				if( this.potentials(i,j).getId() == 0 ) then
 ! 					.and. this.clusters(i).massNumber() + this.clusters(j).massNumber() < maxMass ) then
 					
 					if( firstTime ) then
@@ -438,13 +617,11 @@ module FragmentsDB_
 					write(*,"(<GOptions_indentLength*1>X,A10,A10,5X,2I3)", advance="no") &
 							this.clusters(i).name, this.clusters(j).name, i, j
 							
-					reducedMass = this.clusters(i).mass()*this.clusters(j).mass()/( this.clusters(i).mass()+this.clusters(j).mass() )
-				
-					call this.potentials(i,j,1).init( "HARDSPHERE()", reducedMass )
-					call this.potentials(j,i,1).init( "HARDSPHERE()", reducedMass )
+					call this.potentials(i,j).init( "HARDSPHERE()" )
+					call this.potentials(j,i).init( "HARDSPHERE()" )
 					
 					write(*,"(A15,10F10.3)") &
-						trim(MODEL_NAME(this.potentials(i,j,1).getId())), this.potentials(i,j,1).potParams
+						trim(MODEL_NAME(this.potentials(i,j).getId())), this.potentials(i,j).potParams
 				end if
 			end do
 		end do
@@ -459,8 +636,119 @@ module FragmentsDB_
 		
 		if( allocated(cols) ) deallocate( cols )
 		if( allocated(tokens) ) deallocate( tokens )
-		
 	end subroutine setPotentialTable
+	
+	!>
+	!! @brief
+	!!
+	subroutine setAtomicPotentialTable( this, potentialTable )
+		class(FragmentsDB) :: this
+		type(String), allocatable, intent(in) :: potentialTable(:)
+		
+		integer :: i, j, n, idR1, idR2
+		character(100), allocatable :: cols(:)
+		character(100), allocatable :: tokens(:)
+		logical :: firstTime
+		integer :: maxMass
+		integer :: composition( AtomicElementsDB_nElems )
+		
+		write(*,"(A)") ""
+		write(*,"(<GOptions_indentLength*1>X,A)") "-----------------------------------------------------------------------"
+		write(*,"(<GOptions_indentLength*1>X,A)") " ATOMIC MODEL POTENTIALS"
+		write(*,"(<GOptions_indentLength*1>X,A)") "-----------------------------------------------------------------------"
+		write(*,"(A)") ""
+		write(*,"(<GOptions_indentLength*1>X,A10,A10,11X,A15,A10)") "R1", "R2", "potential", "params"
+		write(*,"(<GOptions_indentLength*1>X,A10,A10,11X,A15,A10)") "----", "----", "---------", "------"
+		
+		firstTime = .true.
+		do i=1,size(potentialTable)
+		
+			if( firstTime ) then
+				write(*,*) ""
+				write(*,"(A)") "USER"
+				firstTime = .false.
+			end if
+		
+			call FString_split( potentialTable(i).fstr, cols, " " )
+			
+			if( size(cols) >= 2 ) then
+				call FString_split( cols(1), tokens, "+" )
+				
+				idR1 = AtomicElementsDB_instance.atomicNumber( tokens(1) )
+				idR2 = AtomicElementsDB_instance.atomicNumber( tokens(2) )
+				
+				write(*,"(<GOptions_indentLength*1>X,A10,A10,5X,2I3)", advance="no") &
+						trim(tokens(1)), trim(tokens(2)), idR1, idR2
+						
+				if( this.atomicPotentials(idR1,idR2).getId() == 0 ) then
+					call this.atomicPotentials(idR1,idR2).init( cols(2) )
+					call this.atomicPotentials(idR2,idR1).init( cols(2) )
+					
+					write(*,"(A15,10F10.3)") &
+						trim(MODEL_NAME(this.atomicPotentials(idR1,idR2).getId())), this.atomicPotentials(idR1,idR2).potParams
+					exit
+				end if
+			else
+				call GOptions_error( &
+						"Intermolecular potential table row incomplete, this row should have had 3 columns", &
+						"SMoleculeDB.setPotentialTable()", &
+						trim(potentialTable(i).fstr) &
+					)
+			end if
+			
+		end do
+		
+! 		maxMass = 0
+! 		do i=1,this.nMolecules()
+! 			if( this.clusters(i).massNumber() > maxMass ) then
+! 				maxMass = this.clusters(i).massNumber()
+! 			end if
+! 		end do
+		
+		composition = 0
+		do i=1,this.nMolecules()
+			composition = composition + this.clusters(i).composition
+		end do
+		composition = merge( 1, 0, composition>0 )
+		
+		firstTime = .true.
+		do i=1,size(composition)
+			do j=i,size(composition)
+				if( composition(i) /= 0 .and. composition(j) /= 0 .and. this.atomicPotentials(i,j).getId() == 0 ) then
+! 					.and. this.clusters(i).massNumber() + this.clusters(j).massNumber() < maxMass ) then
+					
+					if( firstTime ) then
+						write(*,*) ""
+						write(*,"(A)") "DEFAULT"
+						firstTime = .false.
+					end if
+				
+					write(*,"(<GOptions_indentLength*1>X,A10,A10,5X,2I3)", advance="no") &
+							AtomicElementsDB_instance.symbol(i), &
+							AtomicElementsDB_instance.symbol(j), i, j
+							
+					call this.atomicPotentials(i,j).init( "HARDSPHERE()" )
+					call this.atomicPotentials(j,i).init( "HARDSPHERE()" )
+					
+					write(*,"(A15,10F10.3)") &
+						trim(MODEL_NAME(this.atomicPotentials(i,j).getId())), this.atomicPotentials(i,j).potParams
+				end if
+			end do
+		end do
+		
+		write(*,*) ""
+		do i=1,size(composition)
+			if( composition(i) /= 0 ) then
+				write(*,*) i, "--"//trim(AtomicElementsDB_instance.symbol(i))//"--"
+			end if
+		end do
+		write(*,*) ""
+		
+		write(*,"(<GOptions_indentLength*1>X,A)") "-----------------------------------------------------------------------"
+		
+		if( allocated(cols) ) deallocate( cols )
+		if( allocated(tokens) ) deallocate( tokens )
+	end subroutine setAtomicPotentialTable
 	
 	!>
 	!! @brief Destructor
@@ -594,49 +882,72 @@ module FragmentsDB_
 	!>
 	!! @brief Returns the intermolecular potential
 	!!
-	function potential( this, idR1, idR2, r, n ) result ( Vij )
+	function potential( this, idR1, idR2, r ) result ( Vij )
 		class(FragmentsDB), intent(in) :: this
 		integer, intent(in) :: idR1
 		integer, intent(in) :: idR2
 		real(8), intent(in) :: r
-		integer, optional, intent(in) :: n
 		real(8) :: Vij
 		
-		integer :: nEff
 		real(8), allocatable :: params(:)
+		integer :: i, j, atomId1, atomId2
 		
-		if( present(n) ) then
-			nEff = n
-		else
-			nEff = this.randomIdPotential( idR1, idR2 )
-		end if
-		
-		if( .not. allocated(this.potentials) ) then
-			Vij = 0.0_8
-			return
-		end if
-		
-		if( idR1 > size(this.potentials,dim=1) .or. idR2 > size(this.potentials,dim=1) ) then
-			call GOptions_error( &
+		if( .not. this.useAtomicPotentials ) then
+			if( .not. allocated(this.potentials) ) then
+				Vij = 0.0_8
+				return
+			end if
+			
+			if( idR1 > size(this.potentials,dim=1) .or. idR2 > size(this.potentials,dim=1) ) then
+				call GOptions_error( &
 					"Unknown reactive(s) ("//trim(FString_fromInteger(idR1))//","//trim(FString_fromInteger(idR1))//")", &
 					"FragmentsDB.potential()" &
-				)			
-		end if
-		
-		if( nEff < 1 .or. this.potentials(idR1,idR2,nEff).getId() == 0 ) then
+				)
+			end if
+			
+			if( this.potentials(idR1,idR2).getId() == 0 ) then
+				Vij = 0.0_8
+				return
+			end if
+			
+			allocate( params(3) )
+			
+			params(1) = this.clusters(idR1).radius( type=GOptionsM3C_radiusType ) &
+					+ this.clusters(idR2).radius( type=GOptionsM3C_radiusType ) ! Ra+Rb = Re
+			params(2) = real(this.clusters(idR1).charge,8) ! qa = q1
+			params(3) = real(this.clusters(idR2).charge,8) ! qb = q2
+			
+			Vij = this.potentials(idR1,idR2).evaluate( r, params )
+			
+			deallocate( params )
+		else
+			allocate( params(3) )
+			
 			Vij = 0.0_8
-			return
+			do i=1,this.clusters(idR1).nAtoms()
+				do j=1,this.clusters(idR2).nAtoms()
+					
+					atomId1 = AtomicElementsDB_instance.atomicNumber( trim(this.clusters(idR1).atoms(i).symbol) )
+					atomId2 = AtomicElementsDB_instance.atomicNumber( trim(this.clusters(idR2).atoms(j).symbol) )
+					
+					if( this.atomicPotentials(atomId1,atomId2).getId() == 0 ) then
+						Vij = 0.0_8
+						exit
+					end if
+					
+					params(1) = this.clusters(idR1).atoms(i).radius( type=GOptionsM3C_radiusType ) &
+							+ this.clusters(idR2).atoms(j).radius( type=GOptionsM3C_radiusType ) ! Ra+Rb = Re
+! 					params(2) = real(this.clusters(atomId1).charge,8) ! qa = q1
+! 					params(3) = real(this.clusters(atomId2).charge,8) ! qb = q2
+					params(2) = 0.0_8 ! qa = q1
+					params(3) = 0.0_8 ! qb = q2
+					
+					Vij = Vij + this.atomicPotentials(atomId1,atomId2).evaluate( r, params )
+				end do
+			end do
+			
+			deallocate( params )
 		end if
-		
-		allocate( params(3) )
-		
-		params(1) = this.clusters(idR1).radius( type=GOptionsM3C_radiusType ) + this.clusters(idR2).radius( type=GOptionsM3C_radiusType ) ! Ra+Rb = Re
-		params(2) = real(this.clusters(idR1).charge,8) ! qa = q1
-		params(3) = real(this.clusters(idR2).charge,8) ! qb = q2
-		
-		Vij = this.potentials(idR1,idR2,nEff).evaluate( r, params )
-		
-		deallocate( params )
 	end function potential
 	
 	!>
@@ -649,59 +960,11 @@ module FragmentsDB_
 		integer, intent(in) :: idR2
 		logical :: output
 		
-		integer :: i
-		
 		output = .false.
 		
 		if( .not. allocated(this.potentials) ) return
-		
-		output = .false.
-		do i=1,MAXPOTPP
-			if( this.potentials(idR1, idR2,i).getId() /= 0 ) then
-				output = .true.
-				exit
-			end if
-		end do
+		if( this.potentials(idR1, idR2).getId() /= 0 ) output = .true.
 	end function isThereAModel
-	
-	!>
-	!! @brief Returns true if the there is a potential model associated to the clusters
-	!!        which ids are idR1 and idR2
-	!!
-	function randomIdPotential( this, idR1, idR2 ) result ( output )
-		class(FragmentsDB), intent(in) :: this
-		integer, intent(in) :: idR1
-		integer, intent(in) :: idR2
-		integer :: output
-		
-		integer :: i, n
-		integer, allocatable :: randomTargets(:)
-		
-		if( .not. allocated(this.potentials) ) then
-			output = -1
-			return
-		end if
-		
-		if( .not. this.isThereAModel( idR1, idR2 ) ) then
-			output = -1
-			return
-		end if
-		
-		allocate( randomTargets(MAXPOTPP) )
-		randomTargets = 0
-		
-		n = 1
-		do i=1,MAXPOTPP
-			if( this.potentials( idR1, idR2, i ).getId() /= 0 ) then
-				randomTargets(n) = i
-				n = n + 1
-			end if
-		end do
-		
-		output = randomTargets( RandomUtils_uniform([1,n-1]) )
-		
-		deallocate( randomTargets )
-	end function randomIdPotential
 	
 	!>
 	!! @brief Returns true if the reaction associated with the label is forbidden

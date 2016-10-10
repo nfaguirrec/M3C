@@ -1801,9 +1801,6 @@ module FragmentsListBase_
 					)
 				end if
 				
-				! No estoy seguro si estas dos líneas son importantes, porque ya no me acuerdo para que servían
-! 				this.currentProducts(i,j) = FragmentsDB_instance.randomIdPotential( this.clusters(i).id, this.clusters(j).id )
-! 				rBuffer = FragmentsDB_instance.potential( this.clusters(i).id, this.clusters(j).id, rvij, this.currentProducts(i,j) )
 				rBuffer = FragmentsDB_instance.potential( this.clusters(i).id, this.clusters(j).id, rvij )
 				
 				if( GOptions_printLevel >= 3 ) then
