@@ -384,7 +384,7 @@ module FragmentsList_
 				call GOptions_error( &
 					"Unknown angular momentum coupling scheme"//" ("//trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)//")", &
 					"FragmentsListBase.updateDiagInertiaTensor()", &
-					"Posible implemented values: JJ, JL" &
+					"Implemented methods: JJ, JJL" &
 					)
 		end select
 		

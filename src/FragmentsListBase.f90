@@ -675,7 +675,7 @@ module FragmentsListBase_
 	!>
 	!! @brief
 	!! @param[in]  maxIter
-	!!             Maximum allowed number of iterations (default = 100000)
+	!!             Maximum allowed number of iterations (default = 1000000)
 	!!
 	subroutine randomCenters( this, maxIter )
 		class(FragmentsListBase) :: this
