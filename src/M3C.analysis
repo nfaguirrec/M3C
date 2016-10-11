@@ -736,10 +736,10 @@ EOF
 	
 	if [ "$withLabels" = "TRUE" ]
 	then
-		echo "plot \"-\" u 1:2:3 w p palette pt 7, \\" >> .plotE-$$
+		echo "plot \"-\" u 1:2:3 w p palette pt 5, \\" >> .plotE-$$
 		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
 	else
-		echo "plot \"-\" u 1:2::3 w p palette pt 7" >> .plotE-$$
+		echo "plot \"-\" u 1:2::3 w p palette pt 5" >> .plotE-$$
 	fi
 	
 	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" >> .plotE-$$
@@ -988,7 +988,7 @@ EOF
 	
 	if [ "$withLabels" = "TRUE" ]
 	then
-		echo "plot \"-\" u 1:2:3 w p palette pt 7, \\" >> .plotE-$$
+		echo "plot \"-\" u 1:2:3 w p palette pt 5, \\" >> .plotE-$$
 		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:8 every $freqLabels w labels font ',5'" >> .plotE-$$
 		
 # 		#Esto es un apaño que ya no se hace necesario
@@ -1005,7 +1005,7 @@ EOF
 # 			echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:(0.0):8 every $freqLabels w labels font ',5'" >> .plotE-$$
 # 		fi
 	else
-		echo "plot \"-\" u 1:2:3 w p palette pt 7" >> .plotE-$$
+		echo "plot \"-\" u 1:2:3 w p palette pt 5" >> .plotE-$$
 
 # 		#Esto es un apaño que ya no se hace necesario
 # 		if [ "$coord1" = "LnWr" ]
