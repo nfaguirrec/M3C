@@ -512,141 +512,213 @@ module Reactor_
 		integer, allocatable :: channelInfo(:) ! Ids para camino de reacción aleatorio
 		integer :: nChannels ! number of channels
 		integer :: nProducts ! number of products in one channel
-		integer :: i, j, targetMolecule
+		integer :: i, j, targetMolecule1, targetMolecule2
 		
 		logical :: successFrag
 		
-		! La molecula a fragmentar se selecciona de forma aleatoria
-		targetMolecule = RandomUtils_uniform( [ 1, reactives.nMolecules() ] )
+		if( dNfrag >= 0 ) then
 		
-		if( dNfrag > 1 ) then
-			call GOptions_error( &
-				"dNfrag > 1 is not implemented yet", &
-				"Reactor.changeCompositionSequentialFragmentation()" &
-			)
-		end if
-		
-		nProducts = dNfrag+1
-		
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		! Si el cluster no se puede fragmentar mas, mantenga los reactivos
-		if( nProducts > reactives.clusters(targetMolecule).nAtoms() ) then
-! 		if( nProducts > 3 ) then   ! @todo Hay que calcular el número máximo de fragmentos al inicio del programa
-			if( GOptions_printLevel >= 2 ) then
-				call GOptions_info( &
-					"The fragmentation limit has been reached", &
-					"Reactor.changeCompositionSequentialFragmentation()", &
-					"The reactives composition is kept." &
+			if( dNfrag > 1 ) then
+				call GOptions_error( &
+					"dNfrag > 1 is not implemented yet", &
+					"Reactor.changeCompositionSequentialFragmentation()" &
 				)
 			end if
 			
-			products = reactives
-			return
-		end if
-		
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		! Se reserva la memoria necesaria para almacenar
-		! todos los canales
-		nChannels = Math_multisetNumber( FragmentsDB_instance.nMolecules(), nProducts ) ! El tamaño es multiset( N_db, N_prod )
-		
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		! Si solo hay un canal es porque los reactivos
-		! son los mismos productos
-! 		if( nChannels <= 1 ) then
-! 			products = reactives
-! 			return
-! 		end if
-		
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		! Se calcula la masa y carga total las cuales se utilizarán
-		! en las retricciones de conservación
-		allocate( ids(FragmentsDB_instance.nMolecules()) )
-		
-		internalMassNumber = reactives.clusters(targetMolecule).massNumber()
-		internalCharge = reactives.clusters(targetMolecule).charge
-		internalReactivesComposition = reactives.clusters(targetMolecule).composition
-		
-		internalReactivesSpinAvail = reactives.clusters(targetMolecule).spinAvailable()
-		internalNTrials = 0
-		
-		do i=1,FragmentsDB_instance.nMolecules()
-			ids(i) = i
-		end do
-		
-		call RandomUtils_randomMultiset( ids, nProducts, channelInfo, reactorConstraint, success=successFrag )
-		deallocate(ids)
-		call internalReactivesSpinAvail.clear()
-		
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		! Si los clusters no pueden satisfacer el constrain, se mantienen los rectivos
-		if( .not. successFrag ) then
+			! La molecula a fragmentar se selecciona de forma aleatoria
+			targetMolecule1 = RandomUtils_uniform( [ 1, reactives.nMolecules() ] )
+			
+			nProducts = dNfrag+1
+			
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Si el cluster no se puede fragmentar mas, mantenga los reactivos
+			if( nProducts > reactives.clusters(targetMolecule1).nAtoms() ) then
+				if( GOptions_printLevel >= 2 ) then
+					call GOptions_info( &
+						"The fragmentation limit has been reached", &
+						"Reactor.changeCompositionSequentialFragmentation()", &
+						"The reactives composition is kept." &
+					)
+				end if
+				
+				products = reactives
+				return
+			end if
+			
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Se reserva la memoria necesaria para almacenar
+			! todos los canales
+			nChannels = Math_multisetNumber( FragmentsDB_instance.nMolecules(), nProducts ) ! El tamaño es multiset( N_db, N_prod )
+			
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Se calcula la masa y carga total las cuales se utilizarán
+			! en las retricciones de conservación
+			allocate( ids(FragmentsDB_instance.nMolecules()) )
+			
+			internalMassNumber = reactives.clusters(targetMolecule1).massNumber()
+			internalCharge = reactives.clusters(targetMolecule1).charge
+			internalReactivesComposition = reactives.clusters(targetMolecule1).composition
+			
+			internalReactivesSpinAvail = reactives.clusters(targetMolecule1).spinAvailable()
+			internalNTrials = 0
+			
+			do i=1,FragmentsDB_instance.nMolecules()
+				ids(i) = i
+			end do
+			
+			call RandomUtils_randomMultiset( ids, nProducts, channelInfo, reactorConstraint, success=successFrag )
+			deallocate(ids)
+			call internalReactivesSpinAvail.clear()
+			
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Si los clusters no pueden satisfacer el constrain, se mantienen los rectivos
+			if( .not. successFrag ) then
+				if( GOptions_printLevel >= 2 ) then
+					call GOptions_info( &
+						"Impossible to satisfy the constrain during fragmentation", &
+						"Reactor.changeCompositionSequentialFragmentation()", &
+						"The reactives composition is kept." &
+					)
+				end if
+				
+				products = reactives
+				return
+			end if
+			
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Se muestran lo valores importantes
 			if( GOptions_printLevel >= 2 ) then
-				call GOptions_info( &
-					"Impossible to satisfy the constrain during fragmentation", &
-					"Reactor.changeCompositionSequentialFragmentation()", &
-					"The reactives composition is kept." &
+				write(*,"(A10,I20,5X,A)") "massNumber", internalMassNumber, "used for reactor"
+				write(*,"(A10,I20,5X,A)") "charge", internalCharge, "used for reactor"
+				write(*,"(A10,I20,5X,A)") "nTrials", internalNTrials, "used for reactor"
+			end if
+			
+			call products.init( reactives.nMolecules() + dNfrag )
+			
+			j = 1
+			do i=1,reactives.nMolecules()
+				if( i /= targetMolecule1  ) then
+					call products.set( j, reactives.clusters(i) )
+					j = j + 1
+				end if
+			end do
+			
+			do i=1,dNfrag+1
+				call products.set( j-1+i, FragmentsDB_instance.clusters( channelInfo(i) ) )
+			end do
+			
+		else
+			if( dNfrag < -1 ) then
+				call GOptions_error( &
+					"dNfrag < -1 is not implemented yet", &
+					"Reactor.changeCompositionSequentialFragmentation()" &
 				)
 			end if
 			
-			products = reactives
-			return
-		end if
-		
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		! Se muestran lo valores importantes
-		if( GOptions_printLevel >= 2 ) then
-			write(*,"(A10,I20,5X,A)") "massNumber", internalMassNumber, "used for reactor"
-			write(*,"(A10,I20,5X,A)") "charge", internalCharge, "used for reactor"
-			write(*,"(A10,I20,5X,A)") "nTrials", internalNTrials, "used for reactor"
-		end if
-		
-! 		write(*,*) "Molecula inicial"
-! 		do i=1,reactives.nMolecules()
-! 			write(*,*) " --> ", trim(reactives.clusters(i).label())
-! 		end do
-		
-		call products.init( reactives.nMolecules() + dNfrag )
-		
-! 		write(*,*) "dNFrag = ", dNfrag
-! 		write(*,*) "nProducts = ", nProducts
-! 		write(*,*) "nReactives", reactives.nMolecules()
-! 		write(*,*) "products.nMolecules()", products.nMolecules()
-! 		write(*,*) "nProducts* = ", reactives.nMolecules() + dNfrag
-		
-! 		write(*,*) "-- Agregando canales iniciales"
-		j = 1
-		do i=1,reactives.nMolecules()
-			if( i /= targetMolecule  ) then
-! 				write(*,*) "Agregando originales ", j
-				call products.set( j, reactives.clusters(i) )
-				j = j + 1
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Si el cluster no se puede fusionar mas, mantenga los reactivos
+			if( reactives.nMolecules() == 1 ) then
+				if( GOptions_printLevel >= 2 ) then
+					call GOptions_info( &
+						"The fision limit has been reached", &
+						"Reactor.changeCompositionSequentialFragmentation()", &
+						"The reactives composition is kept." &
+					)
+				end if
+				
+				products = reactives
+				return
 			end if
-		end do
-! 		write(*,*) "-- END"
-		
-! 		write(*,*) "-- Agregando nuevos canales"
-		do i=1,dNfrag+1
-! 			write(*,*) "Agregando", j-1+i, i, channelInfo(i)
-! 			write(*,*) " --> ", trim(FragmentsDB_instance.clusters( channelInfo(i) ).label())
-			call products.set( j-1+i, FragmentsDB_instance.clusters( channelInfo(i) ) )
-		end do
-! 		write(*,*) "-- END"
-		
-! 		write(*,*) "-- Canal final"
-! 		do i=1,products.nMolecules()
-! 			write(*,*) i, trim(products.clusters(i).label())
-! 		end do
-! 		write(*,*) "-- END"
-		
+			
+			! La moleculas a fusionar se seleccionan de forma aleatoria
+			do while( .true. )
+				targetMolecule1 = RandomUtils_uniform( [ 1, reactives.nMolecules() ] )
+				targetMolecule2 = RandomUtils_uniform( [ 1, reactives.nMolecules() ] )
+				
+				if( targetMolecule1 /= targetMolecule2 ) exit
+			end do
+			
+			if( GOptions_printLevel >= 2 ) then
+				write(*,"(A10,I20)") "target1", targetMolecule1
+				write(*,"(A10,I20)") "target2", targetMolecule2
+			end if
+			
+			nProducts = 1
+			
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Se reserva la memoria necesaria para almacenar
+			! todos los canales
+			nChannels = Math_multisetNumber( FragmentsDB_instance.nMolecules(), nProducts ) ! El tamaño es multiset( N_db, N_prod )
+			
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Se calcula la masa y carga total las cuales se utilizarán
+			! en las retricciones de conservación
+			allocate( ids(FragmentsDB_instance.nMolecules()) )
+			
+			internalMassNumber = reactives.clusters(targetMolecule1).massNumber()+reactives.clusters(targetMolecule2).massNumber()
+			internalCharge = reactives.clusters(targetMolecule1).charge+reactives.clusters(targetMolecule2).charge
+			internalReactivesComposition = reactives.clusters(targetMolecule1).composition+reactives.clusters(targetMolecule2).composition
+			
+			! @todo No he pensado en como meter el espin. Ver mas abajo el clear
+! 			internalReactivesSpinAvail = reactives.clusters(targetMolecule1).spinAvailable()
+			internalNTrials = 0
+			
+			do i=1,FragmentsDB_instance.nMolecules()
+				ids(i) = i
+			end do
+			
+			call RandomUtils_randomMultiset( ids, nProducts, channelInfo, reactorConstraint, success=successFrag )
+			deallocate(ids)
+! 			call internalReactivesSpinAvail.clear()
+			
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Si los clusters no pueden satisfacer el constrain, se mantienen los rectivos
+			if( .not. successFrag ) then
+				if( GOptions_printLevel >= 2 ) then
+					call GOptions_info( &
+						"Impossible to satisfy the constrain during fusion", &
+						"Reactor.changeCompositionSequentialFragmentation()", &
+						"The reactives composition is kept." &
+					)
+				end if
+				
+				products = reactives
+				return
+			end if
+			
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Se muestran lo valores importantes
+			if( GOptions_printLevel >= 2 ) then
+				write(*,"(A10,I20,5X,A)") "massNumber", internalMassNumber, "used for reactor"
+				write(*,"(A10,I20,5X,A)") "charge", internalCharge, "used for reactor"
+				write(*,"(A10,I20,5X,A)") "nTrials", internalNTrials, "used for reactor"
+			end if
+			
+			call products.init( reactives.nMolecules() + dNfrag )
+			
+			j = 1
+			do i=1,reactives.nMolecules()
+				if( i /= targetMolecule1 .and. i /= targetMolecule2 ) then
+					call products.set( j, reactives.clusters(i) )
+					j = j + 1
+				end if
+			end do
+			
+! 			do i=1,dNfrag+1
+! 				call products.set( j-1+i, FragmentsDB_instance.clusters( channelInfo(i) ) )
+				i = 1
+				call products.set( reactives.nMolecules() + dNfrag, FragmentsDB_instance.clusters( channelInfo(i) ) )
+! 			end do
+			
+		end if
+			
 		if( GOptions_printLevel >= 2 ) then
 			write(*,*) ""
 			write(*,"(5X,A)")      "Choosen channel: "
 			write(*,"(5X,A,5X,A)") "                 ", trim(reactives.label())//" --> "//trim(products.label())
 			write(*,*) ""
 		end if
-
-! 		write(*,*) "Hola 4"
-		
+			
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Se libera la memoria solicitada
 		deallocate( channelInfo )
