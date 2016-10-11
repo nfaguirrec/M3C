@@ -237,12 +237,12 @@ module Fragment_
 			write(IO_STDOUT,"(A)") ""
 			write(IO_STDOUT,"(4X,A22,A)") "file name = ", this.fileName
 			write(IO_STDOUT,"(4X,A22,A)") "name = ", this.name
-			write(IO_STDOUT,"(4X,A23,3F14.5,A)") "Moments of inertia = [", &
+			write(IO_STDOUT,"(4X,A23,3F20.5,A)") "Moments of inertia = [", &
 					this.diagInertiaTensor.get(1,1)/amu/angs**2, &
 					this.diagInertiaTensor.get(2,2)/amu/angs**2, &
 					this.diagInertiaTensor.get(3,3)/amu/angs**2, &
 					"  ]   amu*angs**2"
-			write(IO_STDOUT,"(4X,A23,3F14.5,A)") "Moments of inertia = [", &
+			write(IO_STDOUT,"(4X,A23,3F20.5,A)") "Moments of inertia = [", &
 					this.diagInertiaTensor.get(1,1), &
 					this.diagInertiaTensor.get(2,2), &
 					this.diagInertiaTensor.get(3,3), &

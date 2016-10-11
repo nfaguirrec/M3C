@@ -3195,11 +3195,11 @@ function main()
 				then
 					maxP=$4
 					reactionsDiagram ${iFile%.*}.data/E_${availableEnergies[$id]}.histogram FALSE $maxP
-				else
-					maxP=$4
-					dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:histogramFile`
-					reactionsDiagram $dataFile FALSE $maxP
 				fi
+			else
+				maxP=$4
+				dataFile=`getValueFromIFIle ${iFile%.*}.m3c MARKOV_CHAIN:histogramFile`
+				reactionsDiagram $dataFile FALSE $maxP
 			fi
 			;;
 			

@@ -70,7 +70,6 @@ module ModelPotential_
 	
 	type, public :: ModelPotential
 		integer, private :: id = 0
-		real(8) :: mu = 0.0_8
 		real(8), allocatable :: potParams(:)
 		
 		contains
@@ -115,17 +114,14 @@ module ModelPotential_
 	!>
 	!! @brief Constructor
 	!!
-	subroutine fromFString( this, fstr, mu )
+	subroutine fromFString( this, fstr )
 		class(ModelPotential) :: this 
 		character(*), intent(in) :: fstr
-		real(8), intent(in) :: mu
 		
 		integer :: i
 		character(100), allocatable :: tokens(:)
 		real(8), allocatable :: potUserParams(:)
 		logical :: located
-		
-		this.mu = mu
 		
 		call FString_split( fstr, tokens, "()" )
 		
