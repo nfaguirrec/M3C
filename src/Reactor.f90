@@ -660,6 +660,12 @@ module Reactor_
 			internalReactivesComposition = reactives.clusters(targetMolecule1).composition+reactives.clusters(targetMolecule2).composition
 			
 			! @todo No he pensado en como meter el espin. Ver mas abajo el clear
+			if( GOptionsM3C_useSpinConservationRules ) then
+				call GOptions_error( &
+					"The option useSpinConservationRules=TRUE in combination with structureSamplingMethod=TRUE is not already implemented", &
+					"Reactor.changeCompositionSequentialFragmentation()" &
+				)
+			end if
 ! 			internalReactivesSpinAvail = reactives.clusters(targetMolecule1).spinAvailable()
 			internalNTrials = 0
 			
