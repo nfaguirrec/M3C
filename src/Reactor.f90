@@ -59,7 +59,7 @@ module Reactor_
 			procedure :: run
 			procedure, private :: changeComposition
 			procedure, private, NOPASS :: changeCompositionRandomly
-			procedure, private, NOPASS :: changeCompositionSequentia
+			procedure, private, NOPASS :: changeCompositionSequential
 			procedure, private, NOPASS :: isSpinForbidden
 			procedure, private, NOPASS :: reactorConstraint
 			
@@ -241,7 +241,7 @@ module Reactor_
 			case( "RANDOM" )
 				call changeCompositionRandomly( this.reactives, this.products, this.dNFrag(n) )
 			case( "SEQUENTIAL" )
-				call changeCompositionSequentia( this.reactives, this.products, this.dNFrag(n) )
+				call changeCompositionSequential( this.reactives, this.products, this.dNFrag(n) )
 			case default
 				call GOptions_error( &
 					"Unknown change composition sampling method"//" ("//trim(GOptionsM3C_structureSamplingMethod.fstr)//")", &
@@ -503,7 +503,7 @@ module Reactor_
 	!>
 	!! @brief Change the composition of the system
 	!!
-	subroutine changeCompositionSequentia( reactives, products, dNfrag )
+	subroutine changeCompositionSequential( reactives, products, dNfrag )
 		type(FragmentsList), intent(in) :: reactives
 		type(FragmentsList), intent(inout) :: products
 		integer, intent(in) :: dNfrag
@@ -521,7 +521,7 @@ module Reactor_
 			if( dNfrag > 1 ) then
 				call GOptions_error( &
 					"dNfrag > 1 is not implemented yet", &
-					"Reactor.changeCompositionSequentia()" &
+					"Reactor.changeCompositionSequential()" &
 				)
 			end if
 			
@@ -536,7 +536,7 @@ module Reactor_
 				if( GOptions_printLevel >= 2 ) then
 					call GOptions_info( &
 						"The fragmentation limit has been reached", &
-						"Reactor.changeCompositionSequentia()", &
+						"Reactor.changeCompositionSequential()", &
 						"The reactives composition is kept." &
 					)
 				end if
@@ -576,7 +576,7 @@ module Reactor_
 				if( GOptions_printLevel >= 2 ) then
 					call GOptions_info( &
 						"Impossible to satisfy the constrain during fragmentation", &
-						"Reactor.changeCompositionSequentia()", &
+						"Reactor.changeCompositionSequential()", &
 						"The reactives composition is kept." &
 					)
 				end if
@@ -611,7 +611,7 @@ module Reactor_
 			if( dNfrag < -1 ) then
 				call GOptions_error( &
 					"dNfrag < -1 is not implemented yet", &
-					"Reactor.changeCompositionSequentia()" &
+					"Reactor.changeCompositionSequential()" &
 				)
 			end if
 			
@@ -621,7 +621,7 @@ module Reactor_
 				if( GOptions_printLevel >= 2 ) then
 					call GOptions_info( &
 						"The fision limit has been reached", &
-						"Reactor.changeCompositionSequentia()", &
+						"Reactor.changeCompositionSequential()", &
 						"The reactives composition is kept." &
 					)
 				end if
@@ -663,7 +663,7 @@ module Reactor_
 			if( GOptionsM3C_useSpinConservationRules ) then
 				call GOptions_error( &
 					"The option useSpinConservationRules=TRUE in combination with structureSamplingMethod=TRUE is not already implemented", &
-					"Reactor.changeCompositionSequentia()" &
+					"Reactor.changeCompositionSequential()" &
 				)
 			end if
 ! 			internalReactivesSpinAvail = reactives.clusters(targetMolecule1).spinAvailable()
@@ -683,7 +683,7 @@ module Reactor_
 				if( GOptions_printLevel >= 2 ) then
 					call GOptions_info( &
 						"Impossible to satisfy the constrain during fusion", &
-						"Reactor.changeCompositionSequentia()", &
+						"Reactor.changeCompositionSequential()", &
 						"The reactives composition is kept." &
 					)
 				end if
@@ -729,7 +729,7 @@ module Reactor_
 		! Se libera la memoria solicitada
 		deallocate( channelInfo )
 		
-	end subroutine changeCompositionSequentia
+	end subroutine changeCompositionSequential
 
 	!>
 	!! @brief Override run method
