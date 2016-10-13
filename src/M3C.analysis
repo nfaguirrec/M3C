@@ -678,9 +678,10 @@ set encoding iso_8859_1
 set size $M3C_PLOT_SIZE
 set format y "%.1f"
 set format x "%.1f"
-set format cb "10^{%T}"
 
-set logscale cb
+#set format cb "10^{%T}"
+#set logscale cb
+set format cb "%.1f"
 
 unset key
 # set palette defined ( 0 "white", 1 "blue", 2 "green", 3 "orange", 4 "yellow", 5 "red" )
@@ -688,7 +689,7 @@ set palette defined ( 0 "blue", 1 "green", 2 "orange", 3 "yellow", 4 "red" )
 set xtics rotate by -45 font "Serif,8"
 set ytics font "Serif,8"
 set cbtics font "Serif,8"
-set pointsize 0.4
+set pointsize 0.7
 
 set xrange $M3C_PLOT_XRANGE
 set cbrange $M3C_PLOT_CBRANGE
@@ -736,10 +737,10 @@ EOF
 	
 	if [ "$withLabels" = "TRUE" ]
 	then
-		echo "plot \"-\" u 1:2:3 w p palette pt 5, \\" >> .plotE-$$
-		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:(0.0):7 every $freqLabels w labels font ',5'" >> .plotE-$$
+		echo "plot [0:] [0:] \"-\" u 1:2:(log(\$3)) w p palette pt 5, \\" >> .plotE-$$
+		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:7 every $freqLabels w labels font ',5'" >> .plotE-$$
 	else
-		echo "plot \"-\" u 1:2::3 w p palette pt 5" >> .plotE-$$
+		echo "plot [0:] [0:] \"-\" u 1:2:(log(\$3)) w p palette pt 5" >> .plotE-$$
 	fi
 	
 	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" >> .plotE-$$
@@ -919,9 +920,10 @@ set encoding iso_8859_1
 set size $M3C_PLOT_SIZE
 set format y "%.1f"
 set format x "%.1f"
-set format cb "10^{%T}"
 
-set logscale cb
+#set logscale cb
+#set format cb "10^{%T}"
+set format cb "%.1f"
 
 unset key
 # set palette defined ( 0 "white", 1 "blue", 2 "green", 3 "orange", 4 "yellow", 5 "red" )
@@ -988,7 +990,7 @@ EOF
 	
 	if [ "$withLabels" = "TRUE" ]
 	then
-		echo "plot \"-\" u 1:2:3 w p palette pt 5, \\" >> .plotE-$$
+		echo "plot \"-\" u 1:2:(log(\$3)) w p palette pt 5, \\" >> .plotE-$$
 		echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:8 every $freqLabels w labels font ',5'" >> .plotE-$$
 		
 # 		#Esto es un apaño que ya no se hace necesario
@@ -1005,7 +1007,7 @@ EOF
 # 			echo "'$iFile' u ${column[$coord1]}:${column[$coord2]}:(0.0):8 every $freqLabels w labels font ',5'" >> .plotE-$$
 # 		fi
 	else
-		echo "plot \"-\" u 1:2:3 w p palette pt 5" >> .plotE-$$
+		echo "plot \"-\" u 1:2:(log(\$3)) w p palette pt 5" >> .plotE-$$
 
 # 		#Esto es un apaño que ya no se hace necesario
 # 		if [ "$coord1" = "LnWr" ]
@@ -2007,10 +2009,11 @@ set key out bottom
 set xlabel "Internal Energy (eV)" font "Serif,13"
 set ylabel "Percentage (%)" font "Serif,13"
 set format y "%.0f"
+set logscale y
 
 fixValue(x) = ( 100*x<0.0 ? 0.0 : ( 100*x>100.0 ? 100.0 : 100*x ))
 
-plot $M3C_PLOT_XRANGE [-2:102] \
+plot $M3C_PLOT_XRANGE [1:100] \
 "$energyDir/ecompTable$$.dat" u 1:(fixValue(\$2/(\$2+\$4+\$6+\$8))) t "trans" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
 "" u 1:(fixValue(\$2/(\$2+\$4+\$6+\$8))):(fixValue(\$3/(\$2+\$4+\$6+\$8))) notitle w yerrorbars lt 1 ps 0, \
 "" u 1:(fixValue(\$2/(\$2+\$4+\$6+\$8))) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
