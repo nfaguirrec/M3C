@@ -1,5 +1,16 @@
 iFile=$1
-source $M3C_HOME/bin/gaussianDriver.sh
+
+if [ -f "$M3C_HOME/bin/gaussianDriver.sh" ]
+then
+	source $M3C_HOME/bin/gaussianDriver.sh
+elif [ -f "$M3C_HOME/src/gaussianDriver.sh" ]
+then
+	source $M3C_HOME/src/gaussianDriver.sh
+else
+	echo "### ERROR ### gaussianDriver.sh: No such file"
+	echo "              Check \$M3C_HOME variable"
+	exit
+fi
 
 nAtoms=`grep "NAtoms=" $iFile | awk '{print $2; exit}'`
 ( grep -A$(( $nAtoms+4 )) "Input orientation:" $iFile | tail -n$nAtoms | \
