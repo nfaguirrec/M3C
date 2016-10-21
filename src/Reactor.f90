@@ -65,7 +65,7 @@ module Reactor_
 			
 			procedure :: execute
 			procedure :: executeMinFragmentationEnergy
-			procedure :: executeGenerateAllChannels
+			procedure :: executeReactionsAnalysis
 	end type Reactor
 	
 	integer, private :: internalReactivesComposition(AtomicElementsDB_nElems) = 0 !< For convenience in changeCompositionRandomly procedure
@@ -1068,118 +1068,178 @@ module Reactor_
 	!>
 	!! @brief
 	!!
-	subroutine executeGenerateAllChannels( this, iParser )
+	subroutine executeReactionsAnalysis( this, iParser )
 		class(Reactor) :: this
 		type(BlocksIFileParser), intent(in) :: iParser
 		
 		type(FragmentsList) :: reactives
 		
-		type(String) :: strReactives
-		type(String) :: sBuffer
-		real(8) :: rBuffer, p
-		integer :: i, k, iBuffer, dN, id
-		logical :: lBuffer
-		integer :: nSteps
-		logical :: detailed
+		type(String) :: reactor
+		type(String) :: dotFile
+		type(String) :: sBuffer, reactivesLabel, productsLabel, specieLabel, reactionLabel
+		integer :: i, k, dN, id
+		integer :: nSteps, nExps
+		logical :: details
+		character(100), allocatable :: tokens(:)
 		
-		type(StringHistogram) :: fragmentsHistogram
+		type(StringHistogram) :: speciesHistogram, speciesHistogramD
+		type(StringHistogram) :: reactionsHistogram, reactionsHistogramD
 		class(StringRealMapIterator), pointer :: iter
 		type(StringRealPair) :: pair
-		real(8) :: energy, minValue, minNegativeValue
-		type(String) :: labelMinEnergy, labelMinNegativeEnergy
-		logical :: warningNegativeEnergy
 		
 		if( .not. iParser.isThereBlock( "FRAGMENTS_DATABASE" ) ) then
 			return
 		end if
 		
-		nSteps = iParser.getInteger( "FRAGMENTS_DATABASE"//":maxVibNSteps", def=10000 )
-		write(*,"(A40,I10)") "maxVibNSteps = ", nSteps
+		call GOptions_section( "REACTIONS ANALYSIS", indent=1 )
+		
+		details = iParser.getLogical( "FRAGMENTS_DATABASE"//":reactionsAnalysis.details", def=.false. )
+		write(*,"(A40,L)") "reactionsAnalysis.details = ", details
+		
+		reactor = iParser.getString( "FRAGMENTS_DATABASE"//":reactionsAnalysis.reactor", def="S:-1:1" )
+		write(*,"(A40,A)") "reactionsAnalysis.reactor = ", trim(reactor.fstr)
+		
+		sBuffer = iParser.inputFileName()
+		dotFile = iParser.getString( "FRAGMENTS_DATABASE"//":reactionsAnalysis.dotFile", def=trim(sBuffer.fstr)//".dot" )
+		write(*,"(A40,A)") "reactionsAnalysis.dotFile = ", trim(dotFile.fstr)
+		
+		nSteps = iParser.getInteger( "FRAGMENTS_DATABASE"//":reactionsAnalysis.nSteps", def=10000 )
+		write(*,"(A40,I10)") "reactionsAnalysis.nSteps = ", nSteps
+		
+		nExps = iParser.getInteger( "FRAGMENTS_DATABASE"//":reactionsAnalysis.nExps", def=20 )
+		write(*,"(A40,I10)") "reactionsAnalysis.nExps = ", nExps
+		
+		sBuffer = iParser.getString( "FRAGMENTS_DATABASE:reference", def="@@NONE@@" )
+		if( sBuffer /= "@@NONE@@" ) then
+			id = FragmentsDB_instance.getIdFromName( trim(sBuffer.fstr) )
+		else
+			id = size(FragmentsDB_instance.clusters)
+		end if
+		
+		write(*,*) ""
+		write(*,"(A40,A)") "reference = ", trim(FragmentsDB_instance.clusters(id).label())
 		write(*,*) ""
 		
-		detailed = iParser.getLogical( "FRAGMENTS_DATABASE"//":maxVibDetailed", def=.false. )
+		
+		write(*,"(5X,A)") "Channels"
+		write(*,"(5X,A)") "--------"
+		write(*,*) ""
 		
 		call reactives.init( 1 )
-		
-		write(*,"(A60,A60,A10)") "reactive", "channel", "energy"
-		write(*,"(A60,A60,A10)") "", "", "eV"
-		write(*,"(A60,A60,A10)") "--------", "-------", "------"
-		
-! 		if( FragmentsDB_instance.clusters(id).nAtoms() == 1 ) exit
-		
-		id=size(FragmentsDB_instance.clusters)
 		call reactives.set( 1, FragmentsDB_instance.clusters(id) )
 		call FragmentsDB_instance.setEnergyReference( FragmentsDB_instance.clusters(id).electronicEnergy )
 		
-! 		call this.initReactor( reactives, 100.0_8*eV )
 		
-		warningNegativeEnergy = .false.
-		minValue = Math_INF
-		minNegativeValue = Math_INF
-		do dN=1,reactives.nAtoms()
-			call this.setType( "S:"//trim(FString_fromInteger(dN)) )
-			
-			call fragmentsHistogram.init()
+		call this.setType( reactor.fstr )
+		
+		call speciesHistogram.init()
+		call speciesHistogramD.init()
+		call reactionsHistogram.init()
+		call reactionsHistogramD.init()
+		
+		do i=1,nExps
+			call this.initReactor( reactives, 100.0_8*eV )
 			
 			do k=1,nSteps
-! 					call this.run()
 				call this.changeComposition( this.dNFrag )
+! 				call this.run()
 				
-				if( this.products.nMolecules() == dN+1 ) then
-					call fragmentsHistogram.add( FString_toString( trim(this.products.label()) ) )
-				end if
+				reactivesLabel = trim(this.reactives.label( details=.true. ))
+				productsLabel = trim(this.products.label( details=.true. ))
+				reactionLabel = reactivesLabel+" --> "+ productsLabel
+				
+				if( reactivesLabel == productsLabel ) cycle
+				
+				call speciesHistogramD.add( reactivesLabel )
+				call speciesHistogramD.add( productsLabel )
+				call reactionsHistogramD.add( reactionLabel )
+				
+				reactivesLabel = trim(this.reactives.label( details=.false. ))
+				productsLabel = trim(this.products.label( details=.false. ))
+				reactionLabel = reactivesLabel+" --> "+ productsLabel
+				
+				call speciesHistogram.add( reactivesLabel )
+				call speciesHistogram.add( productsLabel )
+				call reactionsHistogram.add( reactionLabel )
+				
+				this.reactives = this.products
 			end do
-			
-			call fragmentsHistogram.build()
-			
-			k=1
-			call fragmentsHistogram.densityBegin( iter )
-			do while( associated(iter) )
-				pair = fragmentsHistogram.pair( iter )
-				energy = ( FragmentsDB_instance.getEelecFromName(pair.first.fstr)-FragmentsDB_instance.getEelecFromName(reactives.label()) )/eV
-				
-				if( detailed ) &
-					write(*,"(A60,F10.4)") trim(adjustl(pair.first.fstr)), energy
-				
-				if( energy < minValue ) then
-					if( energy < 0.0_8 ) then
-						warningNegativeEnergy = .true.
-						
-						if( energy < minNegativeValue ) then
-							minNegativeValue = energy
-							labelMinNegativeEnergy = pair.first.fstr
-						end if
-					else
-						minValue = energy
-						labelMinEnergy = pair.first.fstr
-					end if
-				end if
-				
-				iter => iter.next
-				k = k+1
-			end do
-			
-			
-			call fragmentsHistogram.clear()
 		end do
 		
-		if( detailed ) &
-			write(*,*) ""
-			
-		if( .not. warningNegativeEnergy ) then
-			write(*,"(A60,A60,F10.5)") trim(adjustl(reactives.label())), trim(adjustl(labelMinEnergy.fstr)), minValue
-		else
-			write(*,"(A60,A60,F10.5,A,A30,F10.5,A)") trim(adjustl(reactives.label())), trim(adjustl(labelMinEnergy.fstr)), minValue, &
-									   "   ==> ( ", trim(adjustl(labelMinNegativeEnergy.fstr)), minNegativeValue, " )"
-		end if
+		call speciesHistogram.build()
+		call speciesHistogramD.build()
+		call reactionsHistogram.build()
+		call reactionsHistogramD.build()
 		
-		if( detailed ) then
-			write(*,*) ""
-			write(*,*) ""
+		open( 11, file=dotFile.fstr )
+		write( 11, * ) "// dot -O -Tpng "//trim(dotFile.fstr)
+		write( 11, * ) "graph reacions {"
+		
+		if( .not. details ) then
+			call speciesHistogram.densityBegin( iter )
+			do while( associated(iter) )
+				pair = speciesHistogram.pair( iter )
+				
+				specieLabel = pair.first
+				write( 11, "(A)" ) "     "//achar(34)//trim(specieLabel.fstr)//achar(34)//"  [label=<"//trim(specieLabel.fstr)//">]"
+				
+				iter => iter.next
+			end do
+			
+			call reactionsHistogram.densityBegin( iter )
+			do while( associated(iter) )
+				pair = reactionsHistogram.pair( iter )
+				
+				reactionLabel = pair.first
+				write(*,"(5X,A)") trim(reactionLabel.fstr)
+				
+				call pair.first.split( tokens, "-->" )
+				reactivesLabel = adjustl(tokens(1))
+				productsLabel =adjustl(tokens(2))
+				write( 11, "(A)" ) "     "//achar(34)//trim(reactivesLabel.fstr)//achar(34)//" -- "//achar(34)//trim(productsLabel.fstr)//achar(34)
+				
+				iter => iter.next
+			end do
+		else
+			call speciesHistogramD.densityBegin( iter )
+			do while( associated(iter) )
+				pair = speciesHistogramD.pair( iter )
+				
+				specieLabel = pair.first
+				write( 11, "(A)" ) "     "//achar(34)//trim(specieLabel.fstr)//achar(34)//"  [label=<"//trim(specieLabel.fstr)//">]"
+				
+				iter => iter.next
+			end do
+			
+			call reactionsHistogramD.densityBegin( iter )
+			do while( associated(iter) )
+				pair = reactionsHistogramD.pair( iter )
+				
+				reactionLabel = pair.first
+				write(*,"(5X,A)") trim(reactionLabel.fstr)
+				
+				call pair.first.split( tokens, "-->" )
+				reactivesLabel = adjustl(tokens(1))
+				productsLabel =adjustl(tokens(2))
+				write( 11, "(A)" ) "     "//achar(34)//trim(reactivesLabel.fstr)//achar(34)//" -- "//achar(34)//trim(productsLabel.fstr)//achar(34)
+				
+				iter => iter.next
+			end do
 		end if
 		
 		write(*,*) ""
 		
-	end subroutine executeGenerateAllChannels
-
+		write( 11, * ) "}"
+		close( 11 )
+		
+		call GOptions_section( "END REACTIONS ANALYSIS", indent=1 )
+		
+		call speciesHistogram.clear()
+		call speciesHistogramD.clear()
+		call reactionsHistogram.clear()
+		call reactionsHistogramD.clear()
+		if( allocated(tokens) ) deallocate( tokens )
+		
+	end subroutine executeReactionsAnalysis
+	
 end module Reactor_
