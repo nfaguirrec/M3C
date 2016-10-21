@@ -23,6 +23,7 @@ program M3C
 	type(MarkovChain) :: MarkovChainMethod
 	
 	logical :: calculateMaxVib
+	logical :: reactionsAnalysis
 	
 	integer :: elapsedTime(3)
 	integer :: status
@@ -107,6 +108,7 @@ program M3C
 	write(*,*)
 	
 	calculateMaxVib = iParser.getLogical( "FRAGMENTS_DATABASE"//":maxVib", def=.false. )
+	reactionsAnalysis = iParser.getLogical( "FRAGMENTS_DATABASE"//":reactionsAnalysis", def=.false. )
 	
 	!-------------------------------------------------------------------
 	! Loading the mass table
@@ -141,7 +143,9 @@ program M3C
 		
 	else if( calculateMaxVib ) then
 		call reactorMethod.executeMinFragmentationEnergy( iParser )
-! 		call reactorMethod.executeGenerateAllChannels( iParser )
+		
+	else if( reactionsAnalysis ) then
+		call reactorMethod.executeReactionsAnalysis( iParser )
 		
 	!-------------------------------------------------------------------
 	! Checking for MarkovChain calculation
