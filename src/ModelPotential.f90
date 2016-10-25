@@ -372,16 +372,14 @@ module ModelPotential_
 		
 		real(8) :: Z
 		
-		E0 = params(1) ! Eab = E0
-		E1 = params(2) ! Ea+Eb = E1
-		Re = params(3) ! Ra+Rb = Re
-		q1 = params(4) ! qa = q1
-		q2 = params(5) ! qb = q2
+		Re = params(1) ! Ra+Rb = Re
+		q1 = params(2) ! qa = q1
+		q2 = params(3) ! qb = q2
 		
 		! @todo No estoy seguro de las unidades de Z
 		Z = userParams(1)
 		
-		output = Z*q1*q2/r+E1
+		output = Z*q1*q2/r
 	end function coulomb	
 	
 	!>
@@ -398,11 +396,9 @@ module ModelPotential_
 		real(8) :: E0, E1
 		real(8) :: q1, q2
 		
-		E0 = params(1) ! Eab = E0
-		E1 = params(2) ! Ea+Eb = E1
-		Re = params(3) ! Ra+Rb = Re
-		q1 = params(4) ! qa = q1
-		q2 = params(5) ! qb = q2
+		Re = params(1) ! Ra+Rb = Re
+		q1 = params(2) ! qa = q1
+		q2 = params(3) ! qb = q2
 		
 		alpha = userParams(1)
 		R0 = userParams(2)
@@ -427,11 +423,9 @@ module ModelPotential_
 		real(8) :: E0, E1
 		real(8) :: q1, q2
 		
-		E0 = params(1) ! Eab = E0
-		E1 = params(2) ! Ea+Eb = E1
-		Re = params(3) ! Ra+Rb = Re
-		q1 = params(4) ! qa = q1
-		q2 = params(5) ! qb = q2
+		Re = params(1) ! Ra+Rb = Re
+		q1 = params(2) ! qa = q1
+		q2 = params(3) ! qb = q2
 		
 		! La conversión de unidades de hace dentro de cada función que se llama
 		alpha = userParams(1)

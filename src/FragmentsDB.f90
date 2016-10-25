@@ -137,6 +137,7 @@ module FragmentsDB_
 		type(OFStream) :: oFile
 		type(String) :: strReference
 		type(String) :: store
+		logical :: coulombContribution
 		
 		integer :: i, j, k, n
 		type(String) :: sBuffer
@@ -166,15 +167,18 @@ module FragmentsDB_
 		!-------------------------------------------------------------------
 		if( iParser.isThereBlock( "POTENTIAL_TABLE" ) ) then
 			call iParser.getBlock( "POTENTIAL_TABLE", potentialTable )
-			call this.setPotentialTable( potentialTable )
+			
+			coulombContribution = iParser.getLogical( "POTENTIAL_TABLE:coulombContribution", def=.true. )
+			
+			call this.setPotentialTable( potentialTable, coulombContribution )
 			deallocate(potentialTable)
 			
 			if( iParser.getLogical( "POTENTIAL_TABLE:check", def=.false. ) ) then
 				
-				rMin = iParser.getReal( "POTENTIAL_TABLE:rMin", def=0.0_8 )*angs
-				rMax = iParser.getReal( "POTENTIAL_TABLE:rMax", def=10.0_8 )*angs
-				rStep = iParser.getReal( "POTENTIAL_TABLE:rStep", def=0.1_8 )*angs
-				sBuffer = iParser.getString( "POTENTIAL_TABLE:outputFile", def="#@NONE@#" )
+				rMin = iParser.getReal( "POTENTIAL_TABLE:check.rMin", def=0.0_8 )*angs
+				rMax = iParser.getReal( "POTENTIAL_TABLE:check.rMax", def=10.0_8 )*angs
+				rStep = iParser.getReal( "POTENTIAL_TABLE:check.rStep", def=0.1_8 )*angs
+				sBuffer = iParser.getString( "POTENTIAL_TABLE:check.outputFile", def="#@NONE@#" )
 				
 				write(*,*) ""
 				write(*,*) "-------------------------------"
@@ -536,9 +540,10 @@ module FragmentsDB_
 	!>
 	!! @brief
 	!!
-	subroutine setPotentialTable( this, potentialTable )
+	subroutine setPotentialTable( this, potentialTable, coulombContribution )
 		class(FragmentsDB) :: this
 		type(String), allocatable, intent(in) :: potentialTable(:)
+		logical, intent(in) :: coulombContribution
 		
 		integer :: i, j, n, idR1, idR2
 		character(100), allocatable :: cols(:)
@@ -602,11 +607,37 @@ module FragmentsDB_
 			end if
 		end do
 		
+		if( coulombContribution ) then
+			firstTime = .true.
+			do i=1,this.nMolecules()
+				do j=i,this.nMolecules()
+					if( this.potentials(i,j).getId() == 0 .and. this.clusters(i).charge .and. this.clusters(j).charge &
+						.and. this.clusters(i).massNumber() + this.clusters(j).massNumber() <= maxMass ) then
+						
+						if( firstTime ) then
+							write(*,*) ""
+							write(*,"(A)") "COULOMB"
+							firstTime = .false.
+						end if
+						
+						write(*,"(<GOptions_indentLength*1>X,A10,A10,5X,2I3)", advance="no") &
+								this.clusters(i).name, this.clusters(j).name, i, j
+								
+						call this.potentials(i,j).init( "COULOMB(1.0)" )
+						call this.potentials(j,i).init( "COULOMB(1.0)" )
+						
+						write(*,"(A15,10F10.3)") &
+							trim(MODEL_NAME(this.potentials(i,j).getId())), this.potentials(i,j).potParams
+					end if
+				end do
+			end do
+		end if
+		
 		firstTime = .true.
 		do i=1,this.nMolecules()
 			do j=i,this.nMolecules()
-				if( this.potentials(i,j).getId() == 0 ) then
-! 					.and. this.clusters(i).massNumber() + this.clusters(j).massNumber() < maxMass ) then
+				if( this.potentials(i,j).getId() == 0 &
+					.and. this.clusters(i).massNumber() + this.clusters(j).massNumber() <= maxMass ) then
 					
 					if( firstTime ) then
 						write(*,*) ""
