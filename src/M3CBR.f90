@@ -22,7 +22,7 @@ program M3CBR
 	type(Grid) :: bufferGrid
 	logical :: lBuffer
 	
-	real(8) :: BR
+	real(8) :: BR, rms, error
 	
 	type(CommandLineParser) :: programOptions
 	type(BlocksIFileParser) :: iParser
@@ -262,6 +262,7 @@ program M3CBR
 	
 	call A.init( nChannels, basisSize )
 	
+	rms = 0.0_8
 	do i=1,nChannels
 		
 		BR = 0.0_8
@@ -271,14 +272,21 @@ program M3CBR
 			BR = BR + C.get(k,1)*integrator.evaluate()
 		end do
 		
+		
 		if( iParser.isThereBlock( "EXPERIMENTAL_BRANCHING_RATIOS" ) ) then
-			write(*,"(A50,3F15.5)") key(idData2Exp(i)).fstr, BR, R.get(i,1), expBRerrors(i)
-			write(11,"(A50,3F15.5)") key(idData2Exp(i)).fstr, BR, R.get(i,1), expBRerrors(i)
+			error = ( BR - R.get(i,1) )**2
+			
+			write(*,"(A50,4F15.5)") key(idData2Exp(i)).fstr, BR, R.get(i,1), expBRerrors(i), error
+			write(11,"(A50,4F15.5)") key(idData2Exp(i)).fstr, BR, R.get(i,1), expBRerrors(i), error
+			
+			rms = rms + error
 		else
-			write(*,"(A50,F15.5)") key(i).fstr, BR
-			write(11,"(A50,F15.5)") key(i).fstr, BR
+			write(*,"(A50,F15.5)") key(i).fstr, BR, error
+			write(11,"(A50,F15.5)") key(i).fstr, BR, error
 		end if
+		
 	end do
+	rms = sqrt(rms/nChannels)
 	
 	close(11)
 
@@ -286,6 +294,7 @@ program M3CBR
 	call f.save( energyDistFileName.fstr )
 	call integrator.init( f, NIntegrator_BOOLE )
 	write(*,*) ""
+	write(*,"(A15,F10.5)") "rms = ", rms
 	write(*,"(A15,F10.5)") "Integral = ", integrator.evaluate()
 	
 	if( integrator.evaluate() < 98.0_8 ) then

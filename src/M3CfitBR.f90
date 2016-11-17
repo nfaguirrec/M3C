@@ -429,7 +429,7 @@ program M3CfitBR
 	write(*,"(A50,3F15.5)") "", sumFit, sumExp, sumError
 	
 	write(*,*) ""
-	write(*,"(A15,F10.5)") "rms = ", sqrt(ssum)
+	write(*,"(A15,F10.5)") "rms = ", sqrt(ssum/nChannels)
 	close(11)
 	
 	call f.fromFunction( energyGrid, energyFunction )

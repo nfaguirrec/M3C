@@ -611,7 +611,7 @@ module FragmentsDB_
 			firstTime = .true.
 			do i=1,this.nMolecules()
 				do j=i,this.nMolecules()
-					if( this.potentials(i,j).getId() == 0 .and. this.clusters(i).charge .and. this.clusters(j).charge &
+					if( this.potentials(i,j).getId() == 0 .and. this.clusters(i).charge > 0 .and. this.clusters(j).charge > 0 &
 						.and. this.clusters(i).massNumber() + this.clusters(j).massNumber() <= maxMass ) then
 						
 						if( firstTime ) then
