@@ -44,6 +44,7 @@ program M3CBR
 	type(IFStream) :: keysFile
 	type(String), allocatable :: key(:)
 	integer, allocatable :: idData2Exp(:)
+	logical, allocatable :: isMappedExp2Data(:)
 	
 	integer :: n, l !< Global parameters which are used in basisFunction
 	integer, allocatable :: NL(:,:) !< Global parameters which are used in basisFunction
@@ -149,7 +150,6 @@ program M3CBR
 		key(i) = keysFile.readLine()
 	end do
 	
-	write(*,*) "----------------------------------------"
 	write(*,*) "Available keys in "//trim(keysDataFileName.fstr)
 	write(*,*) "----------------------------------------"
 	do i=1,keysFile.numberOfLines
@@ -195,29 +195,45 @@ program M3CBR
 		write(*,*) "Experimental branching ratios"
 		write(*,*) "-----------------------------"
 		do i=1,nChannels
-			write(*,"(A50,F15.6,A10,F15.6)") expBRKey(i).fstr, R.get(i,1), " +/- ", expBRerrors(i)
+			write(*,"(I5,A50,F15.6,A10,F15.6)") i, expBRKey(i).fstr, R.get(i,1), " +/- ", expBRerrors(i)
 		end do
 		
-		allocate( idData2Exp(keysFile.numberOfLines) )
+		write(*,*) ""
+		write(*,"(A)") "Mapping channels"
+		write(*,"(A)") "----------------"
+		write(*,*) ""
 		
+		allocate( idData2Exp(keysFile.numberOfLines) )
+		allocate( isMappedExp2Data(nChannels) )
+		
+		isMappedExp2Data = .false.
 		do i=1,size(key)
 			write(*,"(A)",advance="no") "Mapping "//trim(key(i).fstr)//" ... "
 			
 			lBuffer = .false.
 			do j=1,size(expBRKey)
 				if( trim(key(i).fstr) == trim(expBRKey(j).fstr) ) then
-					write(*,"(A)") "OK"
+					write(*,"(A)") "OK ("//trim(FString_fromInteger(i))//":"//trim(FString_fromInteger(j))//")"
 					idData2Exp(j) = i
+					isMappedExp2Data(j) = .true.
 					lBuffer = .true.
 					exit
 				end if
 			end do
 			
 			if( .not. lBuffer ) then
-				write(*,*) ""
-				write(*,*) "### ERROR ### M3CfitBR: Key data inconsistency from both files"
-				write(*,*) "              "//trim(key(i).fstr)//" cannot be mapped"
-				stop
+				write(*,"(A)") "Failed"
+	! 			write(*,*) ""
+	! 			write(*,*) "### ERROR ### M3CfitBR: Key data inconsistency from both files"
+	! 			write(*,*) "                "//trim(key(i).fstr)//" cannot be mapped"
+	! 			stop
+			end if
+		end do
+		write(*,*) ""
+		
+		do i=1,size(isMappedExp2Data)
+			if( isMappedExp2Data(i) == .false. ) then
+				write(*,"(A)") "@@@ WARNING @@@ "//trim(expBRKey(i).fstr)//" has not been mapped. Selecting zero probability in all range of energy"
 			end if
 		end do
 		write(*,*) ""
@@ -227,17 +243,25 @@ program M3CBR
 	!-------------------------------------------------------------------
 	! Loading the channel probabilities
 	!-------------------------------------------------------------------
+	
 	write(*,*) "----------------------------------------"
 	write(*,*) "Loading probabilities from "//trim(dataFileName.fstr)
 	write(*,*) "----------------------------------------"
 	
+	call energyGrid.fromFile( dataFileName.fstr, column=1 )
+	
 	nChannels = keysFile.numberOfLines
 	allocate( P(nChannels) )
 	do i=1,size(P)
-		write(*,"(A)",advance="no") "Reading probability "//trim(FString_fromInteger(i))//" ... "
+		write(*,"(A)",advance="no") "Reading channel "//trim(FString_fromInteger(i))//":"//trim(FString_fromInteger(2*i))//" ... "
 		
 		if( iParser.isThereBlock( "EXPERIMENTAL_BRANCHING_RATIOS" ) ) then
-			call bufferGrid.fromFile( dataFileName.fstr, column=2*idData2Exp(i) )
+			if( isMappedExp2Data(i) ) then
+				call bufferGrid.fromFile( dataFileName.fstr, column=2*idData2Exp(i) )
+			else
+				bufferGrid = energyGrid
+				bufferGrid.data = 0.0_8
+			end if
 		else
 			call bufferGrid.fromFile( dataFileName.fstr, column=2*i )
 		end if
@@ -256,6 +280,10 @@ program M3CBR
 	
 	open(11,file=BRFileName.fstr)
 	
+	write(*,"(35X,2A15,A30,A15)") "   ", "      ", "    Experimental     ", "         "
+	write(*,"(35X,5A15)")         "key", "  BR  ", "  BR  ", "  error  ", "  delta  "
+	write(*,"(35X,5A15)")         "---", "------", "------", "---------", "---------"
+
 	write(11,"(A)") "# Branching ratios fitted with M3CBR"
 	write(11,"(A1,27X,7X,2A15)") "#", "key", "BR"
 	write(11,"(A1,27X,7X,2A15)") "#", "---", "---"
@@ -272,14 +300,19 @@ program M3CBR
 			BR = BR + C.get(k,1)*integrator.evaluate()
 		end do
 		
-		
 		if( iParser.isThereBlock( "EXPERIMENTAL_BRANCHING_RATIOS" ) ) then
-			error = ( BR - R.get(i,1) )**2
 			
-			write(*,"(A50,4F15.5)") key(idData2Exp(i)).fstr, BR, R.get(i,1), expBRerrors(i), error
-			write(11,"(A50,4F15.5)") key(idData2Exp(i)).fstr, BR, R.get(i,1), expBRerrors(i), error
+			if( isMappedExp2Data(i) ) then
+				error = BR - R.get(i,1)
+				
+				write(*,"(A50,4F15.5)") key(idData2Exp(i)).fstr, BR, R.get(i,1), expBRerrors(i), error
+				write(11,"(A50,4F15.5)") key(idData2Exp(i)).fstr, BR, R.get(i,1), expBRerrors(i), error
+! 			else
+! 				write(*,"(A50,4F15.5,A)") key(idData2Exp(i)).fstr, BR, 0.0, 0.0, 0.0, " *"
+! 				write(11,"(A50,4F15.5,A)") key(idData2Exp(i)).fstr, BR, 0.0, 0.0, 0.0, " *"
+			end if
 			
-			rms = rms + error
+			rms = rms + error**2
 		else
 			write(*,"(A50,F15.5)") key(i).fstr, BR, error
 			write(11,"(A50,F15.5)") key(i).fstr, BR, error
