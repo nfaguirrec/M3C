@@ -2482,8 +2482,14 @@ function channelFitBRDiagram()
 	'"`cat $M3C_HOME/utils/M3CUtils.gawk`"'   # Debería ser la anterior linea, pero solo está disponible para gawk >= 2011
 	($1!~/^#/){
 		print reduceM3CLabel($1), $2, $3, $4
-	}' tmp-$$ | sed '{s/\(CFS\)\([0-9]\)/\1_\2/g;s/p/^{+}/g}' > $BRFile
+	}' tmp-$$ > $BRFile
 	rm tmp-$$
+	
+	sed -i -r '{s/([[:alpha:]]+)([[:digit:]]+)pp/\1@_{\2}^{2+}/g}' $BRFile  # Escribir bien los superindices, caso C_2pp(??)
+	sed -i -r '{s/([[:alpha:]]+)pp/\1^{2+}/g}' $BRFile  # Escribir bien los superindices, caso Cpp(??)
+	sed -i -r '{s/([[:alpha:]]+)([[:digit:]]+)p/\1@_{\2}^{+}/g}' $BRFile  # Escribir bien los superindices, caso C_2p(??)
+	sed -i -r '{s/([[:alpha:]]+)p/\1^{+}/g}' $BRFile  # Escribir bien los superindices, caso Cp(??)
+	sed -i -r '{s/([[:alpha:]]+)([[:digit:]]+)/\1_{\2}/g}' $BRFile  # Escribir bien los superindices, caso C_2(??)
 	
 	yMax=`gawk '($0!~/#/){printf "%s\n%s\n",$2,$3}' $BRFile | sort -k 1 -n | tail -n1`
 	
