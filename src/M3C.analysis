@@ -1787,6 +1787,7 @@ function energyDiagram()
 	rm tmp-$$
 
 	sed -i -r '{s/(_)([[:digit:]]+)pp/@_{\2}^{2+}/g}' keys.dat  # Escribir bien los superindices, caso C_2pp(??)
+	sed -i -r '{s/([[:alpha:]]+)pp/\1^{2+}/g}' keys.dat  # Escribir bien los superindices, caso Cpp(??)
 	sed -i -r '{s/(_)([[:digit:]]+)p/@_{\2}^{+}/g}' keys.dat  # Escribir bien los superindices, caso C_2p(??)
 	sed -i -r '{s/([[:alpha:]]+)p/\1^{+}/g}' keys.dat  # Escribir bien los superindices, caso Cp(??)
 	sed -i -r '{s/(_)([[:digit:]]+)/_{\2}/g}' keys.dat  # Escribir bien los superindices, caso C_2(??)
