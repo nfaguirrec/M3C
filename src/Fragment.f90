@@ -31,6 +31,7 @@ module Fragment_
 		integer :: sigmaSym
 		real(8) :: electronicEnergy
 		real(8), allocatable :: vibFrequencies(:)
+		logical :: isTransitionState
 		real(8) :: maxEvib
 		real(8) :: ZPE
 		real(8) :: maxJ
@@ -101,6 +102,7 @@ module Fragment_
 		this.electronicEnergy = 0.0_8
 		
 		if( allocated(this.vibFrequencies) ) deallocate( this.vibFrequencies )
+		this.isTransitionState = .false.
 		this.maxEvib = 0.0_8
 		this.ZPE = 0.0_8
 		this.maxJ = 0.0_8
@@ -191,10 +193,14 @@ module Fragment_
 			)
 		end if
 		
+		if( any( this.vibFrequencies < 0.0_8 ) ) then
+			this.isTransitionState = .true.
+		end if
+		
 		! Zero point energy
 		this.ZPE = 0.0_8
 		if( this.nAtoms() > 1 ) then
-			this.ZPE = sum(this.vibFrequencies)/2.0_8
+			this.ZPE = sum( merge(this.vibFrequencies, 0.0_8,this.vibFrequencies>0.0_8) )/2.0_8
 			
 			if( GOptions_printLevel >= 4 ) then
 				call GOptions_valueReport( "ZPE", this.ZPE, "eV", indent=3 )
@@ -252,15 +258,18 @@ module Fragment_
 ! 					this.diagInertiaTensor.get(2,2)/amu/12.01_8, &
 ! 					this.diagInertiaTensor.get(3,3)/amu/12.01_8, &
 ! 					"  ]   amu*angs**2/mC"
-
+			
 			write(IO_STDOUT,"(4X,A22,F15.5,A)")  "            Radius = ", this.radius( type=GOptionsM3C_radiusType )/angs, "   A"
 			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "             Eelec = ", this.electronicEnergy/eV, "   eV"
 			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "             Eelec = ", this.electronicEnergy, "   a.u."
 			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "              Mass = ", this.mass()/amu, "   amu"
 			if( this.nAtoms() > 1 ) then
-				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "   aver. vib. freq = ", product(this.vibFrequencies)**(1.0_8/size(this.vibFrequencies))/eV, "   eV"
+! 				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "   aver. vib. freq = ", product(this.vibFrequencies)**(1.0_8/size(this.vibFrequencies))/eV, "   eV"
 				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "               ZPE = ", this.ZPE/eV, "   eV"
 ! 				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "               ZPE = ", this.ZPE, "   a.u."
+			end if
+			if( this.isTransitionState ) then
+				write(IO_STDOUT,"(4X,A22,L)")        " isTransitionState = ", this.isTransitionState
 			end if
 			write(IO_STDOUT,"(4X,A23,2I5,A)")    "          (fr, fv) = (", this.fr(), this.fv(), "  )"
 ! 			write(IO_STDOUT,"(A)") ""
@@ -293,6 +302,7 @@ module Fragment_
 		
 		allocate( this.vibFrequencies( size(other.vibFrequencies) ) )
 		this.vibFrequencies = other.vibFrequencies
+		this.isTransitionState = other.isTransitionState
 		
 		this.maxEvib = other.maxEvib
 		this.ZPE = other.ZPE
@@ -820,9 +830,6 @@ module Fragment_
 		
 		integer :: i, eff_fv
 		real(8) :: ssum
-! 		real(8) :: averVibFreq
-		
-! 		averVibFreq = product(this.vibFrequencies)**(1.0_8/size(this.vibFrequencies))
 		
 		if( this.nAtoms() == 1 .or. this.frozen ) then
 			this.LnWv_ = 0.0_8
