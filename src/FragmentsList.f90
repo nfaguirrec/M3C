@@ -1130,7 +1130,7 @@ module FragmentsList_
 	!! @brief Test method
 	!!
 	subroutine FragmentsList_test()
-		use FragmentsDB_
+! 		use FragmentsDB_
 ! 		character(:), allocatable :: fstr
 ! 		
 ! 		type(FragmentsList) :: clist
@@ -1247,20 +1247,20 @@ module FragmentsList_
 ! 		massTable(16) = "      tcC5    0  3  0    1   C5T-cyclic.xyz     -5162.267819   slC2,slC3   300"
 		
 		! En esta clase no se debería utilizar la base de datos
-		store="."
-		call FragmentsDB_instance.fromMassTable( massTable, store=store )
-		
-		GOptionsM3C_angularMomentumCouplingScheme = "JJL"
-		
-		call reactives.init( 3 )
-		reactives.clusters(1) = FragmentsDB_instance.clusters(3)
-		reactives.clusters(2) = FragmentsDB_instance.clusters(3)
-		reactives.clusters(3) = FragmentsDB_instance.clusters(3)
-		
-		do i=1,1000000
-			call reactives.changeGeometry()
-			products = reactives
-		end do
+! 		store="."
+! 		call FragmentsDB_instance.fromMassTable( massTable, store=store )
+! 		
+! 		GOptionsM3C_angularMomentumCouplingScheme = "JJL"
+! 		
+! 		call reactives.init( 3 )
+! 		reactives.clusters(1) = FragmentsDB_instance.clusters(3)
+! 		reactives.clusters(2) = FragmentsDB_instance.clusters(3)
+! 		reactives.clusters(3) = FragmentsDB_instance.clusters(3)
+! 		
+! 		do i=1,1000000
+! 			call reactives.changeGeometry()
+! 			products = reactives
+! 		end do
 		
 ! 		write(*,*) "getEelecFromName('slC3,tcC4,sC1') = ", (-3097.388207+0.049062-4129.378872+0.089866-1026.581828), " eV"
 ! 		write(*,*) RigidMoleculeDatabase_instance.getEelecFromName( "slC3,tcC4,sC1" )/eV, " eV"

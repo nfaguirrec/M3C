@@ -10,6 +10,7 @@ module FragmentsDB_
 	use RandomUtils_
 	use GOptions_
 	use AtomicElementsDB_
+	use StringIntegerMap_
 	
 	use Fragment_
 	use ModelPotential_
@@ -21,23 +22,34 @@ module FragmentsDB_
 	public :: &
 		FragmentsDB_test
 		
+	type, private :: TSkey
+		type(String) :: reactives
+		type(String) :: products
+	end type TSkey
+		
 	type, public :: FragmentsDB
 		type(Fragment), allocatable :: clusters(:)
 		type(ModelPotential), allocatable :: potentials(:,:)
 		type(ModelPotential) :: atomicPotentials( AtomicElementsDB_nElems, AtomicElementsDB_nElems )
 		type(String), allocatable :: forbidden(:)
 		
+		type(Fragment), allocatable :: transitionStates(:)
+		type(TSkey), allocatable :: transitionStateKeys(:)
+		logical, allocatable :: involvedInTS(:) ! One for each group. For speed purposes only.
+		
 		real(8), private :: energyReference_
 		logical, private :: useAtomicPotentials
 		
 		contains
-			generic :: init => initDefault, fromMassTable
+			generic :: init => initDefault, setFragmentsTable
 			
 			procedure :: initDefault
-			procedure :: fromMassTable
 			procedure :: fromInputFile
-			procedure :: setPotentialTable
-			procedure :: setAtomicPotentialTable
+			procedure, private :: setFragmentsTable
+			procedure, private :: setTransitionStatesTable
+			procedure, private :: setPotentialTable
+			procedure, private :: setAtomicPotentialTable
+			procedure, private :: checkPotentials
 			final :: destroyFragmentsDB
 			procedure :: nMolecules
 			procedure :: getIdFromName
@@ -63,12 +75,97 @@ module FragmentsDB_
 	end subroutine initDefault
 	
 	!>
-	!! @brief Constructor
+	!! @brief
 	!!
-	subroutine fromMassTable( this, massTable, strReference, store )
+	subroutine fromInputFile( this, iParser )
 		class(FragmentsDB) :: this
-		type(String), allocatable, intent(in) :: massTable(:)
-		type(String), optional, intent(in) :: strReference
+		type(BlocksIFileParser), intent(in) :: iParser
+		
+		type(String), allocatable :: fragmentsTable(:)
+		type(String), allocatable :: potentialTable(:)
+		
+		!--------------------------------------------------------------------
+		! Loading fragments database
+		!--------------------------------------------------------------------
+		if( iParser.isThereBlock( "FRAGMENTS_DATABASE" ) ) then
+			call iParser.getBlock( "FRAGMENTS_DATABASE", fragmentsTable )
+			
+			call this.setFragmentsTable( &
+				fragmentsTable, &
+				iParser.getString( "FRAGMENTS_DATABASE:reference", def="@@NONE@@" ), &
+				store=iParser.getString( "FRAGMENTS_DATABASE:store", def="." ) &
+			)
+			
+			deallocate(fragmentsTable)
+		else
+			write(*,*) "### ERROR ### M3C: FRAGMENTS_DATABASE block is required"
+			stop
+		end if
+		
+		!--------------------------------------------------------------------
+		! Loading transition states
+		!--------------------------------------------------------------------
+		if( iParser.isThereBlock( "TRANSITION_STATES_DATABASE" ) ) then
+			call iParser.getBlock( "TRANSITION_STATES_DATABASE", fragmentsTable )
+			
+			call this.setTransitionStatesTable( &
+				fragmentsTable, &
+				store=iParser.getString( "TRANSITION_STATES_DATABASE:store", def="." ) &
+			)
+			
+			deallocate(fragmentsTable)
+		end if
+
+		!--------------------------------------------------------------------
+		! Loading potentials
+		!--------------------------------------------------------------------
+		this.useAtomicPotentials = .false.
+		
+		if( iParser.isThereBlock( "POTENTIAL_TABLE" ) ) then
+			call iParser.getBlock( "POTENTIAL_TABLE", potentialTable )
+			
+			call this.setPotentialTable( potentialTable, iParser.getLogical( "POTENTIAL_TABLE:coulombContribution", def=.true. ) )
+			deallocate(potentialTable)
+			
+			if( iParser.getLogical( "POTENTIAL_TABLE:check", def=.false. ) ) then
+				call this.checkPotentials( &
+					iParser.getReal( "POTENTIAL_TABLE:check.rMin", def=0.0_8 )*angs, &
+					iParser.getReal( "POTENTIAL_TABLE:check.rMax", def=10.0_8 )*angs, &
+					iParser.getReal( "POTENTIAL_TABLE:check.rStep", def=0.1_8 )*angs, &
+					iParser.getString( "POTENTIAL_TABLE:check.outputFile", def="#@NONE@#" ) &
+				)
+			end if
+			
+			return ! Hay preferencia de los potentiales moleculares que atomicos
+		end if
+		
+		if( iParser.isThereBlock( "ATOMIC_POTENTIAL_TABLE" ) ) then
+			call iParser.getBlock( "ATOMIC_POTENTIAL_TABLE", potentialTable )
+			
+			call this.setAtomicPotentialTable( potentialTable, iParser.getLogical( "ATOMIC_POTENTIAL_TABLE:coulombContribution", def=.true. ) )
+			deallocate(potentialTable)
+			
+			if( iParser.getLogical( "ATOMIC_POTENTIAL_TABLE:check", def=.false. ) ) then
+				call this.checkPotentials( &
+					iParser.getReal( "ATOMIC_POTENTIAL_TABLE:check.rMin", def=0.0_8 )*angs, &
+					iParser.getReal( "ATOMIC_POTENTIAL_TABLE:check.rMax", def=10.0_8 )*angs, &
+					iParser.getReal( "ATOMIC_POTENTIAL_TABLE:check.rStep", def=0.1_8 )*angs, &
+					iParser.getString( "ATOMIC_POTENTIAL_TABLE:check.outputFile", def="#@NONE@#" ) &
+				)
+			end if
+			
+			return ! Hay preferencia de los potentiales moleculares que atomicos
+		end if
+		
+	end subroutine fromInputFile
+	
+	!>
+	!! @brief
+	!!
+	subroutine setFragmentsTable( this, fragmentsTable, strReference, store )
+		class(FragmentsDB) :: this
+		type(String), allocatable, intent(in) :: fragmentsTable(:)
+		type(String), intent(in) :: strReference
 		type(String), optional, intent(in) :: store
 		
 		integer :: i, n
@@ -76,14 +173,14 @@ module FragmentsDB_
 		real(8) :: rBuffer
 		
 		if( allocated(this.clusters) ) deallocate( this.clusters )
-		allocate( this.clusters(size(massTable)) )
+		allocate( this.clusters(size(fragmentsTable)) )
 		
 		call GOptions_section( "FRAGMENTS DATABASE INITIALIZATION", indent=1 )
 		
-		do i=1,size(massTable)
-			call this.clusters(i).fromMassTableRow( massTable(i).fstr, id=i, store=store.fstr )
+		do i=1,size(fragmentsTable)
+			call this.clusters(i).fromMassTableRow( fragmentsTable(i).fstr, id=i, store=store.fstr )
 			
-			call FString_split( massTable(i).fstr, tokens, " " )
+			call FString_split( fragmentsTable(i).fstr, tokens, " " )
 			
 			!------------------------------------------
 			! Choosing the maximum vibrational energy
@@ -104,11 +201,11 @@ module FragmentsDB_
 			deallocate( tokens )
 		end do
 		
-		if( present(strReference) ) then
+		if( strReference /= "@@NONE@@" ) then
 			this.energyReference_ = this.getEelecFromName( strReference.fstr )
 		else
 			this.energyReference_ = 0.0_8
-			do i=1,size(massTable)
+			do i=1,size(fragmentsTable)
 				if( this.clusters(i).electronicEnergy < this.energyReference_ ) then
 					this.energyReference_ = this.clusters(i).electronicEnergy
 				end if
@@ -122,180 +219,228 @@ module FragmentsDB_
 		
 		call GOptions_section( "END FRAGMENTS DATABASE INITIALIZATION", indent=1 )
 		
-	end subroutine fromMassTable
+	end subroutine setFragmentsTable
 	
 	!>
 	!! @brief
 	!!
-	subroutine fromInputFile( this, iParser )
+	subroutine setTransitionStatesTable( this, fragmentsTable, store )
 		class(FragmentsDB) :: this
-		type(BlocksIFileParser), intent(in) :: iParser
-		
-		type(String), allocatable :: massTable(:)
-		type(String), allocatable :: potentialTable(:)
-		real(8) :: r, rMin, rMax, rStep
-		type(OFStream) :: oFile
-		type(String) :: strReference
-		type(String) :: store
-		logical :: coulombContribution
+		type(String), allocatable, intent(in) :: fragmentsTable(:)
+		type(String), optional, intent(in) :: store
 		
 		integer :: i, j, k, n
-		type(String) :: sBuffer
+		character(100), allocatable :: tokens(:), tokens2(:)
+		real(8) :: rBuffer
+		
+		if( allocated(this.transitionStates) ) deallocate( this.transitionStates )
+		allocate( this.transitionStates(size(fragmentsTable)) )
+		
+		if( allocated(this.transitionStateKeys) ) deallocate( this.transitionStateKeys )
+		allocate( this.transitionStateKeys(size(fragmentsTable)) )
+		
+		if( allocated(this.involvedInTS) ) deallocate( this.involvedInTS )
+		allocate( this.involvedInTS(size(this.clusters)) )
+		
+		call GOptions_section( "TRANSITION_STATES DATABASE INITIALIZATION", indent=1 )
+		
+		do i=1,size(fragmentsTable)
+			call this.transitionStates(i).fromMassTableRow( fragmentsTable(i).fstr, id=i, store=store.fstr )
+			
+			call FString_split( fragmentsTable(i).fstr, tokens, " " )
+			
+			!------------------------------------------
+			! Choosing the maximum vibrational energy
+			!------------------------------------------
+			if( size(tokens) >= 8 .and. this.transitionStates(i).nAtoms() /= 1 ) then
+				if( FString_isNumeric( tokens(8) ) ) then
+					this.transitionStates(i).maxEvib = FString_toReal( tokens(8) )*eV
+				else
+					this.transitionStates(i).maxEvib = this.getEelecFromName( tokens(8) ) &
+							 - this.transitionStates(i).electronicEnergy
+				end if
+			else
+				this.transitionStates(i).maxEvib = 0.0_8
+			end if
+			
+			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "           maxEvib = ", this.transitionStates(i).maxEvib/eV, "   eV"
+			
+			!------------------------------------------
+			! Choosing the reactives and products
+			!------------------------------------------
+			if( size(tokens) >= 10 .and. this.transitionStates(i).nAtoms() /= 1 ) then
+				this.transitionStateKeys(i).reactives = trim(adjustl(tokens(9)))
+				write(IO_STDOUT,"(4X,A22,A)")  "         reactives = ", trim(this.transitionStateKeys(i).reactives.fstr)
+				
+				call FString_split( trim(adjustl(tokens(9))), tokens2, "+" )
+				do j=1,size(tokens2)
+					write(*,*) "token = ", trim(tokens2(j))
+					do k=1,size(this.clusters)
+						if( trim(tokens2(j)) == this.clusters(k).label() ) then
+							write(IO_STDOUT,*) k, this.clusters(k).id
+						end if
+					end do
+				end do
+				deallocate( tokens2 )
+				
+				this.transitionStateKeys(i).products = trim(adjustl(tokens(10)))
+				write(IO_STDOUT,"(4X,A22,A)")  "          products = ", trim(this.transitionStateKeys(i).products.fstr)
+				
+				call FString_split( trim(adjustl(tokens(10))), tokens2, "+" )
+				do j=1,size(tokens2)
+					write(*,*) "token = ", trim(tokens2(j))
+					do k=1,size(this.clusters)
+						if( trim(tokens2(j)) == this.clusters(k).label() ) then
+							write(IO_STDOUT,*) k, this.clusters(k).id
+						end if
+					end do
+				end do
+				deallocate( tokens2 )
+			else
+				call GOptions_error( &
+						"Bad number of atoms in transition state (N=0)", &
+						"SMoleculeDB.setTransitionStatesTable()", &
+						trim(fragmentsTable(i).fstr) &
+					)
+			end if
+			
+			deallocate( tokens )
+		end do
+		
+		write(IO_STDOUT,*) ""
+		
+		call GOptions_section( "END TRANSITION_STATES DATABASE INITIALIZATION", indent=1 )
+		
+	end subroutine setTransitionStatesTable
+	
+	!>
+	!! @brief
+	!!
+	subroutine checkPotentials( this, rMin, rMax, rStep, oFileName )
+		class(FragmentsDB) :: this
+		real(8), intent(in) :: rMin, rMax, rStep
+		type(String), intent(in) :: oFileName
+		
+		type(OFStream) :: oFile
+		integer :: i, j
+		real(8):: r
 		integer :: maxMass
 		
-		if( .not. iParser.isThereBlock( "FRAGMENTS_DATABASE" ) ) then
-			write(*,*) "### ERROR ### M3C: FRAGMENTS_DATABASE block is required"
-			stop
+		
+		write(*,*) ""
+		write(*,*) "-------------------------------"
+		write(*,*) " CHECKING POTENTIAL"
+		write(*,*) ""
+		write(*,"(A30,F10.5,A)") " rMin = ", rMin/angs, " A"
+		write(*,"(A30,F10.5,A)") " rMax = ", rMax/angs, " A"
+		write(*,"(A30,F10.5,A)") "rStep = ", rStep/angs, " A"
+		if( trim(oFileName.fstr) /= "#@NONE@#" ) then
+			write(*,"(A30,A)") "outputFile = ", oFileName.fstr
+			call oFile.init( oFileName.fstr )
 		end if
+		write(*,"(A)") ""
+		write(*,"(A)") ""
 		
-		call iParser.getBlock( "FRAGMENTS_DATABASE", massTable )
-		strReference = iParser.getString( "FRAGMENTS_DATABASE:reference", def="@@NONE@@" )
-		store = iParser.getString( "FRAGMENTS_DATABASE:store", def="." )
-		
-		if( strReference /= "@@NONE@@" ) then
-			call this.fromMassTable( massTable, strReference, store=store )
-		else
-			call this.fromMassTable( massTable, store=store )
-		end if
-		
-		deallocate(massTable)
-		
-		this.useAtomicPotentials = .false.
-		
-		!-------------------------------------------------------------------
-		! Loading the intermolecular potential table
-		!-------------------------------------------------------------------
-		if( iParser.isThereBlock( "POTENTIAL_TABLE" ) ) then
-			call iParser.getBlock( "POTENTIAL_TABLE", potentialTable )
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Escribe la identidad de las moleculas
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		write(oFile.unit,"(A)") "# Molecules identity"
+		write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "covR", "Ee-E0", "label"
+		write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "----", "-----", "-----"
+		maxMass = 0
+		do i=1,this.nMolecules()
+			if( this.clusters(i).nAtoms() > 0 ) then
+				write(oFile.unit,"(1X,F10.2,F20.8,5X,A)") this.clusters(i).radius( type=GOptionsM3C_radiusType )/angs, &
+					( this.clusters(i).electronicEnergy - this.energyReference() )/eV, &
+					trim(this.clusters(i).label())
+					
+			end if
 			
-			coulombContribution = iParser.getLogical( "POTENTIAL_TABLE:coulombContribution", def=.true. )
-			
-			call this.setPotentialTable( potentialTable, coulombContribution )
-			deallocate(potentialTable)
-			
-			if( iParser.getLogical( "POTENTIAL_TABLE:check", def=.false. ) ) then
-				
-				rMin = iParser.getReal( "POTENTIAL_TABLE:check.rMin", def=0.0_8 )*angs
-				rMax = iParser.getReal( "POTENTIAL_TABLE:check.rMax", def=10.0_8 )*angs
-				rStep = iParser.getReal( "POTENTIAL_TABLE:check.rStep", def=0.1_8 )*angs
-				sBuffer = iParser.getString( "POTENTIAL_TABLE:check.outputFile", def="#@NONE@#" )
-				
-				write(*,*) ""
-				write(*,*) "-------------------------------"
-				write(*,*) " CHECKING POTENTIAL"
-				write(*,*) ""
-				write(*,"(A30,F10.5,A)") " rMin = ", rMin/angs, " A"
-				write(*,"(A30,F10.5,A)") " rMax = ", rMax/angs, " A"
-				write(*,"(A30,F10.5,A)") "rStep = ", rStep/angs, " A"
-				
-				if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-					write(*,"(A30,A)") "outputFile = ", sBuffer.fstr
-					call oFile.init( sBuffer.fstr )
+			if( this.clusters(i).massNumber() > maxMass ) then
+				maxMass = this.clusters(i).massNumber()
+			end if
+		end do
+		
+		write(oFile.unit,"(A)") ""
+		write(oFile.unit,"(A)") ""
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Escribe la identidad de los limites disociativos
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		write(oFile.unit,"(A)") "# Dissociative limits"
+		write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "Rmax", "V", "label"
+		write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "----", "-----", "-----"
+		do i=1,this.nMolecules()
+			do j=i,this.nMolecules()
+				if( this.clusters(i).massNumber()+this.clusters(j).massNumber() < maxMass ) then
+					if( this.potentials(i,j).getId() /= 0 ) then
+						write(oFile.unit,"(F10.2,F20.8,5X,A)") rMax/angs, &
+							( this.clusters(i).electronicEnergy &
+							+ this.clusters(j).electronicEnergy &
+							+ this.potential( i, j, rMax ) &
+							- this.energyReference() &
+							)/eV, &
+							trim(this.clusters(i).label())//"+"//trim(this.clusters(j).label())
+					end if
 				end if
+			end do
+		end do
+		
+		write(oFile.unit,"(A)") ""
+		write(oFile.unit,"(A)") ""
+		
+		write(oFile.unit,"(A)") "# Dissociative limits"
+		write(oFile.unit,"(A1,2A20,5X,A)") "#", "r", "V(r)", "label"
+		write(oFile.unit,"(A1,2A20,5X,A)") "#", "---", "-----", "-----"
+		do i=1,this.nMolecules()
+			do j=i,this.nMolecules()
+! 					do j=i+1,this.nMolecules()
+				if( this.potentials(i,j).getId() > 1 ) then  ! Esto evita que imprima NONE y HARDSPHERE
 				
-				write(*,"(A)") ""
-				write(*,"(A)") ""
-				
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				! Escribe la identidad de las moleculas
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				write(oFile.unit,"(A)") "# Molecules identity"
-				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "covR", "Ee-E0", "label"
-				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "----", "-----", "-----"
-				maxMass = 0
-				do i=1,this.nMolecules()
-					if( this.clusters(i).nAtoms() > 0 ) then
-						write(oFile.unit,"(1X,F10.2,F20.8,5X,A)") this.clusters(i).radius( type=GOptionsM3C_radiusType )/angs, &
-							( this.clusters(i).electronicEnergy - this.energyReference() )/eV, &
-							trim(this.clusters(i).label())
-							
+					write(*,"(A)") "#  " &
+						//this.clusters(i).name &
+						//"+" &
+						//this.clusters(j).name
+					
+					if( trim(oFileName.fstr) /= "#@NONE@#" ) then
+						write(oFile.unit,"(A)") "#  " &
+							//this.clusters(i).name &
+							//"+" &
+							//this.clusters(j).name
+					end if
+
+					r = rMin
+					do while( r <= rMax )
+						write(*,"(2F20.7)") r/angs, ( &
+							+ this.clusters(i).electronicEnergy &
+							+ this.clusters(j).electronicEnergy &
+							+ this.potential( i, j, r ) &
+							- this.energyReference() &
+							)/eV
+						
+						if( trim(oFileName.fstr) /= "#@NONE@#" ) then
+							write(oFile.unit,"(2F20.7)") r/angs, ( &
+								+ this.clusters(i).electronicEnergy &
+								+ this.clusters(j).electronicEnergy &
+								+ this.potential( i, j, r ) &
+								- this.energyReference() &
+								)/eV
+						end if
+						
+						r = r + rStep
+					end do
+					write(*,"(A)") ""
+					write(*,"(A)") ""
+					
+					if( trim(oFileName.fstr) /= "#@NONE@#" ) then
+						write(oFile.unit,"(A)") ""
+						write(oFile.unit,"(A)") ""
 					end if
 					
-					if( this.clusters(i).massNumber() > maxMass ) then
-						maxMass = this.clusters(i).massNumber()
-					end if
-				end do
-				
-				write(oFile.unit,"(A)") ""
-				write(oFile.unit,"(A)") ""
-				
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				! Escribe la identidad de los limites disociativos
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				write(oFile.unit,"(A)") "# Dissociative limits"
-				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "Rmax", "V", "label"
-				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "----", "-----", "-----"
-				do i=1,this.nMolecules()
-					do j=i,this.nMolecules()
-						if( this.clusters(i).massNumber()+this.clusters(j).massNumber() < maxMass ) then
-							if( this.potentials(i,j).getId() /= 0 ) then
-								write(oFile.unit,"(F10.2,F20.8,5X,A)") rMax/angs, &
-									( this.clusters(i).electronicEnergy &
-									+ this.clusters(j).electronicEnergy &
-									+ this.potential( i, j, rMax ) &
-									- this.energyReference() &
-									)/eV, &
-									trim(this.clusters(i).label())//"+"//trim(this.clusters(j).label())
-							end if
-						end if
-					end do
-				end do
-				
-				write(oFile.unit,"(A)") ""
-				write(oFile.unit,"(A)") ""
-				
-				write(oFile.unit,"(A)") "# Dissociative limits"
-				write(oFile.unit,"(A1,2A20,5X,A)") "#", "r", "V(r)", "label"
-				write(oFile.unit,"(A1,2A20,5X,A)") "#", "---", "-----", "-----"
-				do i=1,this.nMolecules()
-					do j=i,this.nMolecules()
-! 					do j=i+1,this.nMolecules()
-						if( this.potentials(i,j).getId() > 1 ) then  ! Esto evita que imprima NONE y HARDSPHERE
-						
-							write(*,"(A)") "#  " &
-								//this.clusters(i).name &
-								//"+" &
-								//this.clusters(j).name
-							
-							if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-								write(oFile.unit,"(A)") "#  " &
-									//this.clusters(i).name &
-									//"+" &
-									//this.clusters(j).name
-							end if
-
-							r = rMin
-							do while( r <= rMax )
-								write(*,"(2F20.7)") r/angs, ( &
-									+ this.clusters(i).electronicEnergy &
-									+ this.clusters(j).electronicEnergy &
-									+ this.potential( i, j, r ) &
-									- this.energyReference() &
-									)/eV
-								
-								if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-									write(oFile.unit,"(2F20.7)") r/angs, ( &
-										+ this.clusters(i).electronicEnergy &
-										+ this.clusters(j).electronicEnergy &
-										+ this.potential( i, j, r ) &
-										- this.energyReference() &
-										)/eV
-								end if
-								
-								r = r + rStep
-							end do
-							write(*,"(A)") ""
-							write(*,"(A)") ""
-							
-							if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-								write(oFile.unit,"(A)") ""
-								write(oFile.unit,"(A)") ""
-							end if
-							
-						end if
-					end do
-				end do
-				
+				end if
+			end do
+		end do
+		
 ! 				do i=1,this.nMolecules()
 ! 					do j=1,this.nMolecules()
 ! 						do k=1,this.nMolecules()
@@ -308,7 +453,7 @@ module FragmentsDB_
 ! 									//" -> " &
 ! 									//this.clusters(k).name
 ! 								
-! 								if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+! 								if( trim(oFileName.fstr) /= "#@NONE@#" ) then
 ! 									write(oFile.unit,"(A)") "#  " &
 ! 										//this.clusters(i).name &
 ! 										//" + " &
@@ -321,7 +466,7 @@ module FragmentsDB_
 ! 								do while( r <= rMax )
 ! 									write(*,"(2F20.7)") r/angs, this.potential( i, j, k, r )/eV
 ! 									
-! 									if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+! 									if( trim(oFileName.fstr) /= "#@NONE@#" ) then
 ! 										write(oFile.unit,"(2F20.7)") r/angs, this.potential( i, j, k, r )/eV
 ! 									end if
 ! 									
@@ -330,7 +475,7 @@ module FragmentsDB_
 ! 								write(*,"(A)") ""
 ! 								write(*,"(A)") ""
 ! 								
-! 								if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
+! 								if( trim(oFileName.fstr) /= "#@NONE@#" ) then
 ! 									write(oFile.unit,"(A)") ""
 ! 									write(oFile.unit,"(A)") ""
 ! 								end if
@@ -339,203 +484,13 @@ module FragmentsDB_
 ! 						end do
 ! 					end do
 ! 				end do
-				
-				if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-					call oFile.close()
-				end if
-				
-				stop
-			end if
-			
-			return ! Hay preferencia de los potentiales moleculares que atomicos
+		
+		if( trim(oFileName.fstr) /= "#@NONE@#" ) then
+			call oFile.close()
 		end if
 		
-		!-------------------------------------------------------------------
-		! Loading the intermolecular atomic potential table
-		!-------------------------------------------------------------------
-		if( iParser.isThereBlock( "ATOMIC_POTENTIAL_TABLE" ) ) then
-			this.useAtomicPotentials = .true.
-			
-			call iParser.getBlock( "ATOMIC_POTENTIAL_TABLE", potentialTable )
-			call this.setAtomicPotentialTable( potentialTable )
-			deallocate(potentialTable)
-			
-			if( iParser.getLogical( "ATOMIC_POTENTIAL_TABLE:check", def=.false. ) ) then
-				
-				rMin = iParser.getReal( "ATOMIC_POTENTIAL_TABLE:rMin", def=0.0_8 )*angs
-				rMax = iParser.getReal( "ATOMIC_POTENTIAL_TABLE:rMax", def=10.0_8 )*angs
-				rStep = iParser.getReal( "ATOMIC_POTENTIAL_TABLE:rStep", def=0.1_8 )*angs
-				sBuffer = iParser.getString( "ATOMIC_POTENTIAL_TABLE:outputFile", def="#@NONE@#" )
-				
-				write(*,*) ""
-				write(*,*) "-------------------------------"
-				write(*,*) " CHECKING ATOMIC POTENTIAL"
-				write(*,*) ""
-				write(*,"(A30,F10.5,A)") " rMin = ", rMin/angs, " A"
-				write(*,"(A30,F10.5,A)") " rMax = ", rMax/angs, " A"
-				write(*,"(A30,F10.5,A)") "rStep = ", rStep/angs, " A"
-				
-				if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-					write(*,"(A30,A)") "outputFile = ", sBuffer.fstr
-					call oFile.init( sBuffer.fstr )
-				end if
-				
-				write(*,"(A)") ""
-				write(*,"(A)") ""
-				
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				! Escribe la identidad de las moleculas
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				write(oFile.unit,"(A)") "# Molecules identity"
-				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "covR", "Ee-E0", "label"
-				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "----", "-----", "-----"
-				maxMass = 0
-				do i=1,this.nMolecules()
-					if( this.clusters(i).nAtoms() > 0 ) then
-						write(oFile.unit,"(1X,F10.2,F20.8,5X,A)") this.clusters(i).radius( type=GOptionsM3C_radiusType )/angs, &
-							( this.clusters(i).electronicEnergy - this.energyReference() )/eV, &
-							trim(this.clusters(i).label())
-							
-					end if
-					
-					if( this.clusters(i).massNumber() > maxMass ) then
-						maxMass = this.clusters(i).massNumber()
-					end if
-				end do
-				
-				write(oFile.unit,"(A)") ""
-				write(oFile.unit,"(A)") ""
-				
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				! Escribe la identidad de los limites disociativos
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				write(oFile.unit,"(A)") "# Dissociative limits"
-				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "Rmax", "V", "label"
-				write(oFile.unit,"(A1,A10,A20,5X,A)") "#", "----", "-----", "-----"
-				do i=1,this.nMolecules()
-					do j=i,this.nMolecules()
-						if( this.clusters(i).massNumber()+this.clusters(j).massNumber() < maxMass ) then
-							if( this.potentials(i,j).getId() /= 0 ) then
-								write(oFile.unit,"(F10.2,F20.8,5X,A)") rMax/angs, &
-									( this.clusters(i).electronicEnergy &
-									+ this.clusters(j).electronicEnergy &
-									+ this.potential( i, j, rMax ) &
-									- this.energyReference() &
-									)/eV, &
-									trim(this.clusters(i).label())//"+"//trim(this.clusters(j).label())
-							end if
-						end if
-					end do
-				end do
-				
-				write(oFile.unit,"(A)") ""
-				write(oFile.unit,"(A)") ""
-				
-				write(oFile.unit,"(A)") "# Dissociative limits"
-				write(oFile.unit,"(A1,2A20,5X,A)") "#", "r", "V(r)", "label"
-				write(oFile.unit,"(A1,2A20,5X,A)") "#", "---", "-----", "-----"
-				do i=1,this.nMolecules()
-					do j=i,this.nMolecules()
-! 					do j=i+1,this.nMolecules()
-						if( this.potentials(i,j).getId() > 1 ) then  ! Esto evita que imprima NONE y HARDSPHERE
-						
-							write(*,"(A)") "#  " &
-								//this.clusters(i).name &
-								//"+" &
-								//this.clusters(j).name
-							
-							if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-								write(oFile.unit,"(A)") "#  " &
-									//this.clusters(i).name &
-									//"+" &
-									//this.clusters(j).name
-							end if
-
-							r = rMin
-							do while( r <= rMax )
-								write(*,"(2F20.7)") r/angs, ( &
-									+ this.clusters(i).electronicEnergy &
-									+ this.clusters(j).electronicEnergy &
-									+ this.potential( i, j, r ) &
-									- this.energyReference() &
-									)/eV
-								
-								if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-									write(oFile.unit,"(2F20.7)") r/angs, ( &
-										+ this.clusters(i).electronicEnergy &
-										+ this.clusters(j).electronicEnergy &
-										+ this.potential( i, j, r ) &
-										- this.energyReference() &
-										)/eV
-								end if
-								
-								r = r + rStep
-							end do
-							write(*,"(A)") ""
-							write(*,"(A)") ""
-							
-							if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-								write(oFile.unit,"(A)") ""
-								write(oFile.unit,"(A)") ""
-							end if
-							
-						end if
-					end do
-				end do
-				
-! 				do i=1,this.nMolecules()
-! 					do j=1,this.nMolecules()
-! 						do k=1,this.nMolecules()
-! 							if( this.potentials(i,j,k).getId() /= 0 ) then
-! 							
-! 								write(*,"(A)") "#  " &
-! 									//this.clusters(i).name &
-! 									//" + " &
-! 									//this.clusters(j).name &
-! 									//" -> " &
-! 									//this.clusters(k).name
-! 								
-! 								if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-! 									write(oFile.unit,"(A)") "#  " &
-! 										//this.clusters(i).name &
-! 										//" + " &
-! 										//this.clusters(j).name &
-! 										//" -> " &
-! 										//this.clusters(k).name
-! 								end if
-! 
-! 								r = rMin
-! 								do while( r <= rMax )
-! 									write(*,"(2F20.7)") r/angs, this.potential( i, j, k, r )/eV
-! 									
-! 									if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-! 										write(oFile.unit,"(2F20.7)") r/angs, this.potential( i, j, k, r )/eV
-! 									end if
-! 									
-! 									r = r + rStep
-! 								end do
-! 								write(*,"(A)") ""
-! 								write(*,"(A)") ""
-! 								
-! 								if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-! 									write(oFile.unit,"(A)") ""
-! 									write(oFile.unit,"(A)") ""
-! 								end if
-! 								
-! 							end if
-! 						end do
-! 					end do
-! 				end do
-				
-				if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-					call oFile.close()
-				end if
-				
-				stop
-			end if
-		end if
-		
-	end subroutine fromInputFile
+		stop
+	end subroutine checkPotentials
 	
 	!>
 	!! @brief
@@ -672,9 +627,10 @@ module FragmentsDB_
 	!>
 	!! @brief
 	!!
-	subroutine setAtomicPotentialTable( this, potentialTable )
+	subroutine setAtomicPotentialTable( this, potentialTable, coulombContribution )
 		class(FragmentsDB) :: this
 		type(String), allocatable, intent(in) :: potentialTable(:)
+		logical, intent(in) :: coulombContribution
 		
 		integer :: i, j, n, idR1, idR2
 		character(100), allocatable :: cols(:)
@@ -1043,7 +999,7 @@ module FragmentsDB_
 	subroutine FragmentsDB_test()
 		integer :: i, j
 		type(FragmentsDB) :: db
-		type(String), allocatable :: massTable(:)
+		type(String), allocatable :: fragmentsTable(:)
 		type(String), allocatable :: potential(:)
 		character(:), allocatable :: forbidden
 		character(100), allocatable :: tokens(:), items(:)
@@ -1063,27 +1019,27 @@ module FragmentsDB_
 ! 		strBuffer = this.extendFragmentsListName( "sHe+3*C10s+2*2B" )
 ! 		write(*,*) " output = "//trim(strBuffer.fstr)
 		
-! 		allocate( massTable(16) )
+! 		allocate( fragmentsTable(16) )
 ! 		
 ! 		!                     Label    Z  G    M  L  SYM         geomFile            Eelec       ZPE  Chann.Vib  Jmax
-! 		massTable(1)  = "       sC1    0  F    1  2    0   C1.xyz             -1026.581828  0.000000"
-! 		massTable(2)  = "       tC1    0  F    3  1    0   C1.xyz             -1028.031662  0.000000"
-! 		massTable(3)  = "      slC2    0  T    1  0    2   C2S-linear.xyz     -2062.282893  0.232200      2*tC1   300"
-! 		massTable(4)  = "      tlC2    0  T    3  1    2   C2T-linear.xyz     -2061.703744  0.209800      2*tC1   300"
-! 		massTable(5)  = "      slC3    0  T    1  0    2   C3S-linear.xyz     -3097.388207  0.049062   tC1,slC2   400"
-! 		massTable(6)  = "      tlC3    0  T    3  1    2   C3T-linear.xyz     -3095.315621  0.047823   tC1,slC2   400"
-! 		massTable(7)  = "      scC3    0  F    1  0    2   C3S-cyclic.xyz     -3096.460007  0.176400   tC1,slC2   300"
-! 		massTable(8)  = "      tcC3    0  F    3  0    6   C3T-cyclic.xyz     -3096.641729  0.161110   tC1,slC2   300"
-! 		massTable(9)  = "      slC4    0  T    1  0    2   C4S-linear.xyz     -4129.754238  0.067399   tC1,slC3  1000"
-! 		massTable(10) = "      tlC4    0  T    3  0    2   C4T-linear.xyz     -4129.134441  0.068026   tC1,slC3  1000"
-! 		massTable(11) = "      scC4    0  F    1  0    4   C4S-cyclic.xyz     -4130.294751  0.099871   tC1,slC3   300"
-! 		massTable(12) = "      tcC4    0  F    3  0    4   C4T-cyclic.xyz     -4129.378872  0.089866   tC1,slC3   300"
-! 		massTable(13) = "      slC5    0  T    1  0    2   C5S-linear.xyz     -5165.261895  0.066190  slC2,slC3  1000"
-! 		massTable(14) = "      tlC5    0  T    3  1    2   C5T-linear.xyz     -5162.952781  0.078498  slC2,slC3  1000"
-! 		massTable(15) = "      scC5    0  F    1  0    1   C5S-cyclic.xyz     -5160.722344  0.137100  slC2,slC3   300"
-! 		massTable(16) = "      tcC5    0  F    3  0    1   C5T-cyclic.xyz     -5162.267819  0.093690  slC2,slC3   300"
+! 		fragmentsTable(1)  = "       sC1    0  F    1  2    0   C1.xyz             -1026.581828  0.000000"
+! 		fragmentsTable(2)  = "       tC1    0  F    3  1    0   C1.xyz             -1028.031662  0.000000"
+! 		fragmentsTable(3)  = "      slC2    0  T    1  0    2   C2S-linear.xyz     -2062.282893  0.232200      2*tC1   300"
+! 		fragmentsTable(4)  = "      tlC2    0  T    3  1    2   C2T-linear.xyz     -2061.703744  0.209800      2*tC1   300"
+! 		fragmentsTable(5)  = "      slC3    0  T    1  0    2   C3S-linear.xyz     -3097.388207  0.049062   tC1,slC2   400"
+! 		fragmentsTable(6)  = "      tlC3    0  T    3  1    2   C3T-linear.xyz     -3095.315621  0.047823   tC1,slC2   400"
+! 		fragmentsTable(7)  = "      scC3    0  F    1  0    2   C3S-cyclic.xyz     -3096.460007  0.176400   tC1,slC2   300"
+! 		fragmentsTable(8)  = "      tcC3    0  F    3  0    6   C3T-cyclic.xyz     -3096.641729  0.161110   tC1,slC2   300"
+! 		fragmentsTable(9)  = "      slC4    0  T    1  0    2   C4S-linear.xyz     -4129.754238  0.067399   tC1,slC3  1000"
+! 		fragmentsTable(10) = "      tlC4    0  T    3  0    2   C4T-linear.xyz     -4129.134441  0.068026   tC1,slC3  1000"
+! 		fragmentsTable(11) = "      scC4    0  F    1  0    4   C4S-cyclic.xyz     -4130.294751  0.099871   tC1,slC3   300"
+! 		fragmentsTable(12) = "      tcC4    0  F    3  0    4   C4T-cyclic.xyz     -4129.378872  0.089866   tC1,slC3   300"
+! 		fragmentsTable(13) = "      slC5    0  T    1  0    2   C5S-linear.xyz     -5165.261895  0.066190  slC2,slC3  1000"
+! 		fragmentsTable(14) = "      tlC5    0  T    3  1    2   C5T-linear.xyz     -5162.952781  0.078498  slC2,slC3  1000"
+! 		fragmentsTable(15) = "      scC5    0  F    1  0    1   C5S-cyclic.xyz     -5160.722344  0.137100  slC2,slC3   300"
+! 		fragmentsTable(16) = "      tcC5    0  F    3  0    1   C5T-cyclic.xyz     -5162.267819  0.093690  slC2,slC3   300"
 ! 		
-! 		call db.init( massTable )
+! 		call db.init( fragmentsTable )
 ! 		
 ! 		write(*,*) "getEelecFromName('slC3,tcC4,sC1') = ", (-3097.388207+0.049062-4129.378872+0.089866-1026.581828), " eV"
 ! 		write(*,*) db.getEelecFromName( "slC3,tcC4,sC1" )/eV, " eV"
