@@ -21,7 +21,12 @@ done ) > .geom
 
 if [ "$nAtoms" -gt 0  ]
 then
-	energy=`grep "SCF Done" $iFile | tail -n 1 | cut -d "=" -f 2 | cut -d "A" -f 1`
+	energy=`grep -E "^[[:blank:]]+CCSD\(T\)= " $iFile | sed 's/D/E/g' | gawk '{printf "%.10f\n", $2}'`
+	
+	if [ -z "$energy" ]
+	then
+		energy=`grep "SCF Done" $iFile | tail -n 1 | cut -d "=" -f 2 | cut -d "A" -f 1`
+	fi
 	
 	cat /dev/null > .freqs
 	
