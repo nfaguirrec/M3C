@@ -58,7 +58,7 @@ then
 		echo "SYMMETRY SO3"
 		echo "ELECTRONIC_STATE ??"
 	else
-		group=`grep "Full point group" $iFile | gawk '{print $4}'`
+		group=`grep "Full point group" $iFile | tail -n1 | gawk '{print $4}'`
 		if [ "$group" = "Nop" -o "$group" = "NOp" ]
 		then
 			echo "SYMMETRY ??"
@@ -66,7 +66,7 @@ then
 			echo "SYMMETRY $group"
 		fi
 		
-		state=`grep "The electronic state is" $iFile | gawk '{print $5}' | sed 's/\.//'`
+		state=`grep "The electronic state is" $iFile | tail -n1 | gawk '{print $5}' | sed 's/\.//'`
 		if [ -n "$state" ]
 		then
 			echo "ELECTRONIC_STATE $state"
