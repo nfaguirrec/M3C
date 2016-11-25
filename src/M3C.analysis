@@ -3167,9 +3167,9 @@ function main()
 	then
 		if [ -n "$3" ]
 		then
-			allowedReactionsDiagram ${iFile%.*}.m3c $3 100 100
+			allowedReactionsDiagram ${iFile%.*}.m3c $3 500 500
 		else
-			allowedReactionsDiagram ${iFile%.*}.m3c "FALSE" 100 100
+			allowedReactionsDiagram ${iFile%.*}.m3c "FALSE" 500 500
 		fi
 		exit
 	fi
