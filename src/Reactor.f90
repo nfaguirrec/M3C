@@ -513,6 +513,7 @@ module Reactor_
 		integer :: nChannels ! number of channels
 		integer :: nProducts ! number of products in one channel
 		integer :: i, j, targetMolecule1, targetMolecule2
+		real(8) :: St1, St2, S ! spin target molecule 1, 2 and total
 		
 		logical :: successFrag
 		
@@ -659,14 +660,16 @@ module Reactor_
 			internalCharge = reactives.clusters(targetMolecule1).charge+reactives.clusters(targetMolecule2).charge
 			internalReactivesComposition = reactives.clusters(targetMolecule1).composition+reactives.clusters(targetMolecule2).composition
 			
-			! @todo No he pensado en como meter el espin. Ver mas abajo el clear
-			if( GOptionsM3C_useSpinConservationRules ) then
-				call GOptions_error( &
-					"The option useSpinConservationRules=TRUE in combination with structureSamplingMethod=TRUE is not already implemented", &
-					"Reactor.changeCompositionSequential()" &
-				)
-			end if
-! 			internalReactivesSpinAvail = reactives.clusters(targetMolecule1).spinAvailable()
+			St1 = (FragmentsDB_instance.clusters( targetMolecule1 ).multiplicity-1.0_8)/2.0_8
+			if( St1 < 0.0_8 ) St1=0.0_8
+			St2 = (FragmentsDB_instance.clusters( targetMolecule1 ).multiplicity-1.0_8)/2.0_8
+			if( St2 < 0.0_8 ) St2=0.0_8
+			S = abs(St1-St2)
+			do while( int(2.0*S) <= int(2.0*(St1+St2)) )
+				call internalReactivesSpinAvail.append( S )
+				S = S + 1.0_8
+			end do
+			
 			internalNTrials = 0
 			
 			do i=1,FragmentsDB_instance.nMolecules()
@@ -675,7 +678,7 @@ module Reactor_
 			
 			call RandomUtils_randomMultiset( ids, nProducts, channelInfo, reactorConstraint, success=successFrag )
 			deallocate(ids)
-! 			call internalReactivesSpinAvail.clear()
+			call internalReactivesSpinAvail.clear()
 			
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Si los clusters no pueden satisfacer el constrain, se mantienen los rectivos
