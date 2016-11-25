@@ -3165,7 +3165,12 @@ function main()
 	
 	if [ "$2" = "allowedReactions" ]
 	then
-		allowedReactionsDiagram ${iFile%.*}.m3c "FALSE" 100 100
+		if [ -n "$3" ]
+		then
+			allowedReactionsDiagram ${iFile%.*}.m3c $3 100 100
+		else
+			allowedReactionsDiagram ${iFile%.*}.m3c "FALSE" 100 100
+		fi
 		exit
 	fi
 	
