@@ -22,19 +22,16 @@ module FragmentsDB_
 	public :: &
 		FragmentsDB_test
 		
-	type, private :: TSkey
-		type(String) :: reactives
-		type(String) :: products
-	end type TSkey
-		
 	type, public :: FragmentsDB
 		type(Fragment), allocatable :: clusters(:)
 		type(ModelPotential), allocatable :: potentials(:,:)
 		type(ModelPotential) :: atomicPotentials( AtomicElementsDB_nElems, AtomicElementsDB_nElems )
 		type(String), allocatable :: forbidden(:)
 		
-		type(Fragment), allocatable :: transitionStates(:)
-		type(TSkey), allocatable :: transitionStateKeys(:)
+! 		"C2(d1)+C(t1)-->C3(s1)" --> 5 --> transitionState(5)
+! 		|----------str2id_TS----------|
+		type(Fragment), allocatable :: transitionState(:)
+		type(StringIntegerMap) :: str2id_TS
 		logical, allocatable :: involvedInTS(:) ! One for each group. For speed purposes only.
 		
 		real(8), private :: energyReference_
@@ -224,53 +221,52 @@ module FragmentsDB_
 	!>
 	!! @brief
 	!!
-	subroutine setTransitionStatesTable( this, fragmentsTable, store )
+	subroutine setTransitionStatesTable( this, transitionStatesTable, store )
 		class(FragmentsDB) :: this
-		type(String), allocatable, intent(in) :: fragmentsTable(:)
+		type(String), allocatable, intent(in) :: transitionStatesTable(:)
 		type(String), optional, intent(in) :: store
 		
 		integer :: i, j, k, n
 		character(100), allocatable :: tokens(:), tokens2(:)
 		real(8) :: rBuffer
 		
-		if( allocated(this.transitionStates) ) deallocate( this.transitionStates )
-		allocate( this.transitionStates(size(fragmentsTable)) )
+		if( allocated(this.transitionState) ) deallocate( this.transitionState )
+		allocate( this.transitionState(size(transitionStatesTable)) )
 		
-		if( allocated(this.transitionStateKeys) ) deallocate( this.transitionStateKeys )
-		allocate( this.transitionStateKeys(size(fragmentsTable)) )
+		call this.str2id_TS.init()
 		
 		if( allocated(this.involvedInTS) ) deallocate( this.involvedInTS )
 		allocate( this.involvedInTS(size(this.clusters)) )
 		
 		call GOptions_section( "TRANSITION_STATES DATABASE INITIALIZATION", indent=1 )
 		
-		do i=1,size(fragmentsTable)
-			call this.transitionStates(i).fromMassTableRow( fragmentsTable(i).fstr, id=i, store=store.fstr )
+		do i=1,size(transitionStatesTable)
+			call this.transitionState(i).fromMassTableRow( transitionStatesTable(i).fstr, id=i, store=store.fstr )
 			
-			call FString_split( fragmentsTable(i).fstr, tokens, " " )
+			call FString_split( transitionStatesTable(i).fstr, tokens, " " )
 			
 			!------------------------------------------
 			! Choosing the maximum vibrational energy
 			!------------------------------------------
-			if( size(tokens) >= 8 .and. this.transitionStates(i).nAtoms() /= 1 ) then
+			if( size(tokens) >= 8 .and. this.transitionState(i).nAtoms() /= 1 ) then
 				if( FString_isNumeric( tokens(8) ) ) then
-					this.transitionStates(i).maxEvib = FString_toReal( tokens(8) )*eV
+					this.transitionState(i).maxEvib = FString_toReal( tokens(8) )*eV
 				else
-					this.transitionStates(i).maxEvib = this.getEelecFromName( tokens(8) ) &
-							 - this.transitionStates(i).electronicEnergy
+					this.transitionState(i).maxEvib = this.getEelecFromName( tokens(8) ) &
+							 - this.transitionState(i).electronicEnergy
 				end if
 			else
-				this.transitionStates(i).maxEvib = 0.0_8
+				this.transitionState(i).maxEvib = 0.0_8
 			end if
 			
-			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "           maxEvib = ", this.transitionStates(i).maxEvib/eV, "   eV"
+			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "           maxEvib = ", this.transitionState(i).maxEvib/eV, "   eV"
 			
 			!------------------------------------------
 			! Choosing the reactives and products
 			!------------------------------------------
-			if( size(tokens) >= 10 .and. this.transitionStates(i).nAtoms() /= 1 ) then
-				this.transitionStateKeys(i).reactives = trim(adjustl(tokens(9)))
-				write(IO_STDOUT,"(4X,A22,A)")  "         reactives = ", trim(this.transitionStateKeys(i).reactives.fstr)
+			if( size(tokens) >= 10 .and. this.transitionState(i).nAtoms() /= 1 ) then
+! 				this.transitionStateKeys(i).reactives = trim(adjustl(tokens(9)))
+! 				write(IO_STDOUT,"(4X,A22,A)")  "         reactives = ", trim(this.transitionStateKeys(i).reactives.fstr)
 				
 				call FString_split( trim(adjustl(tokens(9))), tokens2, "+" )
 				do j=1,size(tokens2)
@@ -278,13 +274,14 @@ module FragmentsDB_
 					do k=1,size(this.clusters)
 						if( trim(tokens2(j)) == this.clusters(k).label() ) then
 							write(IO_STDOUT,*) k, this.clusters(k).id
+							this.involvedInTS(k) = .true.
 						end if
 					end do
 				end do
 				deallocate( tokens2 )
 				
-				this.transitionStateKeys(i).products = trim(adjustl(tokens(10)))
-				write(IO_STDOUT,"(4X,A22,A)")  "          products = ", trim(this.transitionStateKeys(i).products.fstr)
+! 				this.transitionStateKeys(i).products = trim(adjustl(tokens(10)))
+! 				write(IO_STDOUT,"(4X,A22,A)")  "          products = ", trim(this.transitionStateKeys(i).products.fstr)
 				
 				call FString_split( trim(adjustl(tokens(10))), tokens2, "+" )
 				do j=1,size(tokens2)
@@ -292,15 +289,18 @@ module FragmentsDB_
 					do k=1,size(this.clusters)
 						if( trim(tokens2(j)) == this.clusters(k).label() ) then
 							write(IO_STDOUT,*) k, this.clusters(k).id
+							this.involvedInTS(k) = .true.
 						end if
 					end do
 				end do
 				deallocate( tokens2 )
+				
+				call this.str2id_TS.insert( FString_toString(trim(adjustl(tokens(9)))//"-->"//trim(adjustl(tokens(10)))), i )
 			else
 				call GOptions_error( &
 						"Bad number of atoms in transition state (N=0)", &
 						"SMoleculeDB.setTransitionStatesTable()", &
-						trim(fragmentsTable(i).fstr) &
+						trim(transitionStatesTable(i).fstr) &
 					)
 			end if
 			
