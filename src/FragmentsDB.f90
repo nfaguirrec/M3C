@@ -227,7 +227,7 @@ module FragmentsDB_
 		type(String), optional, intent(in) :: store
 		
 		integer :: i, j, k, n
-		character(100), allocatable :: tokens(:), tokens2(:)
+		character(100), allocatable :: tokens(:), tokens2(:), tokens3(:)
 		real(8) :: rBuffer
 		
 		if( allocated(this.transitionState) ) deallocate( this.transitionState )
@@ -264,37 +264,38 @@ module FragmentsDB_
 			!------------------------------------------
 			! Choosing the reactives and products
 			!------------------------------------------
-			if( size(tokens) >= 10 .and. this.transitionState(i).nAtoms() /= 1 ) then
-! 				this.transitionStateKeys(i).reactives = trim(adjustl(tokens(9)))
-! 				write(IO_STDOUT,"(4X,A22,A)")  "         reactives = ", trim(this.transitionStateKeys(i).reactives.fstr)
+			if( size(tokens) >= 9 .and. this.transitionState(i).nAtoms() /= 1 ) then
+				call FString_split( trim(adjustl(tokens(9))), tokens2, "-->" )
 				
-				call FString_split( trim(adjustl(tokens(9))), tokens2, "+" )
-				do j=1,size(tokens2)
-					write(*,*) "token = ", trim(tokens2(j))
+				write(*,*) "Reactivos"
+				call FString_split( trim(adjustl(tokens2(1))), tokens3, "+" )
+				do j=1,size(tokens3)
+					write(*,*) "token = ", trim(tokens3(j))
 					do k=1,size(this.clusters)
-						if( trim(tokens2(j)) == this.clusters(k).label() ) then
+						if( trim(tokens3(j)) == this.clusters(k).label() ) then
 							write(IO_STDOUT,*) k, this.clusters(k).id
 							this.involvedInTS(k) = .true.
 						end if
 					end do
 				end do
-				deallocate( tokens2 )
+				deallocate( tokens3 )
 				
-! 				this.transitionStateKeys(i).products = trim(adjustl(tokens(10)))
-! 				write(IO_STDOUT,"(4X,A22,A)")  "          products = ", trim(this.transitionStateKeys(i).products.fstr)
-				
-				call FString_split( trim(adjustl(tokens(10))), tokens2, "+" )
-				do j=1,size(tokens2)
-					write(*,*) "token = ", trim(tokens2(j))
+				write(*,*) "Productos"
+				call FString_split( trim(adjustl(tokens2(2))), tokens3, "+" )
+				do j=1,size(tokens3)
+					write(*,*) "token = ", trim(tokens3(j))
 					do k=1,size(this.clusters)
-						if( trim(tokens2(j)) == this.clusters(k).label() ) then
+						if( trim(tokens3(j)) == this.clusters(k).label() ) then
 							write(IO_STDOUT,*) k, this.clusters(k).id
 							this.involvedInTS(k) = .true.
 						end if
 					end do
 				end do
+				deallocate( tokens3 )
+				
 				deallocate( tokens2 )
 				
+				write(*,*) "Agregado: ", FString_toString(trim(adjustl(tokens(9)))//"-->"//trim(adjustl(tokens(10)))), ">>", i
 				call this.str2id_TS.insert( FString_toString(trim(adjustl(tokens(9)))//"-->"//trim(adjustl(tokens(10)))), i )
 			else
 				call GOptions_error( &
