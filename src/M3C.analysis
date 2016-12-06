@@ -2843,8 +2843,9 @@ function allowedReactionsDiagram()
 	local details=$2
 	local nSteps=$3
 	local nExp=$4
+	local reactor=$5
 	
-	sed -r 's/(^[[:blank:]]*)(BEGIN FRAGMENTS_DATABASE[[:blank:]]*$)/\1\2\n\nreactionsAnalysis = TRUE\nreactionsAnalysis.reactor = S:1\nreactionsAnalysis.dotFile = '${iFile%.*}.dot'\nreactionsAnalysis.details = '$details'\nreactionsAnalysis.nSteps = '$nSteps'\nreactionsAnalysis.nExps = '$nExp'/g' $iFile > .tmp$$.m3c
+	sed -r 's/(^[[:blank:]]*)(BEGIN FRAGMENTS_DATABASE[[:blank:]]*$)/\1\2\n\nreactionsAnalysis = TRUE\nreactionsAnalysis.reactor = '$reactor'\nreactionsAnalysis.dotFile = '${iFile%.*}.dot'\nreactionsAnalysis.details = '$details'\nreactionsAnalysis.nSteps = '$nSteps'\nreactionsAnalysis.nExps = '$nExp'/g' $iFile > .tmp$$.m3c
 	
 	M3C -i .tmp$$.m3c
 	
@@ -3167,9 +3168,13 @@ function main()
 	then
 		if [ -n "$3" ]
 		then
-			allowedReactionsDiagram ${iFile%.*}.m3c $3 500 500
+			#                         iFile         details  nSteps nExp reactor
+			allowedReactionsDiagram ${iFile%.*}.m3c      $3     500  500  S:1
+# 			allowedReactionsDiagram ${iFile%.*}.m3c      $3     500  500  S:-2:2
 		else
-			allowedReactionsDiagram ${iFile%.*}.m3c "FALSE" 500 500
+			allowedReactionsDiagram ${iFile%.*}.m3c "FALSE"     500  500  S:1
+# 			allowedReactionsDiagram ${iFile%.*}.m3c "FALSE"     500  500  S:-1:1
+# 			allowedReactionsDiagram ${iFile%.*}.m3c "FALSE"     500  500  S:-2:2
 		fi
 		exit
 	fi
