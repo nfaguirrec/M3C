@@ -62,6 +62,7 @@ module Reactor_
 			procedure, private, NOPASS :: changeCompositionSequential
 			procedure, private, NOPASS :: isSpinForbidden
 			procedure, private, NOPASS :: reactorConstraint
+			procedure, private, NOPASS :: reactionString
 			
 			procedure :: execute
 			procedure :: executeMinFragmentationEnergy
@@ -370,6 +371,23 @@ module Reactor_
 			end if
 		end if
 	end function reactorConstraint
+	
+	!>
+	!! This is only necessary for isForbidden
+	!!
+	function reactionString( reactives, products, details ) result( output )
+		type(FragmentsList), intent(in) :: reactives
+		type(FragmentsList), intent(in) :: products
+		logical, optional, intent(in) :: details
+		type(String) :: output
+		
+		logical :: effDetails
+		
+		effDetails = .false.
+		if( present(details) ) effDetails = details
+		
+		output = trim(reactives.label( details=effDetails ))//"-->"//trim(products.label( details=effDetails ))
+	end function reactionString
 	
 	!>
 	!! @brief Change the composition of the system
@@ -839,17 +857,17 @@ module Reactor_
 			this.state = .false.
 		end if
 		
-! 		if( clusDB.isForbidden( this.reactives, this.productos ) ) then
-! 			if( GOptions_printLevel >= 2 ) then
-! 				write(*,*) ""
-! 				write(*,*) "### Warning ### This reaction is forbidden"
-! 				write(*,*) "products <= reactives"
-! 				write(*,*) ""
-! 			end if
-! 			
-! 			this.products = this.reactives
-! 			this.state = .false.
-! 		end if
+		if( FragmentsDB_instance.isForbidden( reactionString( this.reactives, this.products, details=FragmentsDB_instance.useForbiddenReactionsDetails ) ) ) then
+			if( GOptions_printLevel >= 2 ) then
+				write(*,*) ""
+				write(*,*) "### Warning ### This reaction is forbidden"
+				write(*,*) "products <= reactives"
+				write(*,*) ""
+			end if
+			
+			this.products = this.reactives
+			this.state = .false.
+		end if
 		
 	end subroutine run
 	

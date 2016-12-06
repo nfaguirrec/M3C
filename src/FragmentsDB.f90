@@ -26,7 +26,9 @@ module FragmentsDB_
 		type(Fragment), allocatable :: clusters(:)
 		type(ModelPotential), allocatable :: potentials(:,:)
 		type(ModelPotential) :: atomicPotentials( AtomicElementsDB_nElems, AtomicElementsDB_nElems )
-		type(String), allocatable :: forbidden(:)
+		
+		type(String), allocatable :: forbiddenReactions(:)
+		logical :: useForbiddenReactionsDetails
 		
 ! 		"C2(d1)+C(t1)-->C3(s1)" --> 5 --> transitionState(5)
 ! 		|----------str2id_TS----------|
@@ -43,6 +45,7 @@ module FragmentsDB_
 			procedure :: initDefault
 			procedure :: fromInputFile
 			procedure, private :: setFragmentsTable
+			procedure, private :: setForbiddenReactionsTable
 			procedure, private :: setTransitionStatesTable
 			procedure, private :: setPotentialTable
 			procedure, private :: setAtomicPotentialTable
@@ -79,6 +82,7 @@ module FragmentsDB_
 		type(BlocksIFileParser), intent(in) :: iParser
 		
 		type(String), allocatable :: fragmentsTable(:)
+		type(String), allocatable :: forbiddenReactionsTable(:)
 		type(String), allocatable :: potentialTable(:)
 		
 		!--------------------------------------------------------------------
@@ -97,6 +101,20 @@ module FragmentsDB_
 		else
 			write(*,*) "### ERROR ### M3C: FRAGMENTS_DATABASE block is required"
 			stop
+		end if
+		
+		!--------------------------------------------------------------------
+		! Loading the forbidden reactions
+		!--------------------------------------------------------------------
+		if( iParser.isThereBlock( "FORBIDDEN_REACTIONS" ) ) then
+			call iParser.getBlock( "FORBIDDEN_REACTIONS", forbiddenReactionsTable )
+			
+			call this.setForbiddenReactionsTable( &
+				forbiddenReactionsTable, &
+				details=iParser.getLogical( "FORBIDDEN_REACTIONS:details", def=.false. ) &
+			)
+			
+			deallocate(forbiddenReactionsTable)
 		end if
 		
 		!--------------------------------------------------------------------
@@ -217,6 +235,100 @@ module FragmentsDB_
 		call GOptions_section( "END FRAGMENTS DATABASE INITIALIZATION", indent=1 )
 		
 	end subroutine setFragmentsTable
+	
+	!>
+	!! @brief
+	!!
+	subroutine setForbiddenReactionsTable( this, forbiddenReactionsTable, details )
+		class(FragmentsDB) :: this
+		type(String), allocatable, intent(in) :: forbiddenReactionsTable(:)
+		logical, optional, intent(in) :: details
+		
+		integer :: i, j, k, n
+		logical :: duplicated
+		character(100), allocatable :: tokens(:)
+		real(8) :: rBuffer
+		
+		this.useForbiddenReactionsDetails = .false.
+		if( present(details) ) this.useForbiddenReactionsDetails = details
+		
+		call GOptions_section( "FORBIDDEN REACTIONS INITIALIZATION", indent=1 )
+		
+		write(IO_STDOUT,"(4X,A22,L15)")  "           details = ", details
+		
+		if( allocated(this.forbiddenReactions) ) deallocate( this.forbiddenReactions )
+		
+		call forbiddenReactionsTable(1).split( tokens, "<-->" )
+		if( size(tokens) == 2 ) then
+			allocate( this.forbiddenReactions(2*size(forbiddenReactionsTable)) )
+			write(IO_STDOUT,"(4X,A22,L15)")  "           directed = ", .false.
+		else if( size(tokens) == 1 ) then
+			allocate( this.forbiddenReactions(size(forbiddenReactionsTable)) )
+			write(IO_STDOUT,"(4X,A22,L15)")  "           directed = ", .true.
+		else
+			call GOptions_error( &
+					"Wrong format in FORBIDDEN_REACTIONS block", &
+					"SMoleculeDB.setForbiddenReactionsTable()", &
+					trim(forbiddenReactionsTable(1).fstr) &
+				)
+		end if
+		
+		write(IO_STDOUT,*) ""
+		
+		j=1
+		do i=1,size(forbiddenReactionsTable)
+			call forbiddenReactionsTable(i).split( tokens, "<-->" )
+			
+			duplicated = .false.
+			do k=1,j-1
+				if( this.forbiddenReactions(k) == trim(tokens(1))//"-->"//trim(tokens(2)) ) then
+					duplicated = .true.
+				end if
+			end do
+			
+			if( .not. duplicated ) then
+				if ( size(tokens) == 2 ) then
+					
+					this.forbiddenReactions(j) = trim(tokens(1))//"-->"//trim(tokens(2))
+					write(IO_STDOUT,"(4X,I6,3X,A)")  j, trim(this.forbiddenReactions(j).fstr)
+					
+					! Esto evita que se almacenen doblemente las isomerizaciones
+					if( trim(tokens(1)) /= trim(tokens(2)) ) then
+						this.forbiddenReactions(j+1) = trim(tokens(2))//"-->"//trim(tokens(1))
+						write(IO_STDOUT,"(4X,I6,5X,A)")  j+1, trim(this.forbiddenReactions(j+1).fstr)
+						
+						j = j + 2
+					else
+						j = j + 1
+					end if
+					
+				else if( .not. duplicated .and. size(tokens) == 1 ) then
+				
+					this.forbiddenReactions(j) = trim(adjustl(forbiddenReactionsTable(i).fstr))
+					write(IO_STDOUT,"(4X,I6,3X,A)")  j, trim(this.forbiddenReactions(j).fstr)
+					
+					j = j + 1
+				else
+					call GOptions_error( &
+							"Wrong format in FORBIDDEN_REACTIONS block", &
+							"SMoleculeDB.setForbiddenReactionsTable()", &
+							trim(forbiddenReactionsTable(i).fstr) &
+						)
+				end if
+			else
+				call GOptions_error( &
+						"Duplicated reaction in FORBIDDEN_REACTIONS block", &
+						"SMoleculeDB.setForbiddenReactionsTable()", &
+						trim(forbiddenReactionsTable(i).fstr) &
+					)
+			end if
+		end do
+		
+		call GOptions_section( "END FORBIDDEN REACTIONS INITIALIZATION", indent=1 )
+		
+		if( allocated(tokens) ) deallocate( tokens )
+		
+	end subroutine setForbiddenReactionsTable
 	
 	!>
 	!! @brief
@@ -746,7 +858,7 @@ module FragmentsDB_
 		
 		if( allocated(this.clusters) ) deallocate(this.clusters)
 		if( allocated(this.potentials) ) deallocate(this.potentials)
-		if( allocated(this.forbidden) ) deallocate(this.forbidden)
+		if( allocated(this.forbiddenReactions) ) deallocate(this.forbiddenReactions)
 	end subroutine destroyFragmentsDB
 	
 	!>
@@ -966,8 +1078,8 @@ module FragmentsDB_
 		integer :: i
 		
 		output = .false.
-		do i=1,size(this.forbidden)
-			if( label == this.forbidden(i) ) then
+		do i=1,size(this.forbiddenReactions)
+			if( label == this.forbiddenReactions(i) ) then
 				output = .true.
 				return
 			end if
