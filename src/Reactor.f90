@@ -229,6 +229,7 @@ module Reactor_
 		integer, intent(in) :: dNfrag(:)
 		
 		integer :: n
+		integer :: maxIterForbidden
 		
 		n = RandomUtils_uniform( [ 1, size(this.dNFrag) ] )
 		
@@ -238,18 +239,43 @@ module Reactor_
 			write(*,"(A10,I20,5X,A)") "dN", this.dNFrag(n), "used for reactor"
 		end if
 		
-		select case( trim(GOptionsM3C_structureSamplingMethod.fstr) )
-			case( "RANDOM" )
-				call changeCompositionRandomly( this.reactives, this.products, this.dNFrag(n) )
-			case( "SEQUENTIAL" )
-				call changeCompositionSequential( this.reactives, this.products, this.dNFrag(n) )
-			case default
+		maxIterForbidden = 0
+		do while( .true. )
+		
+			select case( trim(GOptionsM3C_structureSamplingMethod.fstr) )
+				case( "RANDOM" )
+					call changeCompositionRandomly( this.reactives, this.products, this.dNFrag(n) )
+				case( "SEQUENTIAL" )
+					call changeCompositionSequential( this.reactives, this.products, this.dNFrag(n) )
+				case default
+					call GOptions_error( &
+						"Unknown change composition sampling method"//" ("//trim(GOptionsM3C_structureSamplingMethod.fstr)//")", &
+						"Reactor.changeComposition()", &
+						"Implemented methods: RANDOM, SEQUENTIAL" &
+						)
+			end select
+			
+			if( FragmentsDB_instance.isForbidden( reactionString( this.reactives, this.products, details=FragmentsDB_instance.useForbiddenReactionsDetails ) ) ) then
+				if( GOptions_printLevel >= 2 ) then
+					write(*,*) ""
+					write(*,*) "### Warning ### This reaction is forbidden"
+					write(*,*) "products <= reactives"
+					write(*,*) ""
+				end if
+				
+				maxIterForbidden = maxIterForbidden + 1
+				cycle
+			else
+				exit
+			end if
+			
+			if( maxIterForbidden > 1000 ) then
 				call GOptions_error( &
-					"Unknown change composition sampling method"//" ("//trim(GOptionsM3C_structureSamplingMethod.fstr)//")", &
-					"Reactor.changeComposition()", &
-					"Implemented methods: RANDOM, SEQUENTIAL" &
-					)
-		end select
+					"Maximum number of iterations reached looking for a non forbidden reaction", &
+					"Reactor.changeComposition()" &
+				)
+			end if
+		end do
 		
 	end subroutine changeComposition
 	
@@ -373,7 +399,7 @@ module Reactor_
 	end function reactorConstraint
 	
 	!>
-	!! This is only necessary for isForbidden
+	!! This is only necessary for isForbidden in changeComposition
 	!!
 	function reactionString( reactives, products, details ) result( output )
 		type(FragmentsList), intent(in) :: reactives
@@ -857,18 +883,6 @@ module Reactor_
 			this.state = .false.
 		end if
 		
-		if( FragmentsDB_instance.isForbidden( reactionString( this.reactives, this.products, details=FragmentsDB_instance.useForbiddenReactionsDetails ) ) ) then
-			if( GOptions_printLevel >= 2 ) then
-				write(*,*) ""
-				write(*,*) "### Warning ### This reaction is forbidden"
-				write(*,*) "products <= reactives"
-				write(*,*) ""
-			end if
-			
-			this.products = this.reactives
-			this.state = .false.
-		end if
-		
 	end subroutine run
 	
 	!>
@@ -1158,8 +1172,17 @@ module Reactor_
 		call reactionsHistogram.init()
 		call reactionsHistogramD.init()
 		
+		write(*,"(6X)", advance="no")
+		
 		do i=1,nExps
 			call this.initReactor( reactives, 100.0_8*eV )
+			
+			if( mod(i,max(1,nExps/10/10)) == 0 ) write(*,"(A)", advance="no") "."
+			
+			if( mod(i,max(1,nExps/10)) == 0 ) then
+				write(*,"")
+				write(*,"(6X)",advance="no")
+			end if
 			
 			do k=1,nSteps
 				call this.changeComposition( this.dNFrag )
@@ -1186,6 +1209,9 @@ module Reactor_
 				this.reactives = this.products
 			end do
 		end do
+		
+		write(*,"")
+		write(*,"")
 		
 		call speciesHistogram.build()
 		call speciesHistogramD.build()
