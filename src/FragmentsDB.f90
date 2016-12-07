@@ -27,7 +27,7 @@ module FragmentsDB_
 		type(ModelPotential), allocatable :: potentials(:,:)
 		type(ModelPotential) :: atomicPotentials( AtomicElementsDB_nElems, AtomicElementsDB_nElems )
 		
-		type(String), allocatable :: forbiddenReactions(:)
+		type(StringIntegerMap) :: forbiddenReactions
 		logical :: useForbiddenReactionsDetails
 		
 ! 		"C2(d1)+C(t1)-->C3(s1)" --> 5 --> transitionState(5)
@@ -244,7 +244,7 @@ module FragmentsDB_
 		type(String), allocatable, intent(in) :: forbiddenReactionsTable(:)
 		logical, optional, intent(in) :: details
 		
-		integer :: i, j, k, n
+		integer :: i
 		logical :: duplicated
 		character(100), allocatable :: tokens(:)
 		real(8) :: rBuffer
@@ -255,59 +255,28 @@ module FragmentsDB_
 		call GOptions_section( "FORBIDDEN REACTIONS INITIALIZATION", indent=1 )
 		
 		write(IO_STDOUT,"(4X,A22,L15)")  "           details = ", details
-		
-		if( allocated(this.forbiddenReactions) ) deallocate( this.forbiddenReactions )
-		
-		call forbiddenReactionsTable(1).split( tokens, "<-->" )
-		if( size(tokens) == 2 ) then
-			allocate( this.forbiddenReactions(2*size(forbiddenReactionsTable)) )
-			write(IO_STDOUT,"(4X,A22,L15)")  "           directed = ", .false.
-		else if( size(tokens) == 1 ) then
-			allocate( this.forbiddenReactions(size(forbiddenReactionsTable)) )
-			write(IO_STDOUT,"(4X,A22,L15)")  "           directed = ", .true.
-		else
-			call GOptions_error( &
-					"Wrong format in FORBIDDEN_REACTIONS block", &
-					"SMoleculeDB.setForbiddenReactionsTable()", &
-					trim(forbiddenReactionsTable(1).fstr) &
-				)
-		end if
-		
 		write(IO_STDOUT,*) ""
 		
-		j=1
 		do i=1,size(forbiddenReactionsTable)
 			call forbiddenReactionsTable(i).split( tokens, "<-->" )
 			
-			duplicated = .false.
-			do k=1,j-1
-				if( this.forbiddenReactions(k) == trim(tokens(1))//"-->"//trim(tokens(2)) ) then
-					duplicated = .true.
-				end if
-			end do
-			
-			if( .not. duplicated ) then
+			if( .not. this.forbiddenReactions.contains( FString_toString( trim(tokens(1))//"-->"//trim(tokens(2)) ) ) ) then
 				if ( size(tokens) == 2 ) then
 					
-					this.forbiddenReactions(j) = trim(tokens(1))//"-->"//trim(tokens(2))
-					write(IO_STDOUT,"(4X,I6,3X,A)")  j, trim(this.forbiddenReactions(j).fstr)
+					call this.forbiddenReactions.insert( FString_toString( trim(tokens(1))//"-->"//trim(tokens(2)) ), 1 )
+					write(IO_STDOUT,"(4X,I6,3X,A)")  this.forbiddenReactions.size()-1, trim(tokens(1))//"-->"//trim(tokens(2))
 					
 					! Esto evita que se almacenen doblemente las isomerizaciones
 					if( trim(tokens(1)) /= trim(tokens(2)) ) then
-						this.forbiddenReactions(j+1) = trim(tokens(2))//"-->"//trim(tokens(1))
-						write(IO_STDOUT,"(4X,I6,5X,A)")  j+1, trim(this.forbiddenReactions(j+1).fstr)
-						
-						j = j + 2
-					else
-						j = j + 1
+						call this.forbiddenReactions.set( FString_toString( trim(tokens(2))//"-->"//trim(tokens(1)) ), 1 )
+						write(IO_STDOUT,"(4X,I6,5X,A)")  this.forbiddenReactions.size()-1, trim(tokens(2))//"-->"//trim(tokens(1))
 					end if
 					
-				else if( .not. duplicated .and. size(tokens) == 1 ) then
-				
-					this.forbiddenReactions(j) = trim(adjustl(forbiddenReactionsTable(i).fstr))
-					write(IO_STDOUT,"(4X,I6,3X,A)")  j, trim(this.forbiddenReactions(j).fstr)
+				else if( size(tokens) == 1 ) then
 					
-					j = j + 1
+					call this.forbiddenReactions.insert( FString_toString( trim(adjustl(forbiddenReactionsTable(i).fstr)) ), 1 )
+					write(IO_STDOUT,"(4X,I6,3X,A)")  this.forbiddenReactions.size()-1, trim(adjustl(forbiddenReactionsTable(i).fstr))
+					
 				else
 					call GOptions_error( &
 							"Wrong format in FORBIDDEN_REACTIONS block", &
@@ -858,7 +827,6 @@ module FragmentsDB_
 		
 		if( allocated(this.clusters) ) deallocate(this.clusters)
 		if( allocated(this.potentials) ) deallocate(this.potentials)
-		if( allocated(this.forbiddenReactions) ) deallocate(this.forbiddenReactions)
 	end subroutine destroyFragmentsDB
 	
 	!>
@@ -1070,20 +1038,12 @@ module FragmentsDB_
 	!! @brief Returns true if the reaction associated with the label is forbidden
 	!!        according with the user
 	!!
-	function isForbidden( this, label ) result ( output )
+	pure function isForbidden( this, label ) result ( output )
 		class(FragmentsDB), intent(in) :: this
 		type(String), intent(in) :: label
 		logical :: output
 		
-		integer :: i
-		
-		output = .false.
-		do i=1,size(this.forbiddenReactions)
-			if( label == this.forbiddenReactions(i) ) then
-				output = .true.
-				return
-			end if
-		end do
+		output = this.forbiddenReactions.contains( label )
 	end function isForbidden
 	
 	!>
