@@ -2841,9 +2841,9 @@ function allowedReactionsDiagram()
 {
 	local iFile=$1
 	local details=$2
-	local nSteps=$3
-	local nExp=$4
-	local reactor=$5
+	local reactor=$3
+	local nSteps=$4
+	local nExp=$5
 	
 	sed -r 's/(^[[:blank:]]*)(BEGIN FRAGMENTS_DATABASE[[:blank:]]*$)/\1\2\n\nreactionsAnalysis = TRUE\nreactionsAnalysis.reactor = '$reactor'\nreactionsAnalysis.dotFile = '${iFile%.*}.dot'\nreactionsAnalysis.details = '$details'\nreactionsAnalysis.nSteps = '$nSteps'\nreactionsAnalysis.nExps = '$nExp'/g' $iFile > .tmp$$.m3c
 	
@@ -3166,16 +3166,24 @@ function main()
 	
 	if [ "$2" = "allowedReactions" ]
 	then
-		if [ -n "$3" ]
-		then
-			#                         iFile         details  nSteps nExp reactor
-			allowedReactionsDiagram ${iFile%.*}.m3c      $3     500  500  S:1
-# 			allowedReactionsDiagram ${iFile%.*}.m3c      $3     500  500  S:-2:2
-		else
-			allowedReactionsDiagram ${iFile%.*}.m3c "FALSE"     500  500  S:1
-# 			allowedReactionsDiagram ${iFile%.*}.m3c "FALSE"     500  500  S:-1:1
-# 			allowedReactionsDiagram ${iFile%.*}.m3c "FALSE"     500  500  S:-2:2
-		fi
+		local details=$3
+		local reactor=$4
+		local nSteps=$5
+		local nExp=$6
+		
+		[ -z "$details" ] && details="FALSE"
+		[ -z "$nSteps" ] && nSteps=500
+		[ -z "$nExp" ] && nExp=500
+		[ -z "$reactor" ] && reactor="S:1"
+		
+		allowedReactionsDiagram ${iFile%.*}.m3c $details $reactor $nSteps $nExp
+		
+		echo ""
+		echo "allowedReactions options:"
+		echo "            [details reactor nSteps nExp]"
+		echo "default:       FALSE     S:1    500  500"
+		echo ""
+
 		exit
 	fi
 	
