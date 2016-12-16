@@ -231,16 +231,16 @@ module Reactor_
 		integer :: n
 		integer :: maxIterForbidden
 		
-		n = RandomUtils_uniform( [ 1, size(this.dNFrag) ] )
-		
-		if( GOptions_printLevel >= 2 ) then
-			call GOptions_paragraph("CHANGE COMPOSITION")
-			
-			write(*,"(A10,I20,5X,A)") "dN", this.dNFrag(n), "used for reactor"
-		end if
-		
 		maxIterForbidden = 0
 		do while( .true. )
+		
+			n = RandomUtils_uniform( [ 1, size(this.dNFrag) ] )
+			
+			if( GOptions_printLevel >= 2 ) then
+				call GOptions_paragraph("CHANGE COMPOSITION")
+				
+				write(*,"(A10,I20,5X,A)") "dN", this.dNFrag(n), "used for reactor"
+			end if
 		
 			select case( trim(GOptionsM3C_structureSamplingMethod.fstr) )
 				case( "RANDOM" )
