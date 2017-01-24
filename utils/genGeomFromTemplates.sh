@@ -17,7 +17,7 @@ do
 	
 	if [ "$nAtomsTemplate" -eq "$nAtomsTarget" ]
 	then
-		echo "$f --> $nAtomsTemplate, $nAtomsTarget"
+		echo "$f --> $nAtomsTemplate, $nAtomsTarget" > /dev/stderr
 		
 		gawk '
 		function buildPermutations( n,     i, j, k, s, a, id ) {
@@ -92,8 +92,6 @@ do
 			}
 		}
 		' $f
-		
-		exit
 	fi
 done
 
