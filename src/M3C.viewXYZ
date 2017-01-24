@@ -457,8 +457,8 @@ function main()
 	###### Reading from input line######
 	local oType=$1  # unsorted|sorted|gif
 	FILTER=$2  # xyz
-	NCOLUMNS=$3  # 5
-	NROWS=$4  # 7
+	NCOLUMNS=$3  # 6
+	NROWS=$4  # 8
 	ZOOM=$5  # IN | 30 | 50
 	SIZE=$6  # 100
 	ORIENT=$7 # TRUE
@@ -470,10 +470,10 @@ function main()
 	##### Defining default values ######
 	if [ -z "$oType" ] ; then oType="none"; fi
 	if [ -z "$FILTER" ] ; then FILTER="xyz";fi
-	if [ -z "$NCOLUMNS" ] ; then NCOLUMNS=5; fi
-	if [ -z "$NROWS" ] ; then NROWS=7; fi
-	if [ -z "$ZOOM" ] ; then ZOOM="120"; fi
-	if [ -z "$SIZE" ] ; then SIZE="120"; fi
+	if [ -z "$NCOLUMNS" ] ; then NCOLUMNS=6; fi
+	if [ -z "$NROWS" ] ; then NROWS=8; fi
+	if [ -z "$ZOOM" ] ; then ZOOM="100"; fi
+	if [ -z "$SIZE" ] ; then SIZE="100"; fi
 	if [ -z "$ORIENT" ] ; then ORIENT="TRUE"; fi
 	if [ -z "$RANDOM_ORIENT" ] ; then RANDOM_ORIENT="FALSE"; fi
 	####################################
@@ -518,7 +518,7 @@ function main()
 			;;
 		*)
 			echo "Usage: M3C.viewXYZ (u-pdf|s-pdf|pdf|gif) (xyz|rxyz) [number-of-columns] [number-of-rows] [zoom] [size] [orient] [random] [highlight-list]"
-			echo "defaults:                                                    5                  7         120    120     TRUE    FALSE                  "
+			echo "defaults:                                                    6                  8         100    100     TRUE    FALSE                  "
 			echo ""
 			echo "   @@ WARNING @@ Option to highlight molecules has been disabled in this version"
 			;;

@@ -1,7 +1,7 @@
 INTELC_VERSION = `icpc -dumpversion`
 MACHINE = `uname -m`
 VERSION = `cat VERSION`
-SCIFT_HOME = /home/nestor/Develop/scift
+SCIFT_HOME = ${HOME}/Develop/scift
 
 all:
 	cd src; make; cd ..

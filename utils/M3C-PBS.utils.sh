@@ -89,6 +89,8 @@ function PBS.buildHead()
 #PBS -o log/$name.pbs.log
 #PBS -e log/$name.pbs.err
 
+cd \$PBS_O_WORKDIR
+
 EOF
 
 #SLURM --partition=$partition

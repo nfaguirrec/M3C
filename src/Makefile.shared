@@ -1,7 +1,7 @@
 MAKEFLAGS = -s
 FC = ifort
-FCFLAGS = -traceback -w -I. -g -fpp -mkl -I${HOME}/Software/scift/finclude
-LDFLAGS = -L${HOME}/Software/scift -lscift
+FCFLAGS = -traceback -w -I. -g -fpp -mkl -I${HOME}/Develop/scift/src
+LDFLAGS = -L${HOME}/Develop/scift/src -lscift
 TLIB = 
 
 all: AzizSlamanPotential.o Fragment.o FragmentsDB.o FragmentsListBase.o FragmentsList.o GOptions.o MarkovChain.o ModelPotential.o NNLS.o Reactor.o  $(TLIB) M3CBR M3C M3CfitBR 
