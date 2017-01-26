@@ -237,6 +237,29 @@ EOF
 }
 
 ##
+# M3C.check CONFIGURATION
+#
+function SLURM.M3C.check()
+{
+	local queueParams=$1
+	local name=""
+	
+	SLURM.buildHead $queueParams $name > run$$.slurm
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.slurm << EOF
+M3C.check $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
+EOF
+	
+	sbatch run$$.slurm
+	
+	cp run$$.slurm log/
+	rm run$$.slurm
+}
+
+##
 # M3C-gaussian.freqs CONFIGURATION
 #
 function SLURM.M3C-gaussian.freqs()

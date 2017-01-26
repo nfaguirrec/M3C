@@ -245,6 +245,29 @@ EOF
 }
 
 ##
+# M3C-gaussian.optg CONFIGURATION
+#
+function PBS.M3C.check()
+{
+	local queueParams=$1
+	local name=""
+	
+	PBS.buildHead $queueParams $name > run$$.pbs
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.pbs << EOF
+M3C.check $* > PBS-\$PBS_JOBID.log 2> PBS-\$PBS_JOBID.err
+EOF
+	
+	qsub run$$.pbs
+	
+	cp run$$.pbs log/
+	rm run$$.pbs
+}
+
+##
 # M3C-gaussian.freqs CONFIGURATION
 #
 function PBS.M3C-gaussian.freqs()

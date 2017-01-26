@@ -2,10 +2,10 @@
 ##################################################################
 #
 #  This file is part of M3C
-#  Copyright (C) by authors (2016-2016)
+#  Copyright (C) by authors (2016-2017)
 #  
 #  Authors:
-#    * Dr. Néstor F. Aguirre (2016-2016)
+#    * Dr. Néstor F. Aguirre (2016-2017)
 #          nestor.aguirre@uam.es
 #  
 #  Redistribution and use in source and binary forms, with or
@@ -99,7 +99,7 @@ function checkConsistence()
 {
 	for ifile in `ls *.$FILTER`
 	do
-		echo -n "Checking $ifile ... "
+		echo -n "   Checking $ifile ... "
 		
 		formulaFromFileName=`echo $ifile | awk 'BEGIN{FS="[.-]"}{print $1}'`
 		chargeID=`echo $ifile | awk 'BEGIN{FS="[.-]"}{print $2}'`
@@ -108,30 +108,59 @@ function checkConsistence()
 		
 		if [ "$formulaFromFileName" != "`molecule.chemicalFormula $ifile`" ]
 		then
-			echo ""
-			echo "### ERROR ### Inconsistency in filename ( $formulaFromFileName --> `molecule.chemicalFormula $ifile` )"
-			kill $$
+			
+			if [ "$REMOVE_INCONSISTENCIES" = "TRUE" ]
+			then
+				echo "Failed(formula) --> Removed"
+				rm $ifile
+				continue
+			else
+				echo ""
+				echo "### ERROR ### Inconsistency in filename ( $formulaFromFileName --> `molecule.chemicalFormula $ifile` )"
+				kill $$
+			fi
 		fi
 		
 		if [[ ! "$chargeID" =~ ^q[0-9]+$ ]]
 		then
-			echo ""
-			echo "### ERROR ### Inconsistency in chargeID ( $chargeID --> q[0-9]+ )"
-			kill $$
+			if [ "$REMOVE_INCONSISTENCIES" = "TRUE" ]
+			then
+				echo "Failed(charge) --> Removed"
+				rm $ifile
+				continue
+			else
+				echo ""
+				echo "### ERROR ### Inconsistency in chargeID ( $chargeID --> q[0-9]+ )"
+				kill $$
+			fi
 		fi
 		
 		if [[ ! "$multID" =~ ^m[1-9]+$ ]]
 		then
-			echo ""
-			echo "### ERROR ### Inconsistency in multID ( $multID --> m[1-9]+ )"
-			kill $$
+			if [ "$REMOVE_INCONSISTENCIES" = "TRUE" ]
+			then
+				echo "Failed(mult) --> Removed"
+				rm $ifile
+				continue
+			else
+				echo ""
+				echo "### ERROR ### Inconsistency in multID ( $multID --> m[1-9]+ )"
+				kill $$
+			fi
 		fi
 		
 		if [[ ! "$isomerID" =~ ^[0-9]+$ ]]
 		then
-			echo ""
-			echo "### ERROR ### Inconsistency in isomerID ( $isomerID --> [0-9]+ )"
-			kill $$
+			if [ "$REMOVE_INCONSISTENCIES" = "TRUE" ]
+			then
+				echo "Failed(id) --> Removed"
+				rm $ifile
+				continue
+			else
+				echo ""
+				echo "### ERROR ### Inconsistency in isomerID ( $isomerID --> [0-9]+ )"
+				kill $$
+			fi
 		fi
 		
 		if [ "$FILTER" = "rxyz" -o "$FILTER" = "rxyz0" ]
@@ -141,18 +170,32 @@ function checkConsistence()
 			
 			if [ "$nFreqFromFile" -ne "$nFreqExpected" ]
 			then
-				echo ""
-				echo "### ERROR ### Inconsistency in number of frequencies ( $nFreqFromFile --> $nFreqExpected )"
-				kill $$
+				if [ "$REMOVE_INCONSISTENCIES" = "TRUE" ]
+				then
+					echo "Failed(frequencies) --> Removed"
+					rm $ifile
+					continue
+				else
+					echo ""
+					echo "### ERROR ### Inconsistency in number of frequencies ( $nFreqFromFile --> $nFreqExpected )"
+					kill $$
+				fi
 			fi
 			
 			energyFromFile=`grep Energy $ifile | awk '{print $3}'`
 			
 			if [[ ! "$energyFromFile" =~ ^[-]*[0-9]+.[0-9]+$ ]]
 			then
-				echo ""
-				echo "### ERROR ### Inconsistency in value of energy ( $energyFromFile )"
-				kill $$
+				if [ "$REMOVE_INCONSISTENCIES" = "TRUE" ]
+				then
+					echo "Failed(energy) --> Removed"
+					rm $ifile
+					continue
+				else
+					echo ""
+					echo "### ERROR ### Inconsistency in value of energy ( $energyFromFile )"
+					kill $$
+				fi
 			fi
 		fi
 		
@@ -170,19 +213,20 @@ function main()
 		FILTER=$1
 	else
 		echo "usage:"
-		echo "    M3C.check [xyz|rxyz|rxyz0] [removeDuplicates]"
-		echo "                    xyz              FALSE"
+		echo "    M3C.check [xyz|rxyz|rxyz0] [removeInconsistencies] [removeDuplicates] "
+		echo "                    xyz                 FALSE                FALSE"
 		exit
 	fi
 	
-	REMOVE_DUPLICATES=$2
+	REMOVE_INCONSISTENCIES=$2
+	REMOVE_DUPLICATES=$3
 	
 	echo "-------------------------------"
 	echo " Checking format consistence   "
 	echo "-------------------------------"
 	echo ""
 	checkConsistence
-	
+	echo ""
 	echo "-------------------------------"
 	echo " Checking for repeated isomers "
 	echo "-------------------------------"
