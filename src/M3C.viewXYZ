@@ -160,6 +160,7 @@ function makeLatexTable()
 	for item in `ls *.mkgroup`
 	do
 		list=`cat $item`
+# 		list=`cat $item | sed 's/:Energy =//g' | sort -k2 -n | awk '{print $1}'`
 		
 		makeLatexTableBase $list
 	done

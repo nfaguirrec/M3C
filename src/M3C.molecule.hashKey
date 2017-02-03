@@ -1,0 +1,18 @@
+#!/bin/bash
+
+iFileName=$1
+
+energy=`grep "Energy" $iFileName | awk '{print $NF}'`
+
+charge=`echo $iFileName | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
+mult=`echo $iFileName | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
+id=`echo $iFileName | gawk 'BEGIN{FS="[.-]+"}{print $4}'`
+nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}(NR>3 && $0~/^[[:blank:]]*$/){exit}END{print i}' $iFileName`
+mass=`molecule.mass $iFileName | gawk '{print int($1/1822.88853)}'`
+
+if [ -z "$charge" ]; then charge=0; fi
+if [ -z "$mult" ]; then mult=0; fi
+if [ -z "$id" ]; then id=0; fi
+
+# echo $((100000000*$charge+10000000*$nAtoms+1000*$mass+100*$mult+$id))
+echo "100000000*$charge+10000000*$nAtoms+1000*$mass+100*$mult+$energy" | bc -l

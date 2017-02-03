@@ -203,13 +203,22 @@ function xyz2geom()
 function geom2xyz()
 {
 	local iFile=$1
+	local energy=$2
 	
+	local header=""
 	local nAtoms=""
 	
 	nAtoms=`cat $iFile | wc -l`
 	
+	if [ -z "$energy" ]
+	then
+		header="Geometry from GAUSSIAN"
+	else
+		header="Energy = $energy"
+	fi
+	
 	echo $nAtoms
-	echo "Geometry from GAUSSIAN"
+	echo $header
 	
 	cat $iFile | while read a1 a2 a3 a4 a5 a6
 	do
@@ -284,6 +293,7 @@ function optgGAUSSIANTemplate()
 	local SID="-$xyzFile$RANDOM"
 	
 	local nAtoms=""
+	local energy=""
 	
 	nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' $xyzFile`
 	
@@ -297,9 +307,11 @@ function optgGAUSSIANTemplate()
 		
 		if grep "Normal termination" input$SID.out > /dev/null
 		then
+			energy=`grep "SCF Done" input$SID.out | tail -n 1 | cut -d "=" -f 2 | cut -d "A" -f 1`
 # 			grep -A$(( $nAtoms+4 )) "Standard orientation:" input$SID.out | tail -n$nAtoms > .finalGeom$SID
 			grep -A$(( $nAtoms+4 )) "Input orientation:" input$SID.out | tail -n$nAtoms > .finalGeom$SID
-			geom2xyz .finalGeom$SID
+			
+			geom2xyz .finalGeom$SID $energy
 		else
 			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
 		fi
@@ -337,58 +349,63 @@ function freqsGAUSSIANTemplate()
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.com ${xyzFile%.*}.com 2> /dev/null
 		
-		energy=`grep "SCF Done" input$SID.out | tail -n 1 | cut -d "=" -f 2 | cut -d "A" -f 1`
-		
-		cat /dev/null > .freqs$SID
-		
-		grep "Frequencies" input$SID.out | while read a1 a2 freq1 freq2 freq3
-		do
-			if [ -n "$freq1" ]
-			then
-				echo $freq1 >> .freqs$SID
-			fi
-			
-			if [ -n "$freq2" ]
-			then
-				echo $freq2 >> .freqs$SID
-			fi
-			
-			if [ -n "$freq3" ]
-			then
-				echo $freq3 >> .freqs$SID
-			fi
-		done
-		fv=`cat .freqs$SID | wc -l`
-		
-		echo $nAtoms
-		echo "Energy = $energy"
-		cat $xyzFile | gawk '(NR>2){print $0}'
-		echo ""
-		
-		echo "FREQUENCIES $fv"
-		cat .freqs$SID
-		echo ""
-		
-		if [ "$nAtoms" -eq 1  ]
+		if grep "Normal termination" input$SID.out > /dev/null
 		then
-			echo "SYMMETRY SO3"
-			echo "ELECTRONIC_STATE ??"
-		else
-			group=`grep "Full point group" input$SID.out | gawk '{print $4}'`
-			if [ "$group" = "Nop" -o "$group" = "NOp" ]
-			then
-				echo "SYMMETRY ??"
-			else
-				echo "SYMMETRY $group"
-			fi
+			energy=`grep "SCF Done" input$SID.out | tail -n 1 | cut -d "=" -f 2 | cut -d "A" -f 1`
 			
-			state=`grep "The electronic state is" input$SID.out | gawk '{print $5}' | sed 's/\.//'`
-			if [ -n "$state" ]
+			cat /dev/null > .freqs$SID
+			
+			grep "Frequencies" input$SID.out | while read a1 a2 freq1 freq2 freq3
+			do
+				if [ -n "$freq1" ]
+				then
+					echo $freq1 >> .freqs$SID
+				fi
+				
+				if [ -n "$freq2" ]
+				then
+					echo $freq2 >> .freqs$SID
+				fi
+				
+				if [ -n "$freq3" ]
+				then
+					echo $freq3 >> .freqs$SID
+				fi
+			done
+			fv=`cat .freqs$SID | wc -l`
+			
+			echo $nAtoms
+			echo "Energy = $energy"
+			cat $xyzFile | gawk '(NR>2){print $0}'
+			echo ""
+			
+			echo "FREQUENCIES $fv"
+			cat .freqs$SID
+			echo ""
+			
+			if [ "$nAtoms" -eq 1  ]
 			then
-				echo "ELECTRONIC_STATE $state"
-			else
+				echo "SYMMETRY SO3"
 				echo "ELECTRONIC_STATE ??"
+			else
+				group=`grep "Full point group" input$SID.out | gawk '{print $4}'`
+				if [ "$group" = "Nop" -o "$group" = "NOp" ]
+				then
+					echo "SYMMETRY ??"
+				else
+					echo "SYMMETRY $group"
+				fi
+				
+				state=`grep "The electronic state is" input$SID.out | gawk '{print $5}' | sed 's/\.//'`
+				if [ -n "$state" ]
+				then
+					echo "ELECTRONIC_STATE $state"
+				else
+					echo "ELECTRONIC_STATE ??"
+				fi
 			fi
+		else
+			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
 		fi
 	fi
 	

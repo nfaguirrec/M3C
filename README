@@ -5,6 +5,26 @@ and simply run this command:
 
 $ XXXXX
 
+#-------------------------------------------------
+# .bash_profile
+#-------------------------------------------------
+module purge
+module load intel/16.0-2
+module load gaussian/09-d01-amd64
+
+source $HOME/Software/M3C-v2.0/M3Cvars.sh
+source $HOME/Software/M3C-v2.0/utils/M3C-PBS.utils.sh
+
+# GAMESS configuration
+#export M3C_GAMESS_HOME=$HOME/.gamess
+#export M3C_GAMESS_SCRATCH=/scratch/$USER/gamess
+
+# GAUSSIAN configuration
+export M3C_GAUSSIAN_HOME=/usr/local/lib/g09_revD.01_amd64/g09
+export M3C_GAUSSIAN_SCRATCH=$GAUSS_SCRDIR
+#-------------------------------------------------
+
+
 Check us out on the web at http://XXXXXX
 
 -- The M3C Team

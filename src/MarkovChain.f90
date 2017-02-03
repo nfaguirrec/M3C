@@ -36,6 +36,7 @@ module MarkovChain_
 		type(String) :: geometryHistoryFilePrefix
 		integer :: freqBlockingCheck = 4
 		type(String) :: tracking
+		Logical :: acceptAll
 		
 		type(OFStream) :: energyHistoryFile
 		type(OFStream) :: weightHistoryFile
@@ -395,6 +396,28 @@ module MarkovChain_
 	! 					end if
 
 						call react.run()
+						
+						if( this.acceptAll ) then
+							if( trim(react.reactives.label( details=.false. )) /= trim(react.products.label( details=.false. )) ) then
+								sBuffer = trim(react.reactives.label( details=.false. ))//"-->"//trim(react.products.label( details=.false. ))
+								call this.transitionHistogram.add( sBuffer )
+							end if
+						
+							if( trim(react.reactives.label( details=.true. )) /= trim(react.products.label( details=.true. )) ) then
+								sBuffer = trim(react.reactives.label( details=.true. ))//"-->"//trim(react.products.label( details=.true. ))
+								call this.transitionDetHistogram.add( sBuffer )
+							end if
+							
+							react.reactives = react.products
+							
+							call GOptions_info( &
+							"Step accepted ( MARKOV_CHAIN:acceptAll = TRUE )", "MarkovChain" )
+							
+							origin = "a"//trim(currentTask)
+							
+							call this.reactorAcceptedHistogram.add( FString_toString( trim(currentTask) ) )
+							call this.reactorStatusHistogram.add( FString_toString( "a.ACCEPTED      " ) )
+						end if
 						
 						! Si la energía cinetica es negativa
 						if( .not. react.state ) then
@@ -1347,6 +1370,7 @@ module MarkovChain_
 		this.geometryHistoryFilePrefix = iParser.getString( "MARKOV_CHAIN:geometryHistoryFilePrefix", def="" )
 		this.freqBlockingCheck = iParser.getInteger( "MARKOV_CHAIN:freqBlockingCheck", def=4 )
 		this.tracking = iParser.getString( "MARKOV_CHAIN:tracking", def="none" )
+		this.acceptAll = iParser.getLogical( "MARKOV_CHAIN:acceptAll", def=.false. )
 		
 		write(*,*)
 		write(*,"(A40,A)") "reactives = ", strReactives.fstr
@@ -1358,6 +1382,7 @@ module MarkovChain_
 		write(*,"(A40,A)") "geometryHistoryFilePrefix = ", trim(this.geometryHistoryFilePrefix.fstr)
 		write(*,"(A40,I15)") "freqBlockingCheck = ", this.freqBlockingCheck
 		write(*,"(A40,A)") "tracking = ", trim(this.tracking.fstr)
+		write(*,"(A40,L)") "acceptAll = ", this.acceptAll
 		
 		sBuffer = iParser.getString( "MARKOV_CHAIN:energyHistoryFile", def="#@NONE@#" )
 		if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
