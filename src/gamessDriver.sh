@@ -318,13 +318,22 @@ function xyz2geom()
 function geom2xyz()
 {
 	local iFile=$1
+	local energy=$2
 	
+	local header=""
 	local nAtoms=""
+	
+	if [ -z "$energy" ]
+	then
+		header="Geometry from GAMESS"
+	else
+		header="Energy = $energy"
+	fi
 	
 	nAtoms=`gawk 'BEGIN{i=0}($0!~/^[[:blank:]]*$/){i++}END{print i}' $iFile`
 	
 	echo "$nAtoms"
-	echo ""
+	echo "$header"
 	gawk '{print $1"   "$3"   "$4"   "$5}' $iFile
 }
 
