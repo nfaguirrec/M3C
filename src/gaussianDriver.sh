@@ -301,7 +301,7 @@ function optgGAUSSIANTemplate()
 	then
 		fillTemplate $template $xyzFile $charge $mult > input$SID.com
 			
-		runGAUSSIAN input$SID.com $nProcShared > input$SID.out 2>&1
+		runGAUSSIAN input$SID.com $nProcShared &> input$SID.out
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.com ${xyzFile%.*}.com 2> /dev/null
 		
@@ -345,7 +345,7 @@ function freqsGAUSSIANTemplate()
 	then
 		fillTemplate $template $xyzFile $charge $mult > input$SID.com
 		
-		runGAUSSIAN input$SID.com $nProcShared > input$SID.out 2>&1
+		runGAUSSIAN input$SID.com $nProcShared &> input$SID.out
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.com ${xyzFile%.*}.com 2> /dev/null
 		
@@ -385,7 +385,7 @@ function freqsGAUSSIANTemplate()
 			
 			if [ "$nAtoms" -eq 1  ]
 			then
-				echo "SYMMETRY SO3"
+				echo "SYMMETRY R3"
 				echo "ELECTRONIC_STATE ??"
 			else
 				group=`grep "Full point group" input$SID.out | gawk '{print $4}'`
@@ -435,7 +435,7 @@ function ienerGAUSSIANTemplate()
 		fillTemplate $template .xyzFile$SID $charge $mult > input$SID.com
 		rm .xyzFile$SID
 			
-		runGAUSSIAN input$SID.com $nProcShared > input$SID.out 2>&1
+		runGAUSSIAN input$SID.com $nProcShared &> input$SID.out
 		cp input$SID.out ${rxyzFile%.*}.out 2> /dev/null
 		cp input$SID.com ${rxyzFile%.*}.com 2> /dev/null
 		

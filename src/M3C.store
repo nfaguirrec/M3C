@@ -106,7 +106,7 @@ SCHARGE["3"]="ppp"
 SCHARGE["4"]="pppp"
 
 declare -A RSYMN  # Rotational symmetry number
-RSYMN["SO3"]=1 # << Atoms
+RSYMN["R3"]=1 # << Atoms
 RSYMN["C1"]=1
 RSYMN["CI"]=1
 RSYMN["CS"]=1

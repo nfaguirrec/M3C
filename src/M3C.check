@@ -26,8 +26,9 @@ FILTER="xyz"
 REMOVE_DUPLICATES="FALSE"
 
 BONDING_TOL_SCALE=1.2  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
-# SIMILARITY_THR=0.92 # coarse
-SIMILARITY_THR=0.97 # fine
+SIMILARITY_THR=0.90 # coarse2
+#SIMILARITY_THR=0.92 # coarse
+#SIMILARITY_THR=0.97 # fine
 
 ##
 # @brief

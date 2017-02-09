@@ -425,7 +425,7 @@ function optgGAMESSTemplate()
 		rm -rf input$SID.dat 2> /dev/null
 		fillTemplate $template $xyzFile $charge $mult $oshell > input$SID.inp
 		
-		runGAMESS input$SID.inp $nProcShared > input$SID.out 2>&1
+		runGAMESS input$SID.inp $nProcShared &> input$SID.out
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.inp ${xyzFile%.*}.inp 2> /dev/null
 		
@@ -469,7 +469,7 @@ function freqsGAMESSTemplate()
 		rm -rf input$SID.dat
 		fillTemplate $template $xyzFile $charge $mult > input$SID.inp
 		
-		runGAMESS input$SID.inp $nProcShared > input$SID.out 2>&1
+		runGAMESS input$SID.inp $nProcShared &> input$SID.out
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.inp ${xyzFile%.*}.inp 2> /dev/null
 		
@@ -520,7 +520,7 @@ function ienerGAMESSTemplate()
 		fillTemplate $template .xyzFile$SID $charge $mult rohf > input$SID.inp
 		rm .xyzFile$SID
 		
-		runGAMESS input$SID.inp $nProcShared > input$SID.out 2>&1
+		runGAMESS input$SID.inp $nProcShared &> input$SID.out
 		cp input$SID.out ${rxyzFile%.*}.out 2> /dev/null
 		cp input$SID.inp ${rxyzFile%.*}.inp 2> /dev/null
 		
