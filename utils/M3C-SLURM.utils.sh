@@ -237,29 +237,6 @@ EOF
 }
 
 ##
-# M3C.check CONFIGURATION
-#
-function SLURM.M3C.check()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C.check $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
-
-##
 # M3C-gaussian.freqs CONFIGURATION
 #
 function SLURM.M3C-gaussian.freqs()
@@ -343,6 +320,144 @@ function SLURM.M3C-gaussian.genpot()
 	
 	cat >> run$$.slurm << EOF
 M3C-gaussian.genpot $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
+EOF
+	
+	sbatch run$$.slurm
+	
+	cp run$$.slurm log/
+	rm run$$.slurm
+}
+
+# ##
+# # M3C-adf.geniso CONFIGURATION
+# #
+# function SLURM.M3C-adf.geniso()
+# {
+# 	local queueParams=$1
+# 	local name=""
+# 	
+# 	SLURM.buildHead $queueParams $name > run$$.slurm
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.slurm << EOF
+# M3C-adf.geniso $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
+# EOF
+# 	
+# 	sbatch run$$.slurm
+# 	
+# 	cp run$$.slurm log/
+# 	rm run$$.slurm
+# }
+
+##
+# M3C-adf.optg CONFIGURATION
+#
+function SLURM.M3C-adf.optg()
+{
+	local queueParams=$1
+	local name=""
+	
+	SLURM.buildHead $queueParams $name > run$$.slurm
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.slurm << EOF
+M3C-adf.optg $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
+EOF
+	
+	sbatch run$$.slurm
+	
+	cp run$$.slurm log/
+	rm run$$.slurm
+}
+
+##
+# M3C-adf.freqs CONFIGURATION
+#
+function SLURM.M3C-adf.freqs()
+{
+	local queueParams=$1
+	local name=""
+	
+	SLURM.buildHead $queueParams $name > run$$.slurm
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.slurm << EOF
+M3C-adf.freqs $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
+EOF
+	
+	sbatch run$$.slurm
+	
+	cp run$$.slurm log/
+	rm run$$.slurm
+}
+
+# ##
+# # M3C-adf.symmetrize CONFIGURATION
+# #
+# function SLURM.M3C-adf.symmetrize()
+# {
+# 	local queueParams=$1
+# 	local name=""
+# 	
+# 	SLURM.buildHead $queueParams $name > run$$.slurm
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.slurm << EOF
+# M3C-adf.symmetrize $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
+# EOF
+# 	
+# 	sbatch run$$.slurm
+# 	
+# 	cp run$$.slurm log/
+# 	rm run$$.slurm
+# }
+
+# ##
+# # M3C-adf.iener CONFIGURATION
+# #
+# function SLURM.M3C-adf.iener()
+# {
+# 	local queueParams=$1
+# 	local name=""
+# 	
+# 	SLURM.buildHead $queueParams $name > run$$.slurm
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.slurm << EOF
+# M3C-adf.iener $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
+# EOF
+# 	
+# 	sbatch run$$.slurm
+# 	
+# 	cp run$$.slurm log/
+# 	rm run$$.slurm
+# }
+
+##
+# M3C.check CONFIGURATION
+#
+function SLURM.M3C.check()
+{
+	local queueParams=$1
+	local name=""
+	
+	SLURM.buildHead $queueParams $name > run$$.slurm
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.slurm << EOF
+M3C.check $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm

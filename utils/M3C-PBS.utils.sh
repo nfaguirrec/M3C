@@ -245,29 +245,6 @@ EOF
 }
 
 ##
-# M3C-gaussian.optg CONFIGURATION
-#
-function PBS.M3C.check()
-{
-	local queueParams=$1
-	local name=""
-	
-	PBS.buildHead $queueParams $name > run$$.pbs
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.pbs << EOF
-M3C.check $* > PBS-\$PBS_JOBID.log 2> PBS-\$PBS_JOBID.err
-EOF
-	
-	qsub run$$.pbs
-	
-	cp run$$.pbs log/
-	rm run$$.pbs
-}
-
-##
 # M3C-gaussian.freqs CONFIGURATION
 #
 function PBS.M3C-gaussian.freqs()
@@ -351,6 +328,144 @@ function PBS.M3C-gaussian.genpot()
 	
 	cat >> run$$.pbs << EOF
 M3C-gaussian.genpot $* > PBS-\$PBS_JOBID.log 2> PBS-\$PBS_JOBID.err
+EOF
+	
+	qsub run$$.pbs
+	
+	cp run$$.pbs log/
+	rm run$$.pbs
+}
+
+# ##
+# # M3C-adf.geniso CONFIGURATION
+# #
+# function PBS.M3C-adf.geniso()
+# {
+# 	local queueParams=$1
+# 	local name=""
+# 	
+# 	PBS.buildHead $queueParams $name > run$$.pbs
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.pbs << EOF
+# M3C-adf.geniso $* > PBS-\$PBS_JOBID.log 2> PBS-\$PBS_JOBID.err
+# EOF
+# 	
+# 	qsub run$$.pbs
+# 	
+# 	cp run$$.pbs log/
+# 	rm run$$.pbs
+# }
+
+##
+# M3C-adf.optg CONFIGURATION
+#
+function PBS.M3C-adf.optg()
+{
+	local queueParams=$1
+	local name=""
+	
+	PBS.buildHead $queueParams $name > run$$.pbs
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.pbs << EOF
+M3C-adf.optg $* > PBS-\$PBS_JOBID.log 2> PBS-\$PBS_JOBID.err
+EOF
+	
+	qsub run$$.pbs
+	
+	cp run$$.pbs log/
+	rm run$$.pbs
+}
+
+##
+# M3C-adf.freqs CONFIGURATION
+#
+function PBS.M3C-adf.freqs()
+{
+	local queueParams=$1
+	local name=""
+	
+	PBS.buildHead $queueParams $name > run$$.pbs
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.pbs << EOF
+M3C-adf.freqs $* > PBS-\$PBS_JOBID.log 2> PBS-\$PBS_JOBID.err
+EOF
+	
+	qsub run$$.pbs
+	
+	cp run$$.pbs log/
+	rm run$$.pbs
+}
+
+# ##
+# # M3C-adf.symmetrize CONFIGURATION
+# #
+# function PBS.M3C-adf.symmetrize()
+# {
+# 	local queueParams=$1
+# 	local name=""
+# 	
+# 	PBS.buildHead $queueParams $name > run$$.pbs
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.pbs << EOF
+# M3C-adf.symmetrize $* > PBS-\$PBS_JOBID.log 2> PBS-\$PBS_JOBID.err
+# EOF
+# 	
+# 	qsub run$$.pbs
+# 	
+# 	cp run$$.pbs log/
+# 	rm run$$.pbs
+# }
+
+# ##
+# # M3C-adf.iener CONFIGURATION
+# #
+# function PBS.M3C-adf.iener()
+# {
+# 	local queueParams=$1
+# 	local name=""
+# 	
+# 	PBS.buildHead $queueParams $name > run$$.pbs
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.pbs << EOF
+# M3C-adf.iener $* > PBS-\$PBS_JOBID.log 2> PBS-\$PBS_JOBID.err
+# EOF
+# 	
+# 	qsub run$$.pbs
+# 	
+# 	cp run$$.pbs log/
+# 	rm run$$.pbs
+# }
+
+##
+# M3C.check CONFIGURATION
+#
+function PBS.M3C.check()
+{
+	local queueParams=$1
+	local name=""
+	
+	PBS.buildHead $queueParams $name > run$$.pbs
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.pbs << EOF
+M3C.check $* > PBS-\$PBS_JOBID.log 2> PBS-\$PBS_JOBID.err
 EOF
 	
 	qsub run$$.pbs

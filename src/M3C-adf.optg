@@ -35,11 +35,11 @@ then
 	exit
 fi
 
-if [ -z "`grep -i "^\s*TOTALENERGY\s*$" $ADF_TEMPLATE`" ]
-then
-	echo "### Error ### TOTALENERGY keyword shoul be present in the ADF template ($ADF_TEMPLATE)"
-	exit
-fi
+# if [ -z "`grep -i "^\s*TOTALENERGY\s*$" $ADF_TEMPLATE`" ]
+# then
+# 	echo "### Error ### TOTALENERGY keyword shoul be present in the ADF template ($ADF_TEMPLATE)"
+# 	exit
+# fi
 
 [ -z "$NPROCSHARED" ] && NPROCSHARED=1
 ##############################
@@ -76,6 +76,9 @@ function main()
 	if [ -n "$SLURM_NTASKS" ]
 	then
 		nThreads=$SLURM_NTASKS
+	elif [ -n "$PBS_NODEFILE" ]
+	then
+		nThreads=$(wc -l $PBS_NODEFILE | awk '{print $1}')
 	else
 		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
@@ -109,9 +112,9 @@ function main()
 			
 			if (( j != $nThreads ))
 			then
-				printf "%15s," "${xyzFile[$ij]%.*}"
+				printf "%20s," "${xyzFile[$ij]%.*}"
 			else
-				printf "%15s" "${xyzFile[$ij]%.*}"
+				printf "%20s" "${xyzFile[$ij]%.*}"
 			fi
 			
 			optgeom ${xyzFile[$ij]} ${charge[$ij]} ${mult[$ij]} &
@@ -137,9 +140,9 @@ function main()
 		do
 			if (( $i != $(( ${#xyzFile[@]} - 1 )) ))
 			then
-				printf "%15s," "${xyzFile[$i]%.*}"
+				printf "%20s," "${xyzFile[$i]%.*}"
 			else
-				printf "%15s " "${xyzFile[$i]%.*}"
+				printf "%20s " "${xyzFile[$i]%.*}"
 			fi
 			
 			optgeom ${xyzFile[$i]} ${charge[$i]} ${mult[$i]} &
@@ -151,9 +154,9 @@ function main()
 		do
 			if (( i != $nThreads ))
 			then
-				printf "%15s " ""
+				printf "%20s " ""
 			else
-				printf "%15s" ""
+				printf "%20s" ""
 			fi
 		done
 		

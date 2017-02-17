@@ -558,14 +558,15 @@ function optgADFTemplate()
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.adf ${xyzFile%.*}.adf 2> /dev/null
 		
-		if grep "NORMAL TERMINATION" input$SID.out > /dev/null  # @todo No esta claro cual es la linea que asegura la convergencia apropiada
+		if grep "ERROR:" input$SID.out > /dev/null
 		then
-			energy=`grep "<.*Total energy" input$SID.out | tail -n1 | gawk '{print $5}'`
+			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
+		else
+# 			energy=`grep "<.*Total energy" input$SID.out | tail -n1 | gawk '{print $5}'`  # <<< This not available in all cases
+			energy=`grep "<.*current energy" input$SID.out | tail -n1 | gawk '{print $5}'`
 			grep -A$(( $nAtoms+1 )) "Coordinates in Geometry Cycle" input$SID.out | tail -n$nAtoms | sed -r 's/^[[:blank:]]*[[:digit:]]+\.//g' > .finalGeom$SID
 			
 			geom2xyz .finalGeom$SID $energy
-		else
-			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
 		fi
 	else
 		cat $xyzFile
@@ -601,9 +602,12 @@ function freqsADFTemplate()
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.adf ${xyzFile%.*}.adf 2> /dev/null
 		
-		if grep "NORMAL TERMINATION" input$SID.out > /dev/null  # @todo No esta claro cual es la linea que asegura la convergencia apropiada
+		if grep "ERROR:" input$SID.out > /dev/null
 		then
-			energy=`grep "<.*Total energy" input$SID.out | tail -n1 | gawk '{print $5}'`
+			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
+		else
+# 			energy=`grep "<.*Total energy" input$SID.out | tail -n1 | gawk '{print $5}'`  # <<< This not available in all cases
+			energy=`grep "<.*current energy" input$SID.out | tail -n1 | gawk '{print $5}'`
 			
 			cat /dev/null > .freqs$SID
 			
@@ -649,8 +653,6 @@ function freqsADFTemplate()
 					echo "ELECTRONIC_STATE ??"
 				fi
 			fi
-		else
-			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
 		fi
 	fi
 	

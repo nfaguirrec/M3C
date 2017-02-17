@@ -22,9 +22,6 @@
 #
 ##################################################################
 
-FILTER="xyz"
-REMOVE_DUPLICATES="FALSE"
-
 BONDING_TOL_SCALE=1.2  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
 SIMILARITY_THR=0.90 # coarse2
 #SIMILARITY_THR=0.92 # coarse
@@ -34,9 +31,11 @@ SIMILARITY_THR=0.90 # coarse2
 # @brief
 # @todo Esta función se utiliza en varios script, así que hay que centralizarla. OJO en este fichero no tiene el rm
 ##
-function filterIsomers()
+function checkRepeated()
 {
-	local resultsDir=$1
+	local format=$1
+	local resultsDir=$2
+	local forceRemove=$3
 	
 	local id1=""
 	local id2=""
@@ -47,13 +46,13 @@ function filterIsomers()
 	pushd . &> /dev/null
 	cd $resultsDir
 	
-	local categories=`ls *.$FILTER | awk 'BEGIN{FS="[-]"}{map[$1]=1}END{for(item in map) print item}'`
+	local categories=`ls *.$format | awk 'BEGIN{FS="[-]"}{map[$1]=1}END{for(item in map) print item}'`
 	
 	for category in $categories
 	do
 		echo "   Group $category"
 		
-		local files=(`ls $category-*.$FILTER 2> /dev/null`)
+		local files=(`ls $category-*.$format 2> /dev/null`)
 		
 		for id1 in `seq 0 $(( ${#files[@]} - 1 ))`
 		do
@@ -72,7 +71,7 @@ function filterIsomers()
 				then
 					echo -n "Equal"
 					
-					if [ "$REMOVE_DUPLICATES" = "TRUE" ]
+					if [ "$forceRemove" = "TRUE" ]
 					then
 						echo "--> Removed (${files[$id1]})"
 						rm ${files[$id1]}
@@ -98,7 +97,10 @@ function filterIsomers()
 ##
 function checkConsistence()
 {
-	for ifile in `ls *.$FILTER`
+	local format=$1
+	local forceRemove=$2
+	
+	for ifile in `ls *.$format`
 	do
 		echo -n "   Checking $ifile ... "
 		
@@ -110,7 +112,7 @@ function checkConsistence()
 		if [ "$formulaFromFileName" != "`molecule.chemicalFormula $ifile`" ]
 		then
 			
-			if [ "$REMOVE_INCONSISTENCIES" = "TRUE" ]
+			if [ "$forceRemove" = "TRUE" ]
 			then
 				echo "Failed(formula) --> Removed"
 				rm $ifile
@@ -124,7 +126,7 @@ function checkConsistence()
 		
 		if [[ ! "$chargeID" =~ ^q[0-9]+$ ]]
 		then
-			if [ "$REMOVE_INCONSISTENCIES" = "TRUE" ]
+			if [ "$forceRemove" = "TRUE" ]
 			then
 				echo "Failed(charge) --> Removed"
 				rm $ifile
@@ -138,7 +140,7 @@ function checkConsistence()
 		
 		if [[ ! "$multID" =~ ^m[1-9]+$ ]]
 		then
-			if [ "$REMOVE_INCONSISTENCIES" = "TRUE" ]
+			if [ "$forceRemove" = "TRUE" ]
 			then
 				echo "Failed(mult) --> Removed"
 				rm $ifile
@@ -152,7 +154,7 @@ function checkConsistence()
 		
 		if [[ ! "$isomerID" =~ ^[0-9]+$ ]]
 		then
-			if [ "$REMOVE_INCONSISTENCIES" = "TRUE" ]
+			if [ "$forceRemove" = "TRUE" ]
 			then
 				echo "Failed(id) --> Removed"
 				rm $ifile
@@ -164,14 +166,14 @@ function checkConsistence()
 			fi
 		fi
 		
-		if [ "$FILTER" = "rxyz" -o "$FILTER" = "rxyz0" ]
+		if [ "$format" = "rxyz" -o "$format" = "rxyz0" ]
 		then
 			nFreqFromFile=`grep FREQUENCIES $ifile | awk '{print $2}'`
 			nFreqExpected=`molecule.fv $ifile | awk '{print $1}'`
 			
 			if [ "$nFreqFromFile" -ne "$nFreqExpected" ]
 			then
-				if [ "$REMOVE_INCONSISTENCIES" = "TRUE" ]
+				if [ "$forceRemove" = "TRUE" ]
 				then
 					echo "Failed(frequencies) --> Removed"
 					rm $ifile
@@ -187,7 +189,7 @@ function checkConsistence()
 			
 			if [[ ! "$energyFromFile" =~ ^[-]*[0-9]+.[0-9]+$ ]]
 			then
-				if [ "$REMOVE_INCONSISTENCIES" = "TRUE" ]
+				if [ "$forceRemove" = "TRUE" ]
 				then
 					echo "Failed(energy) --> Removed"
 					rm $ifile
@@ -207,32 +209,199 @@ function checkConsistence()
 ##
 # @brief
 ##
+function checkDisconnected()
+{
+	local format=$1
+	local forceRemove=$2
+	
+	for ifile in `ls *.$format`
+	do
+		echo -n "   Checking $ifile ... "
+		
+		if [ `molecule.isConnected $ifile $BONDING_TOL_SCALE` = "F" ]
+		then
+			if [ "$forceRemove" = "TRUE" ]
+			then
+				echo "Disconnected --> Removed"
+				rm $ifile
+			else
+				echo "--> Disconnected"
+			fi
+			
+			continue
+		fi
+		
+		echo "OK"
+	done
+}
+
+function bold(){ echo "\e[1m$1\e[0m"; }
+function underline(){ echo "\e[4m$1\e[0m"; }
+
+##
+# @brief
+##
+function usage()
+{
+	echo -e ""
+	echo -e "`bold "SYNOPSYS:"`"
+	echo -e ""
+	echo -e "      ${0##*/} [ OPTIONS ]"
+	echo -e ""
+	echo -e "`bold "OPTIONS"`"
+	echo -e "      ${0##*/} accepts the following options.  Standard options are listed first, listed alphabetically by short option."
+	echo -e ""
+	echo -e "     -f `underline format`"
+	echo -e "     --format `underline format`"
+	echo -e "          Read the molecular structures using the format `underline format`. Supported formats are xyz,xyz0,rxyz"
+	echo -e ""
+	echo -e "     -c `underline type`"
+	echo -e "     --check `underline type`"
+	echo -e "          Type of check. Available option for `underline type` are FORMAT,DUPLICATED,DISCONNECTED,ALL"
+	echo -e ""
+	echo -e "     -r"
+	echo -e "     --remove"
+	echo -e "          Run in force remove mode."
+	echo -e ""
+	echo -e "     -b"
+	echo -e "     --bond `underline scale`"
+	echo -e "          Bonding scale factor. Two atoms are considered bonded if their covalent radius satisfy dij < (Rci+Rcj)*`underline scale`"
+	echo -e "          (default 1.2)"
+	echo -e ""
+	echo -e "     -s"
+	echo -e "     --similarity `underline threshold`"
+	echo -e "          Similarity threshold. Two molecules are considered the same if their similarity indices differ less that `underline threshold`"
+	echo -e "          Suggested values: 0.90-0.92 (coarse), 0.97 (fine)"
+	echo -e "          (default 0.9)"
+	exit
+}
+
+##
+# @brief
+##
 function main()
 {
-	if [ "$1" = "xyz" -o "$1" = "rxyz" -o "$1" = "rxyz0" ]
+	local format=""
+	local action=""
+	local forceRemove=""
+	
+	if [ "$#" -lt 1 ]
 	then
-		FILTER=$1
-	else
-		echo "usage:"
-		echo "    M3C.check [xyz|rxyz|rxyz0] [removeInconsistencies] [removeDuplicates] "
-		echo "                    xyz                 FALSE                FALSE"
-		exit
+		usage
 	fi
 	
-	REMOVE_INCONSISTENCIES=$2
-	REMOVE_DUPLICATES=$3
+	TEMP=`getopt \
+		-o f:c:rb:s: \
+		--long format:,check:,remove,bond,similarity \
+		-n 'M3C.check' -- "$@"`
+
+	eval set -- "$TEMP"
 	
-	echo "-------------------------------"
-	echo " Checking format consistence   "
-	echo "-------------------------------"
+	while true
+	do
+		case "$1" in
+			-f|--format)
+				case "$2" in
+					xyz|xyz0|rxyz)
+						format=$2
+						;;
+					*)
+						echo "### Error ### Wrong value for format ($2)"
+						usage
+				esac
+				
+				shift 2
+				;;
+			-c|--check)
+				
+				case "$2" in
+					FORMAT|DUPLICATED|DISCONNECTED|ALL)
+						action=$2
+						;;
+					*)
+						echo "### Error ### Wrong value for check ($2)"
+						usage
+				esac
+				
+				shift 2
+				;;
+			-r|--remove)
+				forceRemove="TRUE"
+				shift 1
+				;;
+			-b|--bond)
+				BONDING_TOL_SCALE=$2
+				shift 2
+				;;
+			-s|--similarity)
+				SIMILARITY_THR=$2
+				shift 2
+				;;
+			--)
+				shift
+				break
+				;;
+			*)
+				echo "Internal error!"
+				usage
+				exit 1
+				;;
+		esac
+	done
+	
 	echo ""
-	checkConsistence
+	echo "Bonding scale factor: $BONDING_TOL_SCALE"
+	echo "Similarity threshold: $SIMILARITY_THR"
 	echo ""
-	echo "-------------------------------"
-	echo " Checking for repeated isomers "
-	echo "-------------------------------"
-	echo ""
-	filterIsomers .
+	
+	case "$action" in
+		FORMAT)
+			echo "-------------------------------------"
+			echo " Checking format                     "
+			echo "-------------------------------------"
+			echo ""
+			checkConsistence $format $forceRemove
+			;;
+			
+		DUPLICATED)
+			echo ""
+			echo "-------------------------------------"
+			echo " Checking for duplicated molecules   "
+			echo "-------------------------------------"
+			echo ""
+			checkRepeated $format . $forceRemove
+			;;
+			
+		DISCONNECTED)
+			echo ""
+			echo "-------------------------------------"
+			echo " Checking for disconnected molecules "
+			echo "-------------------------------------"
+			echo ""
+			checkDisconnected $format $forceRemove
+			;;
+		ALL)
+			echo "-------------------------------------"
+			echo " Checking format                     "
+			echo "-------------------------------------"
+			echo ""
+			checkConsistence $format $forceRemove
+			echo ""
+			echo "-------------------------------------"
+			echo " Checking for duplicated molecules   "
+			echo "-------------------------------------"
+			echo ""
+			checkRepeated $format . $forceRemove
+			echo ""
+			echo "-------------------------------------"
+			echo " Checking for disconnected molecules "
+			echo "-------------------------------------"
+			echo ""
+			checkDisconnected $format $forceRemove
+			;;
+		*)
+			usage
+	esac
 }
 
 main $*

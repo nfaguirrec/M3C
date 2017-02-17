@@ -75,14 +75,17 @@ function main()
 	local j=0
 	local ij=0
 
-    if [ -n "$SLURM_NTASKS" ]
-    then
+	if [ -n "$SLURM_NTASKS" ]
+	then
 		nThreads=$SLURM_NTASKS
-    else
+	elif [ -n "$PBS_NODEFILE" ]
+	then
+		nThreads=$(wc -l $PBS_NODEFILE | awk '{print $1}')
+	else
 		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
-    fi
-    nThreads=$(( $nThreads/$NPROCSHARED ))
-    
+	fi
+	nThreads=$(( $nThreads/$NPROCSHARED ))
+	
 	if [ -d "history.iener" ]
 	then
 		echo "@@@ WARNING @@@ There is already a history directory (history.iener). Backup copy will be generated"
@@ -111,9 +114,9 @@ function main()
 			
 			if (( j != $nThreads ))
 			then
-				printf "%15s," "${rxyzFile[$ij]%.*}"
+				printf "%20s," "${rxyzFile[$ij]%.*}"
 			else
-				printf "%15s" "${rxyzFile[$ij]%.*}"
+				printf "%20s" "${rxyzFile[$ij]%.*}"
 			fi
 			
 			iener ${rxyzFile[$ij]} ${charge[$ij]} ${mult[$ij]} &
@@ -139,9 +142,9 @@ function main()
 		do
 			if (( $i != $(( ${#rxyzFile[@]} - 1 )) ))
 			then
-				printf "%15s," "${rxyzFile[$i]%.*}"
+				printf "%20s," "${rxyzFile[$i]%.*}"
 			else
-				printf "%15s " "${rxyzFile[$i]%.*}"
+				printf "%20s " "${rxyzFile[$i]%.*}"
 			fi
 			
 			iener ${rxyzFile[$i]} ${charge[$i]} ${mult[$i]} &
@@ -153,9 +156,9 @@ function main()
 		do
 			if (( i != $nThreads ))
 			then
-				printf "%15s " ""
+				printf "%20s " ""
 			else
-				printf "%15s" ""
+				printf "%20s" ""
 			fi
 		done
 		

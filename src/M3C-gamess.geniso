@@ -253,6 +253,9 @@ function main()
 	if [ -n "$SLURM_NTASKS" ]
 	then
 		nThreads=$SLURM_NTASKS
+	elif [ -n "$PBS_NODEFILE" ]
+	then
+		nThreads=$(wc -l $PBS_NODEFILE | awk '{print $1}')
 	else
 		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
@@ -286,9 +289,9 @@ function main()
 			
 			if (( j != $nThreads ))
 			then
-				printf "%10s," "${xyzFile[$ij]%.*}"
+				printf "%20s," "${xyzFile[$ij]%.*}"
 			else
-				printf "%10s" "${xyzFile[$ij]%.*}"
+				printf "%20s" "${xyzFile[$ij]%.*}"
 			fi
 			
 			generateIsomers ${xyzFile[$ij]} ${charge[$ij]} ${mult[$ij]} &
@@ -314,9 +317,9 @@ function main()
 		do
 			if (( $i != $(( ${#xyzFile[@]} - 1 )) ))
 			then
-				printf "%10s," "${xyzFile[$i]%.*}"
+				printf "%20s," "${xyzFile[$i]%.*}"
 			else
-				printf "%10s " "${xyzFile[$i]%.*}"
+				printf "%20s " "${xyzFile[$i]%.*}"
 			fi
 			
 			generateIsomers ${xyzFile[$i]} ${charge[$i]} ${mult[$i]} &
@@ -328,9 +331,9 @@ function main()
 		do
 			if (( i != $nThreads ))
 			then
-				printf "%10s " ""
+				printf "%20s " ""
 			else
-				printf "%10s" ""
+				printf "%20s" ""
 			fi
 		done
 		
