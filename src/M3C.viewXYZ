@@ -104,6 +104,8 @@ function makeLatexTableBase()
 	i=1
 	for f in $files
 	do
+		textFileName=`echo ${f%.*} | sed 's/_/\\\_/g'`
+		
 		symm=`grep "SYMMETRY" ${f%.*}.$FILTER | gawk '{print $2}'`
 		estate=`grep "ELECTRONIC_STATE" ${f%.*}.$FILTER | gawk '{print $2}'`
 		
@@ -111,16 +113,16 @@ function makeLatexTableBase()
 		then
 			if [ -n "$symm" -a  -n "$estate" ]
 			then
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} ${f%.*} \hspace{5pt} $estate~($symm)} &"
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{5pt} $estate~($symm)} &"
 			else
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} ${f%.*}} &"
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName} &"
 			fi
 		else
 			if [ -n "$symm" -a  -n "$estate" ]
 			then
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} ${f%.*} \hspace{5pt} $estate~($symm)} "
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{5pt} $estate~($symm)} "
 			else
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} ${f%.*}} "
+				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName} "
 			fi
 			
 			if (( $i != $nFiles ))
