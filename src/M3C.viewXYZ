@@ -338,7 +338,8 @@ function geometriesByCategories()
 		if [ -z "$mult" ]; then mult=0; fi
 		if [ -z "$id" ]; then id=0; fi
 		
-		echo $((100000000*$charge+10000000*$nAtoms+1000*$mass+100*$mult+$id)) $fileName $energy >> .molValues$$
+# 		echo $((100000000*$charge+10000000*$nAtoms+1000*$mass+100*$mult+$id)) $fileName $energy >> .molValues$$
+		echo `M3C.molecule.hashKey $fileName` $fileName $energy >> .molValues$$
 	done
 	
 	categories=`sort -k1 -n .molValues$$ | gawk '{ gsub("[.].*","",$2); if( $2 in map ){ a=1 }else{ print $2 }; map[$2]=1 }'`
