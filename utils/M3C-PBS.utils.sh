@@ -77,6 +77,8 @@ function PBS.buildHead()
 	
 	local jobdir=`echo $PWD | sed s/.*$USER/~/`
 	
+	export M3C_NTHREADS=$nTask
+	
 	[ ! -d log ] && mkdir log
 	
 	cat << EOF

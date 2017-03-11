@@ -67,13 +67,14 @@ main(){
 # 	local scratch=""
 # 	local work=""
 	local iFileEff=""
+
+	NPROCSHARED=1  # M3C is not parallelized
 	
-	if [ -n "$SLURM_NTASKS" ]
+	if [ -z "$M3C_NTHREADS" ]
 	then
-		nThreads=$SLURM_NTASKS
-	else
-		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
+		M3C_NTHREADS=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
+	nThreads=$(( $M3C_NTHREADS/$NPROCSHARED ))
 	
 	while getopts "i:n:" OPTNAME
 	do
