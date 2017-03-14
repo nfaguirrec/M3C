@@ -390,8 +390,16 @@ function geometries()
 	
 	makeLatexHeader > geometries-$$.tex
 	
+	cat /dev/null > .molValues$$
+	ls *.$FILTER \
+	| while read fileName
+	do
+		echo `M3C.molecule.hashKey $fileName` $fileName >> .molValues$$
+	done
+	sortedList=`sort -k1 -n .molValues$$ | awk '{print $2}'`
+	
 	MOL_ITERATOR=1
-	makeLatexTable `ls *.$FILTER` >> geometries-$$.tex
+	makeLatexTable $sortedList >> geometries-$$.tex
 	
 	makeLatexFooter >> geometries-$$.tex
 

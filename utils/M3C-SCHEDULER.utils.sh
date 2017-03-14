@@ -6,7 +6,7 @@
 #  
 #  Authors:
 #    * Dr. Néstor F. Aguirre (2017-2017)
-#          nestor.aguirre@uam.es
+#          nfaguirrec@lanl.gov
 #  
 #  Redistribution and use in source and binary forms, with or
 #  without modification, are permitted provided that the

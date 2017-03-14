@@ -6,7 +6,7 @@
 #  
 #  Authors:
 #    * Dr. Néstor F. Aguirre (2017-2017)
-#          nestor.aguirre@uam.es
+#          nfaguirrec@lanl.gov
 #  
 #  Redistribution and use in source and binary forms, with or
 #  without modification, are permitted provided that the
@@ -31,7 +31,8 @@
 
 export M3C_SCHEDULER_NAME="MOAB"
 export M3C_SCHEDULER_SUBMIT="msub"
-export M3C_SCHEDULER_JOBID="\$PBS_JOBID"
+# export M3C_SCHEDULER_JOBID="\$PBS_JOBID"
+export M3C_SCHEDULER_JOBID="\$SLURM_JOB_ID"  # << Esto puede ser algo especifico de LANL, porque estan migrando todo a SLURM
 export M3C_NTHREADS="" # See SCHEDULER.buildHead()
 
 ##
@@ -87,15 +88,17 @@ function SCHEDULER.buildHead()
 	
 	cat << EOF
 #!/bin/bash
+#MSUB -q $partition
 #MSUB -A $account
 #MSUB -l walltime=$ttime
-###SLURM --qos=$qos   <<< There is not equivalent in MOAB
 #MSUB -N M3C
-#MSUB -o log/${M3C_SCHEDULER_NAME}.log
-#MSUB -e log/${M3C_SCHEDULER_NAME}.err
+#MSUB -o ${M3C_SCHEDULER_NAME}.log
+#MSUB -e ${M3C_SCHEDULER_NAME}.err
 #MSUB -l nodes=1:ppn=$nTask
 
 EOF
+
+###SLURM --qos=$qos   <<< There is not equivalent in MOAB
 	
 	return 0
 }
