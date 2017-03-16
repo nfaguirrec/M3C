@@ -88,8 +88,8 @@ function SCHEDULER.buildHead()
 	
 	cat << EOF
 #!/bin/bash
-#MSUB -q $partition
 #MSUB -A $account
+#MSUB -l qos=$qos
 #MSUB -l walltime=$ttime
 #MSUB -N M3C
 #MSUB -o ${M3C_SCHEDULER_NAME}.log
@@ -98,6 +98,7 @@ function SCHEDULER.buildHead()
 
 EOF
 
+###MSUB -q $partition   << This is a replacement of qos option but probably only in LANL
 ###SLURM --qos=$qos   <<< There is not equivalent in MOAB
 	
 	return 0
