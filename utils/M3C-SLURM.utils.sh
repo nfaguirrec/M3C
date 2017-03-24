@@ -92,7 +92,8 @@ function SLURM.buildHead()
 #SBATCH --job-name=$jobdir/$name
 #SBATCH -o log/$name.slurm.log
 #SBATCH -e log/$name.slurm.err
-#SBATCH --nodes=1-$nTask
+#SBATCH --nodes=1-1
+#SBATCH --ntasks=$nTask
 
 EOF
 	
