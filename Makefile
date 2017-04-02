@@ -22,6 +22,7 @@ binary:
 	cp M3Cvars.sh M3C-v${VERSION}/
 	cp doc/tutorial/tutorial-*.pdf M3C-v${VERSION}/doc/
 #	cp -r examples M3C-v${VERSION}
+	cp -r templates M3C-v${VERSION}
 	mkdir M3C-v${VERSION}/utils
 	find utils/ -maxdepth 1 -type f -exec cp {} M3C-v${VERSION}/utils \;
 	mkdir M3C-v${VERSION}/bin

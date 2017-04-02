@@ -256,7 +256,7 @@ program M3CBR
 		write(*,"(A)",advance="no") "Reading channel "//trim(FString_fromInteger(i))//":"//trim(FString_fromInteger(2*i))//" ... "
 		
 		if( iParser.isThereBlock( "EXPERIMENTAL_BRANCHING_RATIOS" ) ) then
-			if( isMappedExp2Data(i) ) then
+			if( isMappedExp2Data(i) .and. idData2Exp(i) /= 0 ) then
 				call bufferGrid.fromFile( dataFileName.fstr, column=2*idData2Exp(i) )
 			else
 				bufferGrid = energyGrid
@@ -302,7 +302,7 @@ program M3CBR
 		
 		if( iParser.isThereBlock( "EXPERIMENTAL_BRANCHING_RATIOS" ) ) then
 			
-			if( isMappedExp2Data(i) ) then
+			if( isMappedExp2Data(i) .and. idData2Exp(i) /= 0 ) then
 				error = BR - R.get(i,1)
 				
 				write(*,"(A50,4F15.5)") key(idData2Exp(i)).fstr, BR, R.get(i,1), expBRerrors(i), error

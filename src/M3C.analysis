@@ -32,13 +32,13 @@
 
 FILTER=".*"
 
-[ -z "$M3C_GNUPLOT_EXEC"  ] && M3C_GNUPLOT_EXEC="gnuplot"
-[ -z "$M3C_PLOT_TERMINAL" ] && M3C_PLOT_TERMINAL="set terminal wxt size 800,400"
-[ -z "$M3C_PLOT_SIZE"     ] && M3C_PLOT_SIZE="square"
-[ -z "$M3C_PLOT_LW"       ] && M3C_PLOT_LW="2.0"
-[ -z "$M3C_PLOT_XRANGE"   ] && M3C_PLOT_XRANGE="[:]"
-[ -z "$M3C_PLOT_CBRANGE"   ] && M3C_PLOT_CBRANGE="[:]"
-[ -z "$M3C_HISTOGRAM_NBINS"   ] && M3C_HISTOGRAM_NBINS="100"
+[ -z "$M3C_GNUPLOT_EXEC"    ] && M3C_GNUPLOT_EXEC="gnuplot"
+[ -z "$M3C_PLOT_TERMINAL"   ] && M3C_PLOT_TERMINAL="set terminal wxt size 800,400"
+[ -z "$M3C_PLOT_SIZE"       ] && M3C_PLOT_SIZE="square"
+[ -z "$M3C_PLOT_LW"         ] && M3C_PLOT_LW="2.0"
+[ -z "$M3C_PLOT_XRANGE"     ] && M3C_PLOT_XRANGE="[:]"
+[ -z "$M3C_PLOT_CBRANGE"    ] && M3C_PLOT_CBRANGE="[:]"
+[ -z "$M3C_HISTOGRAM_NBINS" ] && M3C_HISTOGRAM_NBINS="100"
 
 LOCAL_DIR=$PWD  # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 
@@ -457,7 +457,9 @@ function histogram2D()
 	local cols=$2
 	local nBins=$3
 	local normalize=$4
-
+	local grid1=$5
+	local grid2=$6
+	
 	[ -z "$nBins" ] && nBins="60,60"
 	[ -z "$normalize" ] && normalize="TRUE"
 	
@@ -469,15 +471,31 @@ function histogram2D()
 	# Se capturan los parámetros para el histograma
 	col1=`echo $cols | gawk 'BEGIN{FS=","}{print $1}'`
 	nbars1=`echo $nBins | gawk 'BEGIN{FS=","}{print $1}'`
-	min1=`cat .tmpFile$$ | sort -k $col1 -n | head -n1 | gawk '{print $'$col1'}'`
-	max1=`cat .tmpFile$$ | sort -k $col1 -n | tail -n1 | gawk '{print $'$col1'}'`
-	h1=`echo "($max1-($min1))/$nbars1" | bc -l`
+	
+	if [ -z "$grid1" ]
+	then
+		min1=`cat .tmpFile$$ | sort -k $col1 -n | head -n1 | gawk '{print $'$col1'}'`
+		max1=`cat .tmpFile$$ | sort -k $col1 -n | tail -n1 | gawk '{print $'$col1'}'`
+		h1=`echo "($max1-($min1))/$nbars1" | bc -l`
+	else
+		min1=`echo $grid1 | gawk 'BEGIN{FS=","}{print $1}'`
+		max1=`echo $grid1 | gawk 'BEGIN{FS=","}{print $2}'`
+		h1=`echo $grid1 | gawk 'BEGIN{FS=","}{print $3}'`
+	fi
 	
 	col2=`echo $cols | gawk 'BEGIN{FS=","}{print $2}'`
 	nbars2=`echo $nBins | gawk 'BEGIN{FS=","}{print $2}'`
-	min2=`cat .tmpFile$$ | sort -k $col2 -n | head -n1 | gawk '{print $'$col2'}'`
-	max2=`cat .tmpFile$$ | sort -k $col2 -n | tail -n1 | gawk '{print $'$col2'}'`
-	h2=`echo "($max2-($min2))/$nbars2" | bc -l`
+	
+	if [ -z "$grid2" ]
+	then
+		min2=`cat .tmpFile$$ | sort -k $col2 -n | head -n1 | gawk '{print $'$col2'}'`
+		max2=`cat .tmpFile$$ | sort -k $col2 -n | tail -n1 | gawk '{print $'$col2'}'`
+		h2=`echo "($max2-($min2))/$nbars2" | bc -l`
+	else
+		min2=`echo $grid2 | gawk 'BEGIN{FS=","}{print $1}'`
+		max2=`echo $grid2 | gawk 'BEGIN{FS=","}{print $2}'`
+		h2=`echo $grid2 | gawk 'BEGIN{FS=","}{print $3}'`
+	fi
 	
 	gawk '
 	BEGIN{
@@ -502,18 +520,20 @@ function histogram2D()
 	}
 
 	END{
-		sum=0.0
-		
-		x = xb
-		for( nx=0; x<=xe; nx++ ){
-			x = xb + nx*hx
+		if( "'$normalize'" == "TRUE" ){
+			sum=0.0
 			
-			y = yb
-			for( ny=0; y<=ye; ny++ ){
-				y = yb + ny*hy
+			x = xb
+			for( nx=0; x<=xe; nx++ ){
+				x = xb + nx*hx
 				
-				if( (nx,ny) in mymap )
-					sum += mymap[nx,ny]
+				y = yb
+				for( ny=0; y<=ye; ny++ ){
+					y = yb + ny*hy
+					
+					if( (nx,ny) in mymap )
+						sum += mymap[nx,ny]
+				}
 			}
 		}
 		
@@ -551,7 +571,10 @@ function histogram3D()
 	local cols=$2
 	local nBins=$3
 	local normalize=$4
-
+	local grid1=$5
+	local grid2=$6
+	local grid3=$7
+	
 	[ -z "$nBins" ] && nBins="60,60,60"
 	[ -z "$normalize" ] && normalize="TRUE"
 	
@@ -563,21 +586,45 @@ function histogram3D()
 	# Se capturan los parámetros para el histograma
 	col1=`echo $cols | gawk 'BEGIN{FS=","}{print $1}'`
 	nbars1=`echo $nBins | gawk 'BEGIN{FS=","}{print $1}'`
-	min1=`cat .tmpFile$$ | sort -k $col1 -n | head -n1 | gawk '{print $'$col1'}'`
-	max1=`cat .tmpFile$$ | sort -k $col1 -n | tail -n1 | gawk '{print $'$col1'}'`
-	h1=`echo "($max1-($min1))/$nbars1" | bc -l`
+	
+	if [ -z "$grid1" ]
+	then
+		min1=`cat .tmpFile$$ | sort -k $col1 -n | head -n1 | gawk '{print $'$col1'}'`
+		max1=`cat .tmpFile$$ | sort -k $col1 -n | tail -n1 | gawk '{print $'$col1'}'`
+		h1=`echo "($max1-($min1))/$nbars1" | bc -l`
+	else
+		min1=`echo $grid1 | gawk 'BEGIN{FS=","}{print $1}'`
+		max1=`echo $grid1 | gawk 'BEGIN{FS=","}{print $2}'`
+		h1=`echo $grid1 | gawk 'BEGIN{FS=","}{print $3}'`
+	fi
 	
 	col2=`echo $cols | gawk 'BEGIN{FS=","}{print $2}'`
 	nbars2=`echo $nBins | gawk 'BEGIN{FS=","}{print $2}'`
-	min2=`cat .tmpFile$$ | sort -k $col2 -n | head -n1 | gawk '{print $'$col2'}'`
-	max2=`cat .tmpFile$$ | sort -k $col2 -n | tail -n1 | gawk '{print $'$col2'}'`
-	h2=`echo "($max2-($min2))/$nbars2" | bc -l`
+	
+	if [ -z "$grid2" ]
+	then
+		min2=`cat .tmpFile$$ | sort -k $col2 -n | head -n1 | gawk '{print $'$col2'}'`
+		max2=`cat .tmpFile$$ | sort -k $col2 -n | tail -n1 | gawk '{print $'$col2'}'`
+		h2=`echo "($max2-($min2))/$nbars2" | bc -l`
+	else
+		min2=`echo $grid2 | gawk 'BEGIN{FS=","}{print $1}'`
+		max2=`echo $grid2 | gawk 'BEGIN{FS=","}{print $2}'`
+		h2=`echo $grid2 | gawk 'BEGIN{FS=","}{print $3}'`
+	fi
 	
 	col3=`echo $cols | gawk 'BEGIN{FS=","}{print $3}'`
 	nbars3=`echo $nBins | gawk 'BEGIN{FS=","}{print $3}'`
-	min3=`cat .tmpFile$$ | sort -k $col3 -n | head -n1 | gawk '{print $'$col3'}'`
-	max3=`cat .tmpFile$$ | sort -k $col3 -n | tail -n1 | gawk '{print $'$col3'}'`
-	h3=`echo "($max3-($min3))/$nbars3" | bc -l`
+	
+	if [ -z "$grid3" ]
+	then
+		min3=`cat .tmpFile$$ | sort -k $col3 -n | head -n1 | gawk '{print $'$col3'}'`
+		max3=`cat .tmpFile$$ | sort -k $col3 -n | tail -n1 | gawk '{print $'$col3'}'`
+		h3=`echo "($max3-($min3))/$nbars3" | bc -l`
+	else
+		min3=`echo $grid3 | gawk 'BEGIN{FS=","}{print $1}'`
+		max3=`echo $grid3 | gawk 'BEGIN{FS=","}{print $2}'`
+		h3=`echo $grid3 | gawk 'BEGIN{FS=","}{print $3}'`
+	fi
 	
 	gawk '
 	BEGIN{
@@ -608,22 +655,25 @@ function histogram3D()
 	}
 
 	END{
-		sum=0.0
-		
-		x = xb
-		for( nx=0; x<=xe; nx++ ){
-			x = xb + nx*hx
+	
+		if( "'$normalize'" == "TRUE" ){
+			sum=0.0
 			
-			y = yb
-			for( ny=0; y<=ye; ny++ ){
-				y = yb + ny*hy
+			x = xb
+			for( nx=0; x<=xe; nx++ ){
+				x = xb + nx*hx
 				
-				z = zb
-				for( nz=0; z<=ze; nz++ ){
-					z = zb + nz*hz
+				y = yb
+				for( ny=0; y<=ye; ny++ ){
+					y = yb + ny*hy
 					
-					if( (nx,ny,nz) in mymap )
-						sum += mymap[nx,ny,nz]
+					z = zb
+					for( nz=0; z<=ze; nz++ ){
+						z = zb + nz*hz
+						
+						if( (nx,ny,nz) in mymap )
+							sum += mymap[nx,ny,nz]
+					}
 				}
 			}
 		}
@@ -689,7 +739,7 @@ set palette defined ( 0 "blue", 1 "green", 2 "orange", 3 "yellow", 4 "red" )
 set xtics rotate by -45 font "Serif,8"
 set ytics font "Serif,8"
 set cbtics font "Serif,8"
-set pointsize 0.7
+set pointsize 0.8
 
 set xrange $M3C_PLOT_XRANGE
 set cbrange $M3C_PLOT_CBRANGE
@@ -743,10 +793,14 @@ EOF
 		echo "plot [0:] [0:] \"-\" u 1:2:(log(\$3)) w p palette pt 5" >> .plotE-$$
 	fi
 	
-	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" "FALSE" "0,25,0.1" "0,10,0.1" | sort -k4 -n > $iFile-hist2D
+	
+# 	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" "TRUE" "0,25,0.1" "0,10,0.1" | sort -k4 -n >> .plotE-$$
+	histogram2D $iFile "${column[$coord1]},${column[$coord2]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" "TRUE" "0,25,0.05" "0,10,0.05" | sort -k4 -n >> .plotE-$$
 	echo "EOF" >> .plotE-$$
 	
 	echo "pause -1" >> .plotE-$$
+# 	echo "pause 1" >> .plotE-$$
 	
 	cp $iFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	cp .plotE-$$ $LOCAL_DIR/figure.gnuplot
@@ -786,7 +840,8 @@ set noytics
 
 set format cb "10^{%T}"
 set logscale cb
-set cbrange $M3C_PLOT_CBRANGE
+# set cbrange $M3C_PLOT_CBRANGE
+set cbrange [1e-1:]
 
 # set palette defined ( 0 "white", 1 "blue", 2 "green", 3 "orange", 4 "yellow", 5 "red" )
 set palette defined ( 0 "blue", 1 "green", 2 "orange", 3 "yellow", 4 "red" )
@@ -832,6 +887,8 @@ set arrow 27 front from 0.30,0.5200 to 0.6,0 nohead linestyle 0
 set arrow 28 front from 0.35,0.6060 to 0.7,0 nohead linestyle 0
 set arrow 29 front from 0.40,0.6930 to 0.8,0 nohead linestyle 0
 set arrow 30 front from 0.45,0.7790 to 0.9,0 nohead linestyle 0
+
+max(x,y) = x>y ? x : y
 
 Xp(x,y,z) = 0.5*(x+2*z)/(x+y+z)
 Yp(x,y,z)=sqrt(3.0)*x/(x+y+z)/2.0
@@ -887,15 +944,20 @@ EOF
 		echo "plot \"-\" u (Xp(\$1,\$2,\$3)):(Yp(\$1,\$2,\$3)):4 notitle w p palette pt 7" >> .plotE-$$
 	fi
 	
-	histogram3D $iFile "${column[$coord1]},${column[$coord2]},${column[$coord3]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" >> .plotE-$$
+	histogram3D $iFile "${column[$coord1]},${column[$coord2]},${column[$coord3]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" "FALSE" \
+		"0,27,0.1" "0,11,0.1" "0,34,0.1" | gawk '($0!~/^[[:blank:]]*$/){print $0}' > $iFile-hist3D
+	
+# 	histogram3D $iFile "${column[$coord1]},${column[$coord2]},${column[$coord3]}" "$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS,$M3C_HISTOGRAM_NBINS" \
+# 		| gawk '($0!~/^[[:blank:]]*$/){print $0}' >> .plotE-$$
 	echo "EOF" >> .plotE-$$
 	
 	echo "pause -1" >> .plotE-$$
+# 	echo "pause 2" >> .plotE-$$
 	
 	cp $iFile $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	cp .plotE-$$ $LOCAL_DIR/figure.gnuplot
 	
-	$M3C_GNUPLOT_EXEC .plotE-$$
+# 	$M3C_GNUPLOT_EXEC .plotE-$$
 
 	rm .plotE-$$
 }
@@ -1730,7 +1792,7 @@ function showSparseMatrix()
 ####################################
 #
 ####################################
-function energyDiagram()
+function breakDownCurves()
 {
 	local energyDir=$1
 	local type=$2
@@ -1885,30 +1947,56 @@ EOF
 		yCol="(\$$(( 2*$i ))*100)"
 		errCol="(\$$(( 2*$i+1 ))*100)"
 		smoothCol="(abs(\$$(( 2*$i+1 ))))"
+# 		smoothThr="1e-9"
+		smoothThr="1e-4"
+		errFact=0.4 # << SSeq
+# 		errFact=1.0 # << Srand
 		
 		if [ "$smooth" = "TRUE" ]
 		then
 			if (( $i != $nChannels ))
 			then
-				echo "'matrix.data' u 1:$yCol:(4e1/abs(1e-4+$errCol)) smooth acsplines notitle w l ls $i lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
-				echo "'matrix.data' u 1:$yCol:$errCol notitle w yerrorbars ls $i pt $i ps 0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$
+				echo "'matrix.data' u 1:$yCol:(4e1/abs($smoothThr+$errCol)) smooth acsplines notitle w lp ls $i pt $i ps $M3C_PLOT_LW/4.0 lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+				echo "'matrix.data' u 1:$yCol:($errFact*$errCol) notitle w yerrorbars ls $i pt $i ps 0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$
 				echo "'matrix.data' u 1:($yCol+1000.0):$errCol t '${keys[$(($i-1))]}' w lp ls $i pt $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
-				echo "'matrix.data' u 1:$yCol:$errCol notitle w p ls $i pt $i ps $M3C_PLOT_LW/3.0, \\" >> .plotMtj-$iFile$$
 			else
-				echo "'matrix.data' u 1:$yCol:(4e1/abs(1e-4+$errCol)) smooth acsplines notitle w l ls $i lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$   # Lineas de la figura
-				echo "'matrix.data' u 1:$yCol:$errCol notitle w yerrorbars ls $i pt $i ps 0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$                # Lineas de las barras de error
-				echo "'matrix.data' u 1:($yCol+1000.0):$errCol t '${keys[$(($i-1))]}' w lp ls $i pt $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$         # Lineas y puntos de los keys
-				echo "'matrix.data' u 1:$yCol:$errCol notitle w p ls $i pt $i ps $M3C_PLOT_LW/3.0" >> .plotMtj-$iFile$$                                  # Puntos de la figura
+				echo "'matrix.data' u 1:$yCol:(4e1/abs($smoothThr+$errCol)) smooth acsplines notitle w lp ls $i pt $i ps $M3C_PLOT_LW/4.0 lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$   # Lineas de la figura
+				echo "'matrix.data' u 1:$yCol:($errFact*$errCol) notitle w yerrorbars ls $i pt $i ps 0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$                # Lineas de las barras de error
+				echo "'matrix.data' u 1:($yCol+1000.0):$errCol t '${keys[$(($i-1))]}' w lp ls $i pt $i lw $M3C_PLOT_LW" >> .plotMtj-$iFile$$         # Lineas y puntos de los keys
 			fi
 		else
 			if (( $i != $nChannels ))
 			then
-				echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$                                          # Lineas de la figura
-				echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/3.0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$     # Puntos y lineas de las barras de error
+				echo "'matrix.data' u 1:$yCol:(4e1/abs($smoothThr+$errCol)) smooth unique notitle w lp ls $i pt $i ps $M3C_PLOT_LW/4.0 lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+				echo "'matrix.data' u 1:$yCol:($errFact*$errCol) notitle w yerrorbars ls $i pt $i ps 0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$
+				echo "'matrix.data' u 1:($yCol+1000.0):$errCol t '${keys[$(($i-1))]}' w lp ls $i pt $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
 			else
-				echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
-				echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/3.0 lw $M3C_PLOT_LW/6.0" >> .plotMtj-$iFile$$
+				echo "'matrix.data' u 1:$yCol:(4e1/abs($smoothThr+$errCol)) smooth unique notitle w lp ls $i pt $i ps $M3C_PLOT_LW/4.0 lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$   # Lineas de la figura
+				echo "'matrix.data' u 1:$yCol:($errFact*$errCol) notitle w yerrorbars ls $i pt $i ps 0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$                # Lineas de las barras de error
+				echo "'matrix.data' u 1:($yCol+1000.0):$errCol t '${keys[$(($i-1))]}' w lp ls $i pt $i lw $M3C_PLOT_LW" >> .plotMtj-$iFile$$         # Lineas y puntos de los keys
 			fi
+
+# 			if (( $i != $nChannels ))
+# 			then
+# 				echo "'matrix.data' u 1:$yCol:(4e1/abs($smoothThr+$errCol)) smooth acsplines notitle w l ls $i lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+# 				echo "'matrix.data' u 1:$yCol:$errCol notitle w yerrorbars ls $i pt $i ps 0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$
+# 				echo "'matrix.data' u 1:($yCol+1000.0):$errCol t '${keys[$(($i-1))]}' w lp ls $i pt $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+# 				echo "'matrix.data' u 1:$yCol:$errCol notitle w p ls $i pt $i ps $M3C_PLOT_LW/3.0, \\" >> .plotMtj-$iFile$$
+# 			else
+# 				echo "'matrix.data' u 1:$yCol:(4e1/abs($smoothThr+$errCol)) smooth acsplines notitle w l ls $i lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$   # Lineas de la figura
+# 				echo "'matrix.data' u 1:$yCol:$errCol notitle w yerrorbars ls $i pt $i ps 0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$                # Lineas de las barras de error
+# 				echo "'matrix.data' u 1:($yCol+1000.0):$errCol t '${keys[$(($i-1))]}' w lp ls $i pt $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$         # Lineas y puntos de los keys
+# 				echo "'matrix.data' u 1:$yCol:$errCol notitle w p ls $i pt $i ps $M3C_PLOT_LW/3.0" >> .plotMtj-$iFile$$                                  # Puntos de la figura
+# 			fi
+# 		else
+# 			if (( $i != $nChannels ))
+# 			then
+# 				echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$                                          # Lineas de la figura
+# 				echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/3.0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$     # Puntos y lineas de las barras de error
+# 			else
+# 				echo "'matrix.data' u 1:$yCol:$smoothCol smooth unique notitle w l ls $i lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+# 				echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/3.0 lw $M3C_PLOT_LW/6.0" >> .plotMtj-$iFile$$
+# 			fi
 		fi
 	done
 	
@@ -1930,6 +2018,8 @@ function energyComponentsDiagram()
 	local iFile=$1
 	local energyDir=$2
 	
+	local eDistOFile=`getValueFromIFIle ${iFile%.*}.m3c "BRANCHING_RATIOS:eDistOFile"`
+	
 	pushd . > /dev/null 2> /dev/null
 	cd $energyDir
 	
@@ -1948,33 +2038,69 @@ $M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-set size $M3C_PLOT_SIZE
 set key out bottom
+set size $M3C_PLOT_SIZE
+set grid front
+unset grid
 
 set xlabel "Internal Energy (eV)" font "Serif,13"
 set ylabel "Energy (eV)" font "Serif,13"
 
-plot $M3C_PLOT_XRANGE \
-"$energyDir/ecompTable$$.dat" u 1:2 t "trans" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
-"" u 1:2:3 notitle w yerrorbars lt 1 ps 0, \
-"" u 1:2 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
-"" u 1:4 t "inter" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 2, \
-"" u 1:4:5 notitle w yerrorbars lt 2 ps 0, \
-"" u 1:4 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
-"" u 1:6 t "vib" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 3, \
-"" u 1:6:7 notitle w yerrorbars lt 3 ps 0, \
-"" u 1:6 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
-"" u 1:8 t "rot" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 4, \
-"" u 1:8:9 notitle w yerrorbars lt 4ps 0, \
-"" u 1:8 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white"
+fixValue(x) = ( 100*x<0.0 ? 0.0 : ( 100*x>100.0 ? 100.0 : 100*x ))
+
+plot $M3C_PLOT_XRANGE [0:] \\
+EOF
+
+	if [ -f "$eDistOFile" ]
+	then
+		echo "\"$eDistOFile\" u 1:(\$2) axis x1y1 notitle smooth cspline w l ls 0 lw 2 lc rgb \"gray60\", \\" >> .plotEComp-$iFile$$
+		echo "\"$eDistOFile\" u 1:(\$2) axis x1y1 notitle smooth cspline w filledcurve y2 ls 0 lc rgb \"gray90\", \\" >> .plotEComp-$iFile$$
+		sed -i '/^#.*/d' $eDistOFile
+		paste $energyDir/ecompTable$$.dat $eDistOFile > $energyDir/ecompTable$$-fE.dat
+		head $energyDir/ecompTable$$-fE.dat
+		
+cat >> .plotEComp-$iFile$$ << EOF
+"$energyDir/ecompTable$$-fE.dat" u 1:(fixValue(\$2/(\$2+\$4+\$6+\$8))*\$11/100) t "trans" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
+"" u 1:(fixValue(\$2/(\$2+\$4+\$6+\$8))*\$11/100):(fixValue(\$3/(\$2+\$4+\$6+\$8))/100) notitle w yerrorbars lt 1 ps 0, \
+"" u 1:(fixValue(\$2/(\$2+\$4+\$6+\$8))*\$11/100) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:(fixValue(\$4/(\$2+\$4+\$6+\$8))*\$11/100) t "inter" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 2, \
+"" u 1:(fixValue(\$4/(\$2+\$4+\$6+\$8))*\$11/100):(fixValue(\$5/(\$2+\$4+\$6+\$8))/100) notitle w yerrorbars lt 2 ps 0, \
+"" u 1:(fixValue(\$4/(\$2+\$4+\$6+\$8))*\$11/100) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:(fixValue(\$6/(\$2+\$4+\$6+\$8))*\$11/100) t "vib" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 3, \
+"" u 1:(fixValue(\$6/(\$2+\$4+\$6+\$8))*\$11/100):(fixValue(\$7/(\$2+\$4+\$6+\$8))/100) notitle w yerrorbars lt 3 ps 0, \
+"" u 1:(fixValue(\$6/(\$2+\$4+\$6+\$8))*\$11/100) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+"" u 1:(fixValue(\$8/(\$2+\$4+\$6+\$8))*\$11/100) t "rot" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 4, \
+"" u 1:(fixValue(\$8/(\$2+\$4+\$6+\$8))*\$11/100):(fixValue(\$9/(\$2+\$4+\$6+\$8))/100) notitle w yerrorbars lt 4ps 0, \
+"" u 1:(fixValue(\$8/(\$2+\$4+\$6+\$8))*\$11/100) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white"
 
 pause -1
 EOF
+	fi
 	
-	cp $energyDir/ecompTable$$.dat $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+# cat >> .plotEComp-$iFile$$ << EOF
+# "$energyDir/ecompTable$$.dat" u 1:2 t "trans" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
+# "" u 1:2:3 notitle w yerrorbars lt 1 ps 0, \
+# "" u 1:2 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+# "" u 1:4 t "inter" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 2, \
+# "" u 1:4:5 notitle w yerrorbars lt 2 ps 0, \
+# "" u 1:4 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+# "" u 1:6 t "vib" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 3, \
+# "" u 1:6:7 notitle w yerrorbars lt 3 ps 0, \
+# "" u 1:6 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
+# "" u 1:8 t "rot" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 4, \
+# "" u 1:8:9 notitle w yerrorbars lt 4ps 0, \
+# "" u 1:8 notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white"
+# 
+# pause -1
+# EOF
+	
+	cp $energyDir/ecompTable$$-fE.dat $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+# 	cp $energyDir/ecompTable$$.dat $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+	cp .plotEComp-$iFile$$ figure.gnuplot
 	$M3C_GNUPLOT_EXEC .plotEComp-$iFile$$ 2> /dev/null
 	
 	rm $energyDir/ecompTable$$.dat
+	rm $energyDir/ecompTable$$-fE.dat
 	rm .plotEComp-$iFile$$
 }
 
@@ -2004,8 +2130,8 @@ $M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-set size $M3C_PLOT_SIZE
 set key out bottom
+set size $M3C_PLOT_SIZE
 
 set xlabel "Internal Energy (eV)" font "Serif,13"
 set ylabel "Percentage (%)" font "Serif,13"
@@ -2353,8 +2479,12 @@ function channelBRDiagram()
 	mv $energyDir/matrix.dat .
 	mv $energyDir/keys.dat .
 	
-	nChannels=`cat keys.dat | wc -w`
+# 	nChannels=`cat keys.dat | wc -w`
+# 	nChannels=$(( $nChannels-1 ))
+
+	nChannels=`getTableFromIFile $iFile "EXPERIMENTAL_BRANCHING_RATIOS" | wc -l`
 	nChannels=$(( $nChannels-1 ))
+# 	nChannels=$(( $nChannels-3 ))  # para el H2C3+
 	
 	M3CBR -i $iFile -d matrix.dat -k keys.dat
 	rm matrix.dat keys.dat
@@ -2376,14 +2506,14 @@ function channelBRDiagram()
 	sed -i -r '{s/([[:alpha:]]+)([[:digit:]]+)/\1_{\2}/g}' $BRFile  # Escribir bien los superindices, caso C_2(??)
 	
 	yMax=`gawk '($0!~/#/){printf "%s\n%s\n",$2,$3}' $BRFile | sort -k 1 -n | tail -n1`
+	yErrorMax=`gawk '($0!~/#/){printf "%s\n",$4}' $BRFile | sort -k 1 -n | tail -n1`
+	yMax=`echo "$yMax+$yErrorMax" | bc -l` 
 	
 	cat > .plotBR-$iFile$$ << EOF
 $M3C_PLOT_TERMINAL
 set termopt enhanced
 set encoding iso_8859_1
 
-set size $M3C_PLOT_SIZE
-# set size 0.9,1.0
 set ylabel "Branching Ratio (%)" font "Serif,13"
 set format y "%.0f"
 # set key out left bottom
@@ -2393,6 +2523,9 @@ set xtics font "Helvetica Bold,9" rotate by 90 right
 set ytics font "Helvetica Bold,9"
 set key font "Helvetica Bold,10"
 
+set size $M3C_PLOT_SIZE
+# set size 0.9,1.0
+
 set mytics 5
 # set grid y
 
@@ -2401,9 +2534,17 @@ set mytics 5
 # "" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
 # "" u :2:xtic(1) t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
 
+# plot [-1.5:$nChannels+1.5] [-40.0*0.1:40.0*1.1]
+
+# yMax=$yMax
+# yMax=63 # --> C5
+# yMax=20 # --> C5+
+# yMax=33 # --> HC4
+# yMax=17 # --> HC4+
+yMax=31 # --> H2C3
+# yMax=19 # --> H2C3+
 set style fill transparent pattern 7 bo
-# plot [-1.5:$nChannels+1.5] [-$yMax*0.1:$yMax*1.1]
-plot [-1.5:$nChannels+1.5] [-40.0*0.1:40.0*1.1] \
+plot [-1.5:$nChannels+1.5] [-yMax*0.1:yMax*1.1] \
 "$BRFile" u :2:(0.5):xtic(1) t "Theo." w boxes lt 1 lw 1.0 lc rgb "red", \
 "" u :3:(0.8) notitle w boxes lt 1 lw 1.5 lc rgb "black", \
 "" u :3:4 t "Exp." w yerrorbars pt 7 ps 0.5 lw 2.0 lc rgb "black"
@@ -3033,8 +3174,11 @@ function main()
 # 		-n 'M3C.analysis' -- "$@"`
 
 	TEMP=`getopt \
-		-o bi:d:nf:s \
-		--long breakDownCurves,iFile:,diagram:,normalize,filter:,smooth \
+		-o i: --long iFile: \
+		--long breakDownCurves --long diagram:,normalize,filter:,smooth -o d:nf:s \
+		--long fitBR \
+		--long BR \
+		--long Ecomp -o p \
 		-n 'M3C.analysis' -- "$@"`
 
 # 	if [ $? != 0 ]
@@ -3049,7 +3193,11 @@ function main()
 		echo "Hola0 $1"
 		
 		case "$1" in
-			-b|--breakDownCurves)
+			-i|--iFile)
+				local iFile=$2
+				shift 2
+				;;
+			--breakDownCurves)
 				shift
 				
 				while true
@@ -3057,10 +3205,6 @@ function main()
 					echo "Hola1 $1"
 					
 					case "$1" in
-						-i|--iFile)
-							local iFile=$2
-							shift 2
-							;;
 						-d|--diagram)
 							local diagram=$2
 							shift 2
@@ -3080,10 +3224,6 @@ function main()
 						--)
 							echo " Available options"
 							echo "-------------------"
-							echo ""
-							echo "       -i file"
-							echo "       --iFile ifile"
-							echo "              Read the M3C input file   "
 							echo ""
 							echo "       -d key"
 							echo "       --diagram key"
@@ -3109,17 +3249,58 @@ function main()
 					esac
 				done
 
-				energyDiagram "${iFile%.*}.data/" "$diagram" "$normalize" "$smooth"
+				breakDownCurves "${iFile%.*}.data/" "$diagram" "$normalize" "$smooth"
 				exit
 				;;
-			-a|--a-long)
-				echo "Option a"
+				
+			--fitBR)
 				shift
+				channelFitBRDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" `getValueFromIFIle ${iFile%.*}.m3c "EXPERIMENTAL_BRANCHING_RATIOS:diagram"` "TRUE"  # << Last is normalize
+				exit
 				;;
-			-b|--b-long)
-				# Este tiene un argumento por eso el shift 2
-				echo "Option b, argument \`$2'"
-				shift 2
+				
+			--BR)
+				shift
+				channelBRDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" `getValueFromIFIle ${iFile%.*}.m3c "BRANCHING_RATIOS:diagram"`
+				exit
+				;;
+				
+			--Ecomp)
+				shift
+				
+				while true
+				do
+					case "$1" in
+						-p|--percentage)
+							shift
+							energyComponentsPercentageDiagram ${iFile%.*}.m3c "${iFile%.*}.data/"
+							exit
+							;;
+						--)
+							shift
+							energyComponentsDiagram ${iFile%.*}.m3c "${iFile%.*}.data/"
+							exit
+							;;
+# 							echo " Available options"
+# 							echo "-------------------"
+# 							echo ""
+# 							echo "       -i file"
+# 							echo "       --iFile ifile"
+# 							echo "              Read the M3C input file   "
+# 							echo ""
+# 							shift 1
+# 							break
+# 							;;
+						*)
+							echo "Unknown option for fitting Ecomp ($1)"
+							shift 1
+							exit 1
+							;;
+					esac
+				done
+				
+				energyComponentsDiagram ${iFile%.*}.m3c "${iFile%.*}.data/"
+				exit
 				;;
 			-c|--c-long) 
 				# c has an optional argument. As we are in quoted mode,
@@ -3137,7 +3318,14 @@ function main()
 				esac
 				;;
 			--)
-				shift
+				echo " Available options"
+				echo "-------------------"
+				echo ""
+				echo "       -i file"
+				echo "       --iFile ifile"
+				echo "              Read the M3C input file   "
+				echo ""
+				shift 1
 				break
 				;;
 			*)
@@ -3171,10 +3359,10 @@ function main()
 			FILTER="$3"
 		fi
 		
-		echo "energyDiagram ${iFile%.*}.data/---$2---$3---$4---$5---$6---"
-		exit
+# 		echo "breakDownCurves ${iFile%.*}.data/---$2---$3---$4---$5---$6---"
+# 		exit
 		
-		energyDiagram "${iFile%.*}.data/" "$2" "$4" "$5"
+		breakDownCurves "${iFile%.*}.data/" "$2" "$4" "$5"
 		exit
 	fi
 	
