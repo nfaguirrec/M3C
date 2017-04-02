@@ -79,12 +79,13 @@ function SLURM.buildHead()
 	
 	local jobdir=`echo $PWD | sed s/.*$USER/~/`
 	
+	export M3C_NTHREADS=$nTask
+	
 	[ ! -d log ] && mkdir log
 	
 	cat << EOF
 #!/bin/bash
 #SBATCH --partition=$partition
-#SBATCH --ntasks=$nTask
 #SBATCH --account=$account
 #SBATCH --time=$ttime
 #SBATCH --qos=$qos
@@ -92,6 +93,7 @@ function SLURM.buildHead()
 #SBATCH -o log/$name.slurm.log
 #SBATCH -e log/$name.slurm.err
 #SBATCH --nodes=1-1
+#SBATCH --ntasks=$nTask
 
 EOF
 	

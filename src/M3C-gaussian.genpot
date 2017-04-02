@@ -118,16 +118,11 @@ function main()
 	[ -z "$NPROCSHARED" ] && NPROCSHARED=1
 	##############################
 	
-	if [ -n "$SLURM_NTASKS" ]
+	if [ -z "$M3C_NTHREADS" ]
 	then
-		nThreads=$SLURM_NTASKS
-	elif [ -n "$PBS_NODEFILE" ]
-	then
-		nThreads=$(wc -l $PBS_NODEFILE | awk '{print $1}')
-	else
-		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
+		M3C_NTHREADS=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
-	nThreads=$(( $nThreads/$NPROCSHARED ))
+	nThreads=$(( $M3C_NTHREADS/$NPROCSHARED ))
 	
 	local charge1=`echo "$iFileMol1" | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
 	local charge2=`echo "$iFileMol2" | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`

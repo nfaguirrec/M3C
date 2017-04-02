@@ -250,16 +250,11 @@ function main()
 	[ -z "$NPROCSHARED" ] && NPROCSHARED=1
 	##############################
 	
-	if [ -n "$SLURM_NTASKS" ]
+	if [ -z "$M3C_NTHREADS" ]
 	then
-		nThreads=$SLURM_NTASKS
-	elif [ -n "$PBS_NODEFILE" ]
-	then
-		nThreads=$(wc -l $PBS_NODEFILE | awk '{print $1}')
-	else
-		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
+		M3C_NTHREADS=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
-	nThreads=$(( $nThreads/$NPROCSHARED ))
+	nThreads=$(( $M3C_NTHREADS/$NPROCSHARED ))
 	
 	xyzFile=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $1 }' $DATABASE` )
 	charge=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $2 }' $DATABASE` )
