@@ -339,14 +339,14 @@ function geometriesByCategories()
 		if [ -z "$id" ]; then id=0; fi
 		
 # 		echo $((100000000*$charge+10000000*$nAtoms+1000*$mass+100*$mult+$id)) $fileName $energy >> .molValues$$
-		echo `M3C.molecule.hashKey $fileName` $fileName $energy >> .molValues$$
+		echo `M3C.molecule.hashKey $fileName` $fileName `molecule.chemicalFormula $fileName` $energy >> .molValues$$
 	done
 	
-	categories=`sort -k1 -n .molValues$$ | gawk '{ gsub("[.].*","",$2); if( $2 in map ){ a=1 }else{ print $2 }; map[$2]=1 }'`
+	categories=`sort -k1 -n .molValues$$ | gawk '{ if( $3 in map ){ a=1 }else{ print $3 }; map[$3]=1 }'`
 	
 	for item in $categories
 	do
-		list=`grep " $item[.].*" .molValues$$ | sort -k1 -n | gawk '{print $2}'`
+		list=`awk '($3=="'$item'"){print $0}' .molValues$$ | sort -k1 -n | gawk '{print $2}'`
 		
 		TABLE_HEADER=`echo $item | sed -r 's/([[:alpha:]]+)([[:digit:]]+)/\1\\$_{\2}\\$/g'`
 		

@@ -4,6 +4,11 @@ iFileName=$1
 
 energy=`grep "Energy" $iFileName | awk '{print $NF}'`
 
+if [ -z "$energy" ]
+then
+	energy=`grep "^\s*ENERGY " $iFileName | awk '{print $NF}'`
+fi
+
 charge=`echo $iFileName | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
 mult=`echo $iFileName | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
 id=`echo $iFileName | gawk 'BEGIN{FS="[.-]+"}{print $4}'`
