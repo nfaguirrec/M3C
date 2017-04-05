@@ -1,0 +1,167 @@
+#!/bin/bash
+##################################################################
+#
+#  This file is part of M3C
+#  Copyright (C) by authors (2017-2017)
+#  
+#  Authors:
+#    * Dr. Néstor F. Aguirre (2017-2017)
+#          nfaguirrec@lanl.gov
+#  
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the
+#  following conditions are met:
+#  
+#   * Redistributions of binary or source code must retain
+#     the above copyright notice and this list of conditions
+#     and/or other materials provided with the distribution.
+#   * All advertising materials mentioning features or use of
+#     this software must display the following acknowledgement:
+#     
+#     This product includes software from M3C project.
+#
+##################################################################
+
+NWCHEM_TEMPLATE=$1
+NPROCSHARED=$2
+
+##############################
+# Default options
+##############################
+if [ -z "$NWCHEM_TEMPLATE" ]
+then
+	echo "usage: M3C-gaussian.freqs gaussianTemplate [ nProcShared ]"
+	echo "                                                  1       "
+	exit
+fi
+
+[ -z "$NPROCSHARED" ] && NPROCSHARED=1
+##############################
+
+if [ -f "$M3C_HOME/bin/gaussianDriver.sh" ]
+then
+	source $M3C_HOME/bin/gaussianDriver.sh
+else
+	source $M3C_HOME/src/gaussianDriver.sh
+fi
+
+frequencies()
+{
+	local iFileXYZ=$1
+	local charge=$2
+	local mult=$3
+	
+	freqsNWCHEMTemplate $NWCHEM_TEMPLATE $NPROCSHARED $iFileXYZ $charge $mult $DEBUG > ${iFileXYZ%.*}.rxyz
+	mv ${iFileXYZ%.*}.out history.freqs/ 2> /dev/null
+	mv ${iFileXYZ%.*}.com history.freqs/ 2> /dev/null
+}
+
+main()
+{
+	local xyzFile=""
+	local charge=""
+	local mult=""
+	
+	if [ -z "$M3C_NTHREADS" ]
+	then
+		M3C_NTHREADS=`cat /proc/cpuinfo | grep processor | wc -l`
+	fi
+	nThreads=$(( $M3C_NTHREADS/$NPROCSHARED ))
+	
+	if [ -d "history.freqs" ]
+	then
+		echo "@@@ WARNING @@@ There is already a history directory (history.freqs). Backup copy will be generated"
+		mv history.freqs history.freqs.backup-`date +%Y%m%d`
+	fi
+	mkdir history.freqs
+
+	xyzFile=( `ls *.xyz` )
+	charge=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'` )
+	mult=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'` )
+	
+	#-----------------------------------------------------------------------
+	
+	startTime=`date "+%s"`
+	
+	ij=-1
+	for (( i=0; i<=$(( ${#xyzFile[@]}/$nThreads-1 )); i++ ))
+	do
+		iStartTime=`date "+%s"`
+		
+		echo -n "Running: "
+		
+		for (( j=1; j<=$nThreads; j++ ))
+		do
+			ij=$(( $j-1+$nThreads*$i ))
+			
+			if (( j != $nThreads ))
+			then
+				printf "%20s," "${xyzFile[$ij]%.*}"
+			else
+				printf "%20s" "${xyzFile[$ij]%.*}"
+			fi
+			
+			frequencies ${xyzFile[$ij]} ${charge[$ij]} ${mult[$ij]} &
+		done
+		
+		echo -n " ... "
+		
+		wait
+		
+		iEndTime=`date "+%s"`
+		elapsedTime=$(( $iEndTime-$iStartTime ))
+		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+	done
+
+	if (( $ij < ${#xyzFile[@]} ))
+	then
+		iStartTime=`date "+%s"`
+		
+		echo -n "Running: "
+		
+		k=1
+		for (( i=$(( $ij+1 )); i<${#xyzFile[@]}; i++ ))
+		do
+			if (( $i != $(( ${#xyzFile[@]} - 1 )) ))
+			then
+				printf "%20s," "${xyzFile[$i]%.*}"
+			else
+				printf "%20s " "${xyzFile[$i]%.*}"
+			fi
+			
+			frequencies ${xyzFile[$i]} ${charge[$i]} ${mult[$i]} &
+			
+			k=$(( $k+1 ))
+		done
+		
+		for (( i=$k; i<=$nThreads; i++ ))
+		do
+			if (( i != $nThreads ))
+			then
+				printf "%20s " ""
+			else
+				printf "%20s" ""
+			fi
+		done
+		
+		echo -n " ... "
+		
+		wait
+		
+		iEndTime=`date "+%s"`
+		elapsedTime=$(( $iEndTime-$iStartTime ))
+		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+	fi
+	
+	endTime=`date "+%s"`
+	elapsedTime=$(( $endTime-$startTime ))
+	
+	echo -n "        "
+	printf "%$(( 15*(${nThreads}+1) ))s" ""
+	echo "            ` echo -n  "Total"`: $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+	
+	#-----------------------------------------------------------------------
+}
+
+main $*
+

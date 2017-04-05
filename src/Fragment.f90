@@ -231,11 +231,10 @@ module Fragment_
 				
 		if( this.fv() /= size(this.vibFrequencies) ) then
 			call GOptions_error( &
-				"Mass table row incomplete, this row should have at least 7 parameters", &
+				"Geometry is inconsistent with the number of vibrational frequencies", &
 				"Fragment.fromMassTableRow()", &
-				"Inconsistent vibrational degrees of freedom, " &
-					//trim(FString_fromInteger(size(this.vibFrequencies)))//" should be " &
-					//trim(FString_fromInteger(this.fv()))//" ("//trim(this.fileName)//")" &
+				"fv = "//trim(FString_fromInteger(size(this.vibFrequencies)))//" should be "// &
+				"fv = "//trim(FString_fromInteger(this.fv()))//" ("//trim(this.fileName)//")" &
 			)
 		end if
 		
@@ -400,7 +399,7 @@ module Fragment_
 		
 		call this.loadXYZ( ifile, loadName )
 		
-		if( .not. ifile.eof() ) then
+		do while( .not. ifile.eof() )
 			buffer = ifile.readLine()
 			if( buffer.length() /= 0 ) then
 				call buffer.split( tokens, " " )
@@ -418,7 +417,7 @@ module Fragment_
 					end do
 				end if
 			end if
-		end if
+		end do
 		
 		call ifile.close()
 		if( allocated(tokens) ) deallocate(tokens)
