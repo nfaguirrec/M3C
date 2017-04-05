@@ -1077,7 +1077,7 @@ module FragmentsListBase_
 		logical :: effInitialize
 		
 		real(8) :: rVec1(3), rVec2(3)
-		integer :: i, j, n
+		integer :: i, j, n, m
 		real(8) :: centerOfMass(3)
 		logical :: outOfSphere
 		
@@ -1093,19 +1093,27 @@ module FragmentsListBase_
 			call this.randomCenters()
 			this.forceRandomCenters = .false.
 		else
-			outOfSphere = .true.
-			do n=1,100000
-				call this.randomCentersByRandomWalkStep()
+			do m=1,10
+				outOfSphere = .true.
+				do n=1,100000
+					call this.randomCentersByRandomWalkStep()
+					
+					if( this.radius() < GOptionsM3C_systemRadius ) then
+						outOfSphere = .false.
+						exit
+					end if
+				end do
 				
-				if( this.radius() < GOptionsM3C_systemRadius ) then
-					outOfSphere = .false.
+				if( outOfSphere ) then
+					this.forceRandomCenters = .true.
+				else
 					exit
 				end if
 			end do
 				
 			if( outOfSphere ) then
 				call GOptions_error( &
-				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n))//")", &
+				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n-1))//", m="//trim(FString_fromInteger(m-1))//")", &
 				"FragmentsListBase.changeGeometryFragmentsListBase()", &
 				"Consider to increase GOptions:systemRadius" &
 				)
