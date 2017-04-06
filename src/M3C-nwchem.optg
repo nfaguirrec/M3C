@@ -30,7 +30,7 @@ NPROCSHARED=$2
 ##############################
 if [ -z "$NWCHEM_TEMPLATE" ]
 then
-	echo "usage: M3C-gaussian.optg gaussianTemplate [ nProcShared ]"
+	echo "usage: M3C-nwchem.optg nwchemTemplate [ nProcShared ]"
 	echo "                                                 1       "
 	exit
 fi
@@ -38,11 +38,11 @@ fi
 [ -z "$NPROCSHARED" ] && NPROCSHARED=1
 ##############################
 
-if [ -f "$M3C_HOME/bin/gaussianDriver.sh" ]
+if [ -f "$M3C_HOME/bin/nwchemDriver.sh" ]
 then
-	source $M3C_HOME/bin/gaussianDriver.sh
+	source $M3C_HOME/bin/nwchemDriver.sh
 else
-	source $M3C_HOME/src/gaussianDriver.sh
+	source $M3C_HOME/src/nwchemDriver.sh
 fi
 
 function optgeom()
@@ -54,7 +54,7 @@ function optgeom()
 	cp $iFileXYZ ${iFileXYZ%.*}.xyz0
 	optgNWCHEMTemplate $NWCHEM_TEMPLATE $NPROCSHARED ${iFileXYZ%.*}.xyz0 $charge $mult > ${iFileXYZ%.*}.xyz
 	mv ${iFileXYZ%.*}.out history.optg/ 2> /dev/null
-	mv ${iFileXYZ%.*}.com history.optg/ 2> /dev/null
+	mv ${iFileXYZ%.*}.nw history.optg/ 2> /dev/null
 }
 
 function main()

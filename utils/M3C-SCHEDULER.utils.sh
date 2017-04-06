@@ -352,6 +352,116 @@ EOF
 # 	rm run$$.${M3C_SCHEDULER_NAME}
 # }
 
+# ##
+# # M3C-nwchem.geniso CONFIGURATION
+# #
+# function SCHEDULER.M3C-nwchem.geniso()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-nwchem.geniso $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# 	
+# 	cp run$$.${M3C_SCHEDULER_NAME} log/
+# 	rm run$$.${M3C_SCHEDULER_NAME}
+# }
+
+##
+# M3C-nwchem.optg CONFIGURATION
+#
+function SCHEDULER.M3C-nwchem.optg()
+{
+	local queueParams=$1
+	
+	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+M3C-nwchem.optg $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+EOF
+	
+	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+	
+	cp run$$.${M3C_SCHEDULER_NAME} log/
+	rm run$$.${M3C_SCHEDULER_NAME}
+}
+
+##
+# M3C-nwchem.freqs CONFIGURATION
+#
+function SCHEDULER.M3C-nwchem.freqs()
+{
+	local queueParams=$1
+	
+	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+M3C-nwchem.freqs $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+EOF
+	
+	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+	
+	cp run$$.${M3C_SCHEDULER_NAME} log/
+	rm run$$.${M3C_SCHEDULER_NAME}
+}
+
+# ##
+# # M3C-nwchem.symmetrize CONFIGURATION
+# #
+# function SCHEDULER.M3C-nwchem.symmetrize()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-nwchem.symmetrize $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# 	
+# 	cp run$$.${M3C_SCHEDULER_NAME} log/
+# 	rm run$$.${M3C_SCHEDULER_NAME}
+# }
+
+# ##
+# # M3C-nwchem.iener CONFIGURATION
+# #
+# function SCHEDULER.M3C-nwchem.iener()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-nwchem.iener $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# 	
+# 	cp run$$.${M3C_SCHEDULER_NAME} log/
+# 	rm run$$.${M3C_SCHEDULER_NAME}
+# }
+
 ##
 # M3C.check CONFIGURATION
 #

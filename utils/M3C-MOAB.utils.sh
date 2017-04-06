@@ -27,6 +27,8 @@
 # M3C_GAUSSIAN_SCRATCH
 # M3C_GAMESS_HOME
 # M3C_GAMESS_SCRATCH
+# M3C_NWCHEM_HOME
+# M3C_NWCHEM_SCRATCH
 #############################
 
 export M3C_SCHEDULER_NAME="MOAB"
@@ -110,17 +112,26 @@ alias MOAB.M3C-gamess.geniso="SCHEDULER.M3C-gamess.geniso"
 alias MOAB.M3C-gamess.optg="SCHEDULER.M3C-gamess.optg"
 alias MOAB.M3C-gamess.freqs="SCHEDULER.M3C-gamess.freqs"
 alias MOAB.M3C-gamess.iener="SCHEDULER.M3C-gamess.iener"
+
 alias MOAB.M3C-gaussian.geniso="SCHEDULER.M3C-gaussian.geniso"
 alias MOAB.M3C-gaussian.optg="SCHEDULER.M3C-gaussian.optg"
 alias MOAB.M3C-gaussian.freqs="SCHEDULER.M3C-gaussian.freqs"
 alias MOAB.M3C-gaussian.symmetrize="SCHEDULER.M3C-gaussian.symmetrize"
 alias MOAB.M3C-gaussian.iener="SCHEDULER.M3C-gaussian.iener"
 alias MOAB.M3C-gaussian.genpot="SCHEDULER.M3C-gaussian.genpot"
+
 # alias MOAB.M3C-adf.geniso="SCHEDULER.M3C-adf.geniso"
 alias MOAB.M3C-adf.optg="SCHEDULER.M3C-adf.optg"
 alias MOAB.M3C-adf.freqs="SCHEDULER.M3C-adf.freqs"
 # alias MOAB.M3C-adf.symmetrize ="SCHEDULER.M3C-adf.symmetrize"
 # alias MOAB.M3C-adf.iener="SCHEDULER.M3C-adf.iener"
+
+# alias MOAB.M3C-nwchem.geniso="SCHEDULER.M3C-nwchem.geniso"
+alias MOAB.M3C-nwchem.optg="SCHEDULER.M3C-nwchem.optg"
+alias MOAB.M3C-nwchem.freqs="SCHEDULER.M3C-nwchem.freqs"
+# alias MOAB.M3C-nwchem.symmetrize="SCHEDULER.M3C-nwchem.symmetrize"
+# alias MOAB.M3C-nwchem.iener="SCHEDULER.M3C-nwchem.iener"
+
 alias MOAB.M3C.check="SCHEDULER.M3C.check"
 alias MOAB.M3C="SCHEDULER.M3C"
 alias MOAB.M3C.p="SCHEDULER.M3C.p"

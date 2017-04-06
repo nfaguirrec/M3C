@@ -30,7 +30,7 @@ NPROCSHARED=$2
 ##############################
 if [ -z "$NWCHEM_TEMPLATE" ]
 then
-	echo "usage: M3C-gaussian.freqs gaussianTemplate [ nProcShared ]"
+	echo "usage: M3C-nwchem.freqs nwchemTemplate [ nProcShared ]"
 	echo "                                                  1       "
 	exit
 fi
@@ -38,11 +38,11 @@ fi
 [ -z "$NPROCSHARED" ] && NPROCSHARED=1
 ##############################
 
-if [ -f "$M3C_HOME/bin/gaussianDriver.sh" ]
+if [ -f "$M3C_HOME/bin/nwchemDriver.sh" ]
 then
-	source $M3C_HOME/bin/gaussianDriver.sh
+	source $M3C_HOME/bin/nwchemDriver.sh
 else
-	source $M3C_HOME/src/gaussianDriver.sh
+	source $M3C_HOME/src/nwchemDriver.sh
 fi
 
 frequencies()
@@ -53,7 +53,7 @@ frequencies()
 	
 	freqsNWCHEMTemplate $NWCHEM_TEMPLATE $NPROCSHARED $iFileXYZ $charge $mult $DEBUG > ${iFileXYZ%.*}.rxyz
 	mv ${iFileXYZ%.*}.out history.freqs/ 2> /dev/null
-	mv ${iFileXYZ%.*}.com history.freqs/ 2> /dev/null
+	mv ${iFileXYZ%.*}.nw history.freqs/ 2> /dev/null
 }
 
 main()
