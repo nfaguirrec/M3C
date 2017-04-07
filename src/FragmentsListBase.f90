@@ -97,7 +97,9 @@ module FragmentsListBase_
 			procedure, NON_OVERRIDABLE :: initialGuessFragmentsListBase
 			procedure, private :: randomCenters
 			procedure, private :: randomCentersByRandomWalkStep
+			procedure, NON_OVERRIDABLE :: atomicOverlapping
 			procedure, NON_OVERRIDABLE :: changeGeometryFragmentsListBase
+			procedure, NON_OVERRIDABLE :: interpolateGeometryFragmentsListBase
 			procedure, NON_OVERRIDABLE :: changeOrientationsFragmentsListBase
 			procedure, NON_OVERRIDABLE :: changeVibrationalEnergyFragmentsListBase
 			
@@ -1066,6 +1068,33 @@ module FragmentsListBase_
 	end subroutine randomCentersByRandomWalkStep
 	
 	!>
+	!! @brief Checks for atomic overlapping
+	!!
+	function atomicOverlapping( this ) result( output )
+		class(FragmentsListBase) :: this
+		logical :: output
+		
+		integer :: i, j
+		
+		if( .not. GOptionsM3C_checkAtomicOverlapping ) then
+			output = .true.
+			return
+		end if
+		
+		output = .false.
+		do i=1,this.nMolecules()-1
+			do j=i+1,this.nMolecules()
+				
+				output = this.clusters(i).overlapping( this.clusters(j), &
+						overlappingRadius=GOptionsM3C_atomicOverlappingRadius, radiusType=GOptionsM3C_radiusType )
+				
+				if( output ) return
+			end do
+		end do
+		
+	end function atomicOverlapping
+
+	!>
 	!! @brief Builds a random intermolecular energy by building a random
 	!!        geometry for the clusters. The center of mass is fixed as
 	!!        the origin and the main inertia directions as axes of the
@@ -1079,7 +1108,7 @@ module FragmentsListBase_
 		real(8) :: rVec1(3), rVec2(3)
 		integer :: i, j, n, m
 		real(8) :: centerOfMass(3)
-		logical :: outOfSphere
+		logical :: check
 		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsListBase()
@@ -1090,28 +1119,34 @@ module FragmentsListBase_
 		! Por omisión se generan centros aleatorios
 		! la primera vez que entra a esta función
 		if( this.forceRandomCenters .or. ( .not. GOptionsM3C_useRandomWalkers ) ) then
-			call this.randomCenters()
+		
+			do n=1,100000
+				call this.randomCenters()
+				
+				if( .not. this.atomicOverlapping() ) exit
+			end do
+			
 			this.forceRandomCenters = .false.
 		else
 			do m=1,10
-				outOfSphere = .true.
+				check = .true.
 				do n=1,100000
 					call this.randomCentersByRandomWalkStep()
 					
-					if( this.radius() < GOptionsM3C_systemRadius ) then
-						outOfSphere = .false.
+					if( this.radius() < GOptionsM3C_systemRadius .and. .not. this.atomicOverlapping() ) then
+						check = .false.
 						exit
 					end if
 				end do
 				
-				if( outOfSphere ) then
-					this.forceRandomCenters = .true.
+				if( check ) then
+					call this.randomCenters()
 				else
 					exit
 				end if
 			end do
 				
-			if( outOfSphere ) then
+			if( check ) then
 				call GOptions_error( &
 				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n-1))//", m="//trim(FString_fromInteger(m-1))//")", &
 				"FragmentsListBase.changeGeometryFragmentsListBase()", &
@@ -1160,12 +1195,91 @@ module FragmentsListBase_
 	end subroutine changeGeometryFragmentsListBase
 	
 	!>
+	!! @brief Interpolates the geometry from other
+	!!
+	subroutine interpolateGeometryFragmentsListBase( this, other )
+		class(FragmentsListBase) :: this
+		class(FragmentsListBase) :: other
+		
+		logical :: check
+		integer :: i, n
+		real(8) :: centerOfMass(3)
+		
+		! @todo No tengo claro que esto deba ir aqui
+! 		if( this.forceInitializing ) then
+! 			call this.initialGuessFragmentsListBase()
+! 			return
+! 		end if
+		
+		if( this.nAtoms() == other.nAtoms() ) then
+		
+			do i=1,this.nMolecules()
+				call this.clusters(i).setCenter( other.clusters(i).center() )
+			end do
+			
+			if( GOptions_printLevel >= 2 ) write(*,*) "Geometry interpolated ... OK"
+			
+			call this.changeOrientationsFragmentsListBase()
+			
+			if( check ) then
+				call GOptions_error( &
+				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n-1))//")", &
+				"FragmentsListBase.interpolateGeometryFragmentsListBase()", &
+				"Consider to change the initial geometry" &
+				)
+			end if
+		
+		else if( this.nAtoms() > other.nAtoms() ) then
+			
+			call GOptions_error( &
+				"Case this.nAtoms() > other.nAtoms() is not implemented yet", &
+				"FragmentsListBase.geometryFrom()" &
+				)
+				
+		else if( this.nAtoms() < other.nAtoms() ) then
+		
+			call GOptions_error( &
+				"Case this.nAtoms() < other.nAtoms() is not implemented yet", &
+				"FragmentsListBase.geometryFrom()" &
+				)
+				
+		end if
+		
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		! Se establece como origen el centro de masas y se
+		! actualiza el tensor de inercia
+		centerOfMass = this.centerOfMass()
+		do i=1,this.nMolecules()
+			call this.clusters(i).setCenter( this.clusters(i).center() - centerOfMass )
+		end do
+		
+		call this.updateInertiaTensor()
+		
+		if( GOptions_printLevel >= 3 ) then
+			call GOptions_paragraph( "Geometry", indent=2 )
+			
+			call GOptions_valueReport( "CM", this.centerOfMass(), "A", indent=2 )
+			write(*,*) ""
+			
+			write(*,"(<GOptions_indentLength*2>X,A20,3X,3A10,3X,A10)") "id", "X", "Y", "Z", "R"
+			write(*,"(<GOptions_indentLength*2>X,A33,2A10,3X,A10)") "A", "A", "A", "A"
+			do i=1,this.nMolecules()
+				write(*,"(<GOptions_indentLength*2>X,A20,3X,3F10.5,3X,F10.5)") trim(this.clusters(i).label()), &
+						this.clusters(i).center()/angs, this.clusters(i).radius( type=GOptionsM3C_radiusType )/angs
+			end do
+			write(*,*) ""
+		end if
+		
+		call this.updateIntermolecularPotential()
+	end subroutine interpolateGeometryFragmentsListBase
+	
+	!>
 	!! @brief 
 	!!
 	subroutine changeOrientationsFragmentsListBase( this )
 		class(FragmentsListBase) :: this
 		
-		integer :: i
+		integer :: i, n
 		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsListBase()
@@ -1173,30 +1287,43 @@ module FragmentsListBase_
 		end if
 		
 		if( this.nMolecules() > 1 ) then
-			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			! Caso átomo - molécula lineal
-			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			if( this.nMolecules() == 2 .and. &
-			( ( this.clusters(1).isLineal() .and. this.clusters(2).nAtoms() == 1 ) .or. &
-			  ( this.clusters(2).isLineal() .and. this.clusters(1).nAtoms() == 1 ) ) ) then
-				do i=1,this.nMolecules()
-					call this.clusters(i).changeOrientation( force1D=.true. )
-				end do
+			
+			if( GOptions_printLevel >= 2 ) write(*,"(A)", advance="no") "Checking overlaping"
+
+			do n=1,100000
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				! Caso átomo - molécula lineal
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				if( this.nMolecules() == 2 .and. &
+				( ( this.clusters(1).isLineal() .and. this.clusters(2).nAtoms() == 1 ) .or. &
+				( this.clusters(2).isLineal() .and. this.clusters(1).nAtoms() == 1 ) ) ) then
+					do i=1,this.nMolecules()
+						call this.clusters(i).changeOrientation( force1D=.true. )
+					end do
+					
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				! Caso átomo - molécula
+				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				else if( this.nMolecules() == 2 .and. &
+				( this.clusters(1).nAtoms() == 1 .or. this.clusters(2).nAtoms() == 1 ) ) then
+					do i=1,this.nMolecules()
+						call this.clusters(i).changeOrientation( force2D=.true. )
+					end do
+					
+				else
+					do i=1,this.nMolecules()
+						call this.clusters(i).changeOrientation()
+					end do
+				end if
 				
-			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			! Caso átomo - molécula
-			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			else if( this.nMolecules() == 2 .and. &
-			( this.clusters(1).nAtoms() == 1 .or. this.clusters(2).nAtoms() == 1 ) ) then
-				do i=1,this.nMolecules()
-					call this.clusters(i).changeOrientation( force2D=.true. )
-				end do
+				if( GOptions_printLevel >= 2 ) then
+					write(*,*) this.atomicOverlapping()
+					call this.save("hola"//trim(FString_fromInteger(n))//".xyz")
+				end if
 				
-			else
-				do i=1,this.nMolecules()
-					call this.clusters(i).changeOrientation()
-				end do
-			end if
+				if( .not. this.atomicOverlapping() ) exit
+			end do
+
 		end if
 		
 		call this.updateLogVtheta()
