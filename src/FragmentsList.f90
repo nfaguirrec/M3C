@@ -106,13 +106,12 @@ module FragmentsList_
 		
 		call this.destroyFragmentsListBase()
 	end subroutine destroyFragmentsList	
-	
+
 	!>
 	!! @brief
 	!!
-	subroutine initialGuessFragmentsList( this, geometryFrom )
+	subroutine initialGuessFragmentsList( this )
 		class(FragmentsList) :: this
-		class(FragmentsList), optional, intent(in) :: geometryFrom
 		
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_section( "BUILDING INITIAL CONFIGURATION "//trim(this.label()), indent=2 )
@@ -121,10 +120,23 @@ module FragmentsList_
 		
 		this.forceInitializing = .false.
 		
-		call this.initialGuessFragmentsListBase() ! Orienta el sistema e inicializa formula, gFactor, Wn, We, Vr y Vtheta
+		! Este frozen, no estoy seguro si debería ir aquí, pero para no
+		! escribir más código lo dejo así por el momento
+! 		call this.setFrozen( .true. )
+		
+		call this.initialGuessFragmentsListBase() ! Inicializa geometría (incluidas orientaciones) y parte vibracional
+! 		call this.updateKineticEnergy()
+! 		
+! 		call this.changeAngularMomenta() ! Inicializa el momento angular
+! 		call this.updateLogVJ()
+! 		call this.updateKineticEnergy()
+! 		
+! 		call this.updateLambda()
+		
+! 		call this.setFrozen( .false. )
 
 		call this.changeVibrationalEnergy()
-		call this.changeGeometry( geometryFrom )
+		call this.changeGeometry()
 		call this.changeOrientations()
 		
 		if( GOptions_printLevel >= 3 ) then
@@ -135,9 +147,8 @@ module FragmentsList_
 	!>
 	!! @brief
 	!!
-	subroutine changeGeometry( this, other )
+	subroutine changeGeometry( this )
 		class(FragmentsList) :: this
-		class(FragmentsList), optional, intent(in) :: other
 		
 		integer :: j
 		
@@ -150,12 +161,8 @@ module FragmentsList_
 			call GOptions_section( "CHANGE GEOMETRY "//trim(this.label()), indent=2 )
 			write(IO_STDOUT,*) ""
 		end if
-		
-		if( present(other) ) then
-			call this.interpolateGeometryFragmentsListBase( other )
-		else
-			call this.changeGeometryFragmentsListBase()
-		end if
+
+		call this.changeGeometryFragmentsListBase()
 		
 		!-----------------------------------------------------------------------------------------
 		! @todo Probablemente este bloque debería ir dentro de changeGeometryFragmentsListBase
@@ -593,6 +600,7 @@ module FragmentsList_
 			write(*,"(10X,5X,20X,A20)") "---------------"
 			write(*,"(5X,A10,20X,F20.5)") "Total", this.LnDiagI_
 			write(*,*) ""
+			stop
 		end if
 		
 	end subroutine updateDiagInertiaTensorJJ

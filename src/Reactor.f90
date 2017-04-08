@@ -804,14 +804,10 @@ module Reactor_
 				call this.products.setReactorEnergy( this.reactives.reactorEnergy() )
 				
 				! Para que fuerce los centros aleatorios en la siguiente iteración
-! 				this.products.forceRandomCenters = .true.
+				this.products.forceRandomCenters = .true.
 				
 				! Los productos utilizan parte de la energía
-				if( all( this.dNFrag == 0 ) ) then
-					call this.products.initialGuessFragmentsList( geometryFrom=this.reactives ) ! Initialize vib, geom and orient
-				else
-					call this.products.initialGuessFragmentsList() ! Initialize vib, geom and orient
-				end if
+				call this.products.initialGuessFragmentsList()
 				
 ! 				call this.products.changeVibrationalEnergy()
 ! 				call this.products.changeGeometry()
