@@ -27,6 +27,7 @@ binary:
 	find utils/ -maxdepth 1 -type f -exec cp {} M3C-v${VERSION}/utils \;
 	mkdir M3C-v${VERSION}/bin
 	find src -type f -executable -exec cp {} M3C-v${VERSION}/bin \;
+	find src -type f -name "*.sh" -exec cp {} M3C-v${VERSION}/bin \;
 	find ${SCIFT_HOME}/examples/ -name "molecule.*" -type f -executable -exec cp {} M3C-v${VERSION}/bin \;
 	sleep 10s
 	tar cvfz M3C-v${VERSION}-intelc-${INTELC_VERSION}-${MACHINE}.tar.gz M3C-v${VERSION}
