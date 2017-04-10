@@ -94,8 +94,8 @@ function SCHEDULER.buildHead()
 ###PBS --account=$account # There is not equivalence for QOS in PBS
 ###PBS --qos=$qos # There is not equivalence for QOS in PBS
 #PBS -N $jobdir/$name
-#PBS -o log/$name.pbs.log
-#PBS -e log/$name.pbs.err
+#PBS -o ${M3C_SCHEDULER_NAME}.log
+#PBS -e ${M3C_SCHEDULER_NAME}.err
 
 cd \$PBS_O_WORKDIR
 

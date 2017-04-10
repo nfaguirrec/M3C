@@ -2,10 +2,10 @@
 ##################################################################
 #
 #  This file is part of M3C
-#  Copyright (C) by authors (2013-2016)
+#  Copyright (C) by authors (2013-2017)
 #  
 #  Authors:
-#    * Dr. Néstor F. Aguirre (2013-2016)
+#    * Dr. Néstor F. Aguirre (2013-2017)
 #          nestor.aguirre@uam.es
 #    * Dr. Sergio Díaz-Tendero (2015-2015)
 #          sergio.diaztendero@uam.es
@@ -90,8 +90,8 @@ function SLURM.buildHead()
 #SBATCH --time=$ttime
 #SBATCH --qos=$qos
 #SBATCH --job-name=$jobdir/$name
-#SBATCH -o log/$name.slurm.log
-#SBATCH -e log/$name.slurm.err
+#SBATCH -o SLURM.log
+#SBATCH -e SLURM.err
 #SBATCH --nodes=1-1
 #SBATCH --ntasks=$nTask
 
@@ -118,9 +118,6 @@ M3C-gamess.geniso $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 ##
@@ -141,9 +138,6 @@ M3C-gamess.optg $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 ##
@@ -164,9 +158,6 @@ M3C-gamess.freqs $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 ##
@@ -187,9 +178,6 @@ M3C-gamess.iener $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 ##
@@ -210,9 +198,6 @@ M3C-gaussian.geniso $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 ##
@@ -233,9 +218,6 @@ M3C-gaussian.optg $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 ##
@@ -256,9 +238,6 @@ M3C-gaussian.freqs $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 ##
@@ -279,9 +258,6 @@ M3C-gaussian.symmetrize $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.er
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 ##
@@ -302,9 +278,6 @@ M3C-gaussian.iener $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 ##
@@ -325,9 +298,6 @@ M3C-gaussian.genpot $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 # ##
@@ -348,9 +318,6 @@ EOF
 # EOF
 # 	
 # 	sbatch run$$.slurm
-# 	
-# 	cp run$$.slurm log/
-# 	rm run$$.slurm
 # }
 
 ##
@@ -371,9 +338,6 @@ M3C-adf.optg $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 ##
@@ -394,9 +358,6 @@ M3C-adf.freqs $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 # ##
@@ -417,9 +378,6 @@ EOF
 # EOF
 # 	
 # 	sbatch run$$.slurm
-# 	
-# 	cp run$$.slurm log/
-# 	rm run$$.slurm
 # }
 
 # ##
@@ -440,9 +398,6 @@ EOF
 # EOF
 # 	
 # 	sbatch run$$.slurm
-# 	
-# 	cp run$$.slurm log/
-# 	rm run$$.slurm
 # }
 
 ##
@@ -463,9 +418,6 @@ M3C.check $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 ##
@@ -486,9 +438,6 @@ M3C $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 
 ##
@@ -509,8 +458,5 @@ M3C.p $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
 EOF
 	
 	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
 }
 

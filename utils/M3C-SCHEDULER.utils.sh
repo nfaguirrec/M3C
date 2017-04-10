@@ -39,9 +39,6 @@ M3C-gamess.geniso $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -61,9 +58,6 @@ M3C-gamess.optg $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_S
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -83,9 +77,6 @@ M3C-gamess.freqs $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -105,9 +96,6 @@ M3C-gamess.iener $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -127,9 +115,6 @@ M3C-gaussian.geniso $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -149,9 +134,6 @@ M3C-gaussian.optg $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -171,9 +153,6 @@ M3C-gaussian.freqs $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -193,9 +172,6 @@ M3C-gaussian.symmetrize $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2>
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -215,9 +191,6 @@ M3C-gaussian.iener $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -237,9 +210,6 @@ M3C-gaussian.genpot $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 # ##
@@ -259,9 +229,6 @@ EOF
 # EOF
 # 	
 # 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-# 	
-# 	cp run$$.${M3C_SCHEDULER_NAME} log/
-# 	rm run$$.${M3C_SCHEDULER_NAME}
 # }
 
 ##
@@ -281,9 +248,6 @@ M3C-adf.optg $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHE
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -303,9 +267,6 @@ M3C-adf.freqs $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCH
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 # ##
@@ -325,9 +286,6 @@ EOF
 # EOF
 # 	
 # 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-# 	
-# 	cp run$$.${M3C_SCHEDULER_NAME} log/
-# 	rm run$$.${M3C_SCHEDULER_NAME}
 # }
 
 # ##
@@ -347,9 +305,6 @@ EOF
 # EOF
 # 	
 # 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-# 	
-# 	cp run$$.${M3C_SCHEDULER_NAME} log/
-# 	rm run$$.${M3C_SCHEDULER_NAME}
 # }
 
 # ##
@@ -369,9 +324,6 @@ EOF
 # EOF
 # 	
 # 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-# 	
-# 	cp run$$.${M3C_SCHEDULER_NAME} log/
-# 	rm run$$.${M3C_SCHEDULER_NAME}
 # }
 
 ##
@@ -391,9 +343,6 @@ M3C-nwchem.optg $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_S
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -413,9 +362,6 @@ M3C-nwchem.freqs $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 # ##
@@ -435,9 +381,6 @@ EOF
 # EOF
 # 	
 # 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-# 	
-# 	cp run$$.${M3C_SCHEDULER_NAME} log/
-# 	rm run$$.${M3C_SCHEDULER_NAME}
 # }
 
 # ##
@@ -457,9 +400,6 @@ EOF
 # EOF
 # 	
 # 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-# 	
-# 	cp run$$.${M3C_SCHEDULER_NAME} log/
-# 	rm run$$.${M3C_SCHEDULER_NAME}
 # }
 
 ##
@@ -479,9 +419,6 @@ M3C.check $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDUL
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -501,9 +438,6 @@ M3C $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAM
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
 ##
@@ -523,8 +457,5 @@ M3C.p $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_N
 EOF
 	
 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
-	
-	cp run$$.${M3C_SCHEDULER_NAME} log/
-	rm run$$.${M3C_SCHEDULER_NAME}
 }
 
