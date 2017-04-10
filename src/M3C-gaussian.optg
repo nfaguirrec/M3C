@@ -53,6 +53,13 @@ else
 	source $M3C_HOME/src/gaussianDriver.sh
 fi
 
+if [ -f "$M3C_HOME/bin/parallel.sh" ]
+then
+	source $M3C_HOME/bin/parallel.sh
+else
+	source $M3C_HOME/src/parallel.sh
+fi
+
 function optgeom()
 {
 	local iFileXYZ=$1
@@ -92,89 +99,14 @@ function main()
 	charge=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'` )
 	mult=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'` )
 	
-	#-----------------------------------------------------------------------
-	
-	startTime=`date "+%s"`
-	
-	ij=-1
-	for (( i=0; i<=$(( ${#xyzFile[@]}/$nThreads-1 )); i++ ))
+	cat /dev/null > .commands$$
+	for (( i=0; i<${#xyzFile[@]}; i++ ))
 	do
-		iStartTime=`date "+%s"`
-		
-		echo -n "Running: "
-		
-		for (( j=1; j<=$nThreads; j++ ))
-		do
-			ij=$(( $j-1+$nThreads*$i ))
-			
-			if (( j != $nThreads ))
-			then
-				printf "%20s," "${xyzFile[$ij]%.*}"
-			else
-				printf "%20s" "${xyzFile[$ij]%.*}"
-			fi
-			
-			optgeom ${xyzFile[$ij]} ${charge[$ij]} ${mult[$ij]} &
-		done
-		
-		echo -n " ... "
-		
-		wait
-		
-		iEndTime=`date "+%s"`
-		elapsedTime=$(( $iEndTime-$iStartTime ))
-		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+		echo "optgeom ${xyzFile[$i]} ${charge[$i]} ${mult[$i]}" >> .commands$$
 	done
-
-	if (( $ij < ${#xyzFile[@]} ))
-	then
-		iStartTime=`date "+%s"`
-		
-		echo -n "Running: "
-		
-		k=1
-		for (( i=$(( $ij+1 )); i<${#xyzFile[@]}; i++ ))
-		do
-			if (( $i != $(( ${#xyzFile[@]} - 1 )) ))
-			then
-				printf "%20s," "${xyzFile[$i]%.*}"
-			else
-				printf "%20s " "${xyzFile[$i]%.*}"
-			fi
-			
-			optgeom ${xyzFile[$i]} ${charge[$i]} ${mult[$i]} &
-			
-			k=$(( $k+1 ))
-		done
-		
-		for (( i=$k; i<=$nThreads; i++ ))
-		do
-			if (( i != $nThreads ))
-			then
-				printf "%20s " ""
-			else
-				printf "%20s" ""
-			fi
-		done
-		
-		echo -n " ... "
-		
-		wait
-		
-		iEndTime=`date "+%s"`
-		elapsedTime=$(( $iEndTime-$iStartTime ))
-		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
-	fi
 	
-	endTime=`date "+%s"`
-	elapsedTime=$(( $endTime-$startTime ))
-	
-	echo -n "        "
-	printf "%$(( 15*(${nThreads}+1) ))s" ""
-	echo "            ` echo -n  "Total"`: $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
-	
-	#-----------------------------------------------------------------------
-
+	parallel .commands$$ $nThreads
+	rm .commands$$
 }
 
 main $*
