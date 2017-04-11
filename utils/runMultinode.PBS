@@ -1,0 +1,54 @@
+#!/bin/bash
+#PBS -q default
+#PBS -l nodes=4:ppn=32,walltime=72:00:00
+###PBS --account=-- # There is not equivalence for QOS in PBS
+###PBS --qos=-- # There is not equivalence for QOS in PBS
+#PBS -N multiNode
+#PBS -o PBS.log
+#PBS -e PBS.err
+
+NPROCSHARED=16
+ext="*.xyz"
+
+cd $PBS_O_WORKDIR
+
+nElem=`ls $ext | wc -w`
+nElemPerNode=`echo "$nElem $PBS_NUM_NODES" | awk '{v=$1/$2; if(v==int(v)) print int(v); else print int(v+1)}'`
+
+nodeName=( `cat $PBS_NODEFILE | awk '{map[$1]=1}END{for(k in map) print k}'` )
+
+i=0; nodeId=-1
+for f in `ls $ext`
+do
+	if (( $i%$nElemPerNode==0 ))
+	then
+		nodeId=$(($nodeId+1))
+		mkdir ${nodeName[$nodeId]}
+	fi
+
+	echo "$f --> ${nodeName[$nodeId]}"
+	cp $f ${nodeName[$nodeId]}/
+	i=$(($i+1))
+done
+
+for (( i=0; i<${#nodeName[@]}; i++ ))
+do
+	ssh -o StrictHostKeyChecking=no ${nodeName[$i]} "[ -f ~/.bash_profile ] && source ~/.bash_profile; [ -f ~/.bashrc ] && source ~/.bashrc; cd $PBS_O_WORKDIR/${nodeName[$i]}; M3C-nwchem.freqs ../b3lyp.freqs-NWCHEM.inp $NPROCSHARED" &
+done
+
+wait
+
+if [ -d "history.freqs" ]
+then
+        echo "@@@ WARNING @@@ There is already a history directory (history.freqs). Backup copy will be generated"
+        mv history.freqs history.freqs.backup-`date +%Y%m%d`
+fi
+mkdir history.freqs
+
+for (( i=0; i<${#nodeName[@]}; i++ ))
+do
+	mv ${nodeName[$i]}/history.*/* history.freqs/
+	mv ${nodeName[$i]}/* .
+	rm -rf ${nodeName[$i]}
+done
+
