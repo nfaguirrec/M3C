@@ -7,25 +7,39 @@
 #PBS -o PBS.log
 #PBS -e PBS.err
 
-NPROCSHARED=16
-ext="*.xyz"
+#--------------------------------------------------------------------------
+# User variables
+NPROCSHARED=4
+targetExtension="*.xyz"
+historyDir="history.freqs"
+command="M3C-nwchem.freqs ../b3lyp.freqs-NWCHEM.inp $NPROCSHARED"
 
-cd $PBS_O_WORKDIR
+# NPROCSHARED=4
+# targetExtension="*.xyz"
+# historyDir="history.optg"
+# command="M3C-nwchem.optg ../b3lyp.optg-NWCHEM.inp $NPROCSHARED"
+#--------------------------------------------------------------------------
 
-nElem=`ls $ext | wc -w`
-nElemPerNode=`echo "$nElem $PBS_NUM_NODES" | awk '{v=$1/$2; if(v==int(v)) print int(v); else print int(v+1)}'`
+nNodes=$PBS_NUM_NODES
+workDir=$PBS_O_WORKDIR
+nodeFile=$PBS_NODEFILE
 
-nodeName=( `cat $PBS_NODEFILE | awk '{map[$1]=1}END{for(k in map) print k}'` )
+cd $workDir
+
+nElem=`ls $targetExtension | wc -w`
+nElemPerNode=`echo "$nElem $nNodes" | awk '{v=$1/$2; if(v==int(v)) print int(v); else print int(v+1)}'`
+
+nodeName=( `cat $nodeFile | awk '{map[$1]=1}END{for(k in map) print k}'` )
 
 i=0; nodeId=-1
-for f in `ls $ext`
+for f in `ls $targetExtension`
 do
 	if (( $i%$nElemPerNode==0 ))
 	then
 		nodeId=$(($nodeId+1))
 		mkdir ${nodeName[$nodeId]}
 	fi
-
+	
 	echo "$f --> ${nodeName[$nodeId]}"
 	cp $f ${nodeName[$nodeId]}/
 	i=$(($i+1))
@@ -33,21 +47,21 @@ done
 
 for (( i=0; i<${#nodeName[@]}; i++ ))
 do
-	ssh -o StrictHostKeyChecking=no ${nodeName[$i]} "[ -f ~/.bash_profile ] && source ~/.bash_profile; [ -f ~/.bashrc ] && source ~/.bashrc; cd $PBS_O_WORKDIR/${nodeName[$i]}; M3C-nwchem.freqs ../b3lyp.freqs-NWCHEM.inp $NPROCSHARED" &
+	ssh -o StrictHostKeyChecking=no ${nodeName[$i]} "[ -f ~/.bash_profile ] && source ~/.bash_profile; [ -f ~/.bashrc ] && source ~/.bashrc; cd $workDir/${nodeName[$i]}; $command" &
 done
 
 wait
 
-if [ -d "history.freqs" ]
+if [ -d "$historyDir" ]
 then
         echo "@@@ WARNING @@@ There is already a history directory (history.freqs). Backup copy will be generated"
-        mv history.freqs history.freqs.backup-`date +%Y%m%d`
+        mv $historyDir $historyDir.backup-`date +%Y%m%d`
 fi
-mkdir history.freqs
+mkdir $historyDir
 
 for (( i=0; i<${#nodeName[@]}; i++ ))
 do
-	mv ${nodeName[$i]}/history.*/* history.freqs/
+	mv ${nodeName[$i]}/$historyDir/* $historyDir/
 	mv ${nodeName[$i]}/* .
 	rm -rf ${nodeName[$i]}
 done
