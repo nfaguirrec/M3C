@@ -2479,12 +2479,15 @@ function channelBRDiagram()
 	mv $energyDir/matrix.dat .
 	mv $energyDir/keys.dat .
 	
-# 	nChannels=`cat keys.dat | wc -w`
-# 	nChannels=$(( $nChannels-1 ))
-
 	nChannels=`getTableFromIFile $iFile "EXPERIMENTAL_BRANCHING_RATIOS" | wc -l`
 	nChannels=$(( $nChannels-1 ))
 # 	nChannels=$(( $nChannels-3 ))  # para el H2C3+
+	
+	if [ "$nChannels" -le 0 ]
+	then
+		nChannels=`cat keys.dat | wc -w`
+		nChannels=$(( $nChannels-1 ))
+	fi
 	
 	M3CBR -i $iFile -d matrix.dat -k keys.dat
 	rm matrix.dat keys.dat
