@@ -73,8 +73,8 @@ SYMMETRY_GROUP_MAP["I"]="I"
 SYMMETRY_GROUP_MAP["Ih"]="IH"
 
 # Nwchem 6.6 do not use non-Abelian groups
-# SYMMETRY_GROUP_MAP["C(LIN)"]="C(inf)v"
-# SYMMETRY_GROUP_MAP["D(LIN)"]="D(inf)H"
+# SYMMETRY_GROUP_MAP["C(LIN)"]="C*V"
+# SYMMETRY_GROUP_MAP["D(LIN)"]="D*H"
 
 ##
 # @brief
