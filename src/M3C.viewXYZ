@@ -113,16 +113,16 @@ function makeLatexTableBase()
 		then
 			if [ -n "$symm" -a  -n "$estate" ]
 			then
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{5pt} $estate~($symm)} &"
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{5pt} $estate~($symm)} &"
 			else
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName} &"
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName} &"
 			fi
 		else
 			if [ -n "$symm" -a  -n "$estate" ]
 			then
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{5pt} $estate~($symm)} "
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{5pt} $estate~($symm)} "
 			else
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName} "
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName} "
 			fi
 			
 			if (( $i != $nFiles ))

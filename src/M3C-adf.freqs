@@ -81,6 +81,7 @@ frequencies()
 	freqsADFTemplate $ADF_TEMPLATE $NPROCSHARED $iFileXYZ $charge $mult $DEBUG > ${iFileXYZ%.*}.rxyz
 	mv ${iFileXYZ%.*}.out history.freqs/ 2> /dev/null
 	mv ${iFileXYZ%.*}.adf history.freqs/ 2> /dev/null
+	mv ${iFileXYZ%.*}.t21 history.freqs/ 2> /dev/null
 }
 
 main()

@@ -410,6 +410,7 @@ function runADF()
 {
 	local iFile=$1
 	local nProcShared=$2
+	local copyT21to=$3
 	
 	export ADFHOME=$M3C_ADF_HOME
 	export ADFBIN=$ADFHOME/bin
@@ -432,6 +433,14 @@ function runADF()
 		$M3C_ADF_HOME/bin/adf -n $nProcShared < $iFile
 	else
 		$M3C_ADF_HOME/bin/adf < $iFile
+	fi
+	
+	ls -l >> $HOME/hola
+	echo "cp TAPE21 $copyT21to" >> $HOME/hola
+	
+	if [ -n "$copyT21to" ]
+	then
+		cp TAPE21 $copyT21to 2> /dev/null
 	fi
 	
 	rm -rf $SCM_TMPDIR/${iFile%.*}/
@@ -554,7 +563,7 @@ function optgADFTemplate()
 	then
 		fillTemplate $template $xyzFile $charge $mult > input$SID.adf
 			
-		runADF input$SID.adf $nProcShared &> input$SID.out
+		runADF input$SID.adf $nProcShared $PWD/${xyzFile%.*}.t21 &> input$SID.out
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.adf ${xyzFile%.*}.adf 2> /dev/null
 		
@@ -562,8 +571,10 @@ function optgADFTemplate()
 		then
 			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
 		else
-# 			energy=`grep "<.*Total energy" input$SID.out | tail -n1 | gawk '{print $5}'`  # <<< This not available in all cases
+# 			energy=`grep "<.*Total energy" input$SID.out | tail -n1 | gawk '{print $5}'`  # <<< This not available in all cases, I think is just atoms
+			
 			energy=`grep "<.*current energy" input$SID.out | tail -n1 | gawk '{print $5}'`
+			
 			grep -A$(( $nAtoms+1 )) "Coordinates in Geometry Cycle" input$SID.out | tail -n$nAtoms | sed -r 's/^[[:blank:]]*[[:digit:]]+\.//g' > .finalGeom$SID
 			
 			geom2xyz .finalGeom$SID $energy
@@ -598,7 +609,7 @@ function freqsADFTemplate()
 	then
 		fillTemplate $template $xyzFile $charge $mult > input$SID.adf
 		
-		runADF input$SID.adf $nProcShared &> input$SID.out
+		runADF input$SID.adf $nProcShared $PWD/${xyzFile%.*}.t21 &> input$SID.out
 		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
 		cp input$SID.adf ${xyzFile%.*}.adf 2> /dev/null
 		
@@ -606,8 +617,9 @@ function freqsADFTemplate()
 		then
 			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
 		else
-# 			energy=`grep "<.*Total energy" input$SID.out | tail -n1 | gawk '{print $5}'`  # <<< This not available in all cases
-			energy=`grep "<.*current energy" input$SID.out | tail -n1 | gawk '{print $5}'`
+# 			energy=`grep "<.*Total energy" input$SID.out | tail -n1 | gawk '{print $5}'`  # <<< This not available in all cases, I think is just atoms
+
+			energy=`grep "<.*Bond Energy.*a.u." input$SID.out | tail -n1 | gawk '{print $5}'`  # <<< When only a frequencies calculation was carried out.
 			
 			cat /dev/null > .freqs$SID
 			

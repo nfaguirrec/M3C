@@ -68,6 +68,7 @@ function optgeom()
 	optgADFTemplate $ADF_TEMPLATE $NPROCSHARED ${iFileXYZ%.*}.xyz0 $charge $mult > ${iFileXYZ%.*}.xyz
 	mv ${iFileXYZ%.*}.out history.optg/ 2> /dev/null
 	mv ${iFileXYZ%.*}.adf history.optg/ 2> /dev/null
+	mv ${iFileXYZ%.*}.t21 history.optg/ 2> /dev/null
 }
 
 function main()

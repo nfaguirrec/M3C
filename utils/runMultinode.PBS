@@ -22,14 +22,12 @@ command="M3C-nwchem.freqs ../b3lyp.freqs-NWCHEM.inp $NPROCSHARED"
 
 nNodes=$PBS_NUM_NODES
 workDir=$PBS_O_WORKDIR
-nodeFile=$PBS_NODEFILE
+nodeName=( `cat $PBS_NODEFILE | awk '{map[$1]=1}END{for(k in map) print k}'` )
 
 cd $workDir
 
 nElem=`ls $targetExtension | wc -w`
 nElemPerNode=`echo "$nElem $nNodes" | awk '{v=$1/$2; if(v==int(v)) print int(v); else print int(v+1)}'`
-
-nodeName=( `cat $nodeFile | awk '{map[$1]=1}END{for(k in map) print k}'` )
 
 i=0; nodeId=-1
 for f in `ls $targetExtension`
