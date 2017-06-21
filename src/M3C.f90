@@ -79,6 +79,8 @@ program M3C
 	GOptionsM3C_useSpinConservationRules = iParser.getLogical( "GOPTIONS:useSpinConservationRules", def=.false. )
 	GOptionsM3C_angularMomentumCouplingScheme = iParser.getString( "GOPTIONS:angularMomentumCouplingScheme", def="JJ" )
 	GOptionsM3C_structureSamplingMethod = iParser.getString( "GOPTIONS:structureSamplingMethod", def="RANDOM" )
+	GOptionsM3C_checkAtomicOverlapping = iParser.getLogical( "GOPTIONS:checkAtomicOverlapping", def=.false. )
+	GOptionsM3C_atomicOverlappingRadius = iParser.getReal( "GOPTIONS:atomicOverlappingRadius", def=0.0_8 )*angs
 	GOptionsM3C_fixMultiplicity = iParser.getInteger( "GOPTIONS:fixMultiplicity", def=-1 )
 	GOptionsM3C_totalJ(3) = iParser.getReal( "GOPTIONS:totalJ", def=0.0_8 )
 	GOptions_printLevel = iParser.getInteger( "GOPTIONS:printLevel", def=1 )
@@ -91,6 +93,8 @@ program M3C
 	write(*,"(A40,F15.5,A)") "randomWalkStepRadius = ", GOptionsM3C_randomWalkStepRadius/angs, " A"
 	write(*,"(A40,L5)") "useWeightedWalkStep = ", GOptionsM3C_useWeightedWalkStep
 	write(*,"(A40,F15.5,A)") "overlappingRadius = ", GOptionsM3C_overlappingRadius/angs, " A"
+	write(*,"(A40,L5)") "checkAtomicOverlapping = ", GOptionsM3C_checkAtomicOverlapping
+	write(*,"(A40,F15.5,A)") "atomicOverlappingRadius = ", GOptionsM3C_atomicOverlappingRadius/angs, " A"
 	
 	select case( GOptionsM3C_radiusType )
 		case( AtomicElementsDB_COVALENT_RADIUS )
