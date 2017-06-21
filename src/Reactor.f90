@@ -322,23 +322,38 @@ module Reactor_
 		end if
 		
 		output = .true.
-		
-		it1 => spinAvail.begin
-		do while( associated(it1) )
+		if( GOptionsM3C_fixMultiplicity == -1 ) then
 			
-			it2 => internalReactivesSpinAvail.begin
-			do while( associated(it2) )
+			it1 => spinAvail.begin
+			do while( associated(it1) )
+				
+				it2 => internalReactivesSpinAvail.begin
+				do while( associated(it2) )
+				
+					if( abs( it1.data - it2.data ) < 0.1 ) then
+						output = .false.
+						return
+					end if
+					
+					it2 => it2.next
+				end do
+				
+				it1 => it1.next
+			end do
+		else
 			
-				if( abs( it1.data - it2.data ) < 0.1 ) then
+			it1 => spinAvail.begin
+			do while( associated(it1) )
+				
+				S = 0.5_8*(GOptionsM3C_fixMultiplicity-1.0_8)
+				if( abs( it1.data - S ) < 0.1 ) then
 					output = .false.
 					return
 				end if
 				
-				it2 => it2.next
+				it1 => it1.next
 			end do
-			
-			it1 => it1.next
-		end do
+		end if
 		
 		call spinAvail.clear()
 	end function isSpinForbidden

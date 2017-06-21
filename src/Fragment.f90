@@ -258,6 +258,9 @@ module Fragment_
 ! 					this.diagInertiaTensor.get(3,3)/amu/12.01_8, &
 ! 					"  ]   amu*angs**2/mC"
 			
+			write(IO_STDOUT,"(4X,A22,I5,A)")     "            Charge = ", this.charge, "   "
+			write(IO_STDOUT,"(4X,A22,I5,A)")     "      Multiplicity = ", this.multiplicity, "   "
+			write(IO_STDOUT,"(4X,A22,I5,A)")     "              degL = ", this.degL, "   "
 			write(IO_STDOUT,"(4X,A22,F15.5,A)")  "            Radius = ", this.radius( type=GOptionsM3C_radiusType )/angs, "   A"
 			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "             Eelec = ", this.electronicEnergy/eV, "   eV"
 			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "             Eelec = ", this.electronicEnergy, "   a.u."

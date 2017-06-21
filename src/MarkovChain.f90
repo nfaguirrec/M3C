@@ -126,7 +126,7 @@ module MarkovChain_
 		
 		call GOptions_error( &
 			"This method is not implemented", &
-			"Reactor.copyReactor()" &
+			"MarkovChain.copy()" &
 		)
 	end subroutine copy
 	
@@ -1460,8 +1460,8 @@ module MarkovChain_
 		this.tracking = iParser.getString( "MARKOV_CHAIN:tracking", def="none" )
 		this.acceptAll = iParser.getLogical( "MARKOV_CHAIN:acceptAll", def=.false. )
 		
-		write(*,*)
-		write(*,"(A40,A)") "reactives = ", strReactives.fstr
+		write(*,*) ""
+		write(*,"(A40,A)") "reactives = ", trim(reactives.label())
 		write(*,"(A40,F15.5)") "burnInFraction = ", this.burnInFraction
 		write(*,"(A40,F15.5,A)") "excitationEnergy = ", this.excitationEnergy/eV, " eV"
 		write(*,"(A40,I15)") "numberOfEvents = ", this.numberOfEvents

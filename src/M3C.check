@@ -73,8 +73,8 @@ function checkRepeated()
 					
 					if [ "$forceRemove" = "TRUE" ]
 					then
-						echo "--> Removed (${files[$id1]})"
-						rm ${files[$id1]}
+						echo "--> Removed (${files[$id2]})"
+						rm ${files[$id2]}
 					else
 						echo ""
 					fi

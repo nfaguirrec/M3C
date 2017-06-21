@@ -45,6 +45,7 @@ RANDOM_ORIENT="TRUE"
 # Internal variables
 TABLE_HEADER="" 
 MOL_ITERATOR=1
+ENERGY_REF="0.0"
 
 ##
 # @brief
@@ -79,7 +80,7 @@ function makeLatexTableBase()
 	
 	local nFiles=`echo $files | wc -w`
 	local effSize=`echo "2.0*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
-	local effSizeBlank=`echo "0.5*$effSize" | bc -l`
+	local effSizeBlank=`echo "0.8*$effSize" | bc -l`
 	local i=0
 	
 	echo "\vspace{0.5cm}"
@@ -96,6 +97,7 @@ function makeLatexTableBase()
 		if [ $MOL_ITERATOR -eq 1 ]
 		then
 			echo "\multicolumn{`echo "$NCOLUMNS $nFiles" | gawk '{print $1<$2?$1:$2}'`}{|c|}{$TABLE_HEADER} \\\\\hline"
+			ENERGY_REF=`grep Energy $files | sort -k3 -n | head -n1 | awk '{print $3}'`
 		else
 			echo "\multicolumn{`echo "$NCOLUMNS $nFiles" | gawk '{print $1<$2?$1:$2}'`}{|c|}{$TABLE_HEADER (\textit{Continued from previous page})} \\\\\hline"
 		fi
@@ -108,19 +110,26 @@ function makeLatexTableBase()
 		
 		symm=`grep "SYMMETRY" ${f%.*}.$FILTER | gawk '{print $2}'`
 		estate=`grep "ELECTRONIC_STATE" ${f%.*}.$FILTER | gawk '{print $2}'`
+		relEnergy=`grep "Energy" ${f%.*}.$FILTER | gawk 'BEGIN{ eV=0.0367493088244753 }{printf("%10.2f",($3-('$ENERGY_REF'))/eV)}'`
 		
 		if (( $i%$NCOLUMNS != 0 && $i != $nFiles )) 
 		then
-			if [ -n "$symm" -a  -n "$estate" ]
+			if [ -n "$symm" -a  -n "$estate" -a -n "$relEnergy" ]
 			then
-				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{5pt} $estate~($symm)} &"
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{${effSizeBlank}cm} $estate~($symm) \hspace{${effSizeBlank}cm} \$$relEnergy\$~eV} &"
+			elif [ -n "$symm" -a  -n "$estate" ]
+			then
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{${effSizeBlank}cm} $estate~($symm)} &"
 			else
 				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName} &"
 			fi
 		else
-			if [ -n "$symm" -a  -n "$estate" ]
+			if [ -n "$symm" -a  -n "$estate" -a -n "$relEnergy" ]
 			then
-				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{5pt} $estate~($symm)} "
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{${effSizeBlank}cm} $estate~($symm) \hspace{${effSizeBlank}cm} \$$relEnergy\$~eV} "
+			elif [ -n "$symm" -a  -n "$estate" ]
+			then
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{${effSizeBlank}cm} $estate~($symm)} "
 			else
 				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName} "
 			fi
@@ -396,9 +405,10 @@ function geometries()
 	do
 		echo `M3C.molecule.hashKey $fileName` $fileName >> .molValues$$
 	done
-	sortedList=`sort -k1 -n .molValues$$ | awk '{print $2}'`
+	sortedList=`sort -k1 -n .molValues$$ | gawk '{print $2}'`
 	
 	MOL_ITERATOR=1
+	ENERGY_REF=`grep Energy $sortedList | sort -k3 -n | head -n1 | awk '{print $3}'`
 	makeLatexTable $sortedList >> geometries-$$.tex
 	
 	makeLatexFooter >> geometries-$$.tex

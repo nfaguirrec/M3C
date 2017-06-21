@@ -79,6 +79,7 @@ program M3C
 	GOptionsM3C_useSpinConservationRules = iParser.getLogical( "GOPTIONS:useSpinConservationRules", def=.false. )
 	GOptionsM3C_angularMomentumCouplingScheme = iParser.getString( "GOPTIONS:angularMomentumCouplingScheme", def="JJ" )
 	GOptionsM3C_structureSamplingMethod = iParser.getString( "GOPTIONS:structureSamplingMethod", def="RANDOM" )
+	GOptionsM3C_fixMultiplicity = iParser.getInteger( "GOPTIONS:fixMultiplicity", def=-1 )
 	GOptionsM3C_totalJ(3) = iParser.getReal( "GOPTIONS:totalJ", def=0.0_8 )
 	GOptions_printLevel = iParser.getInteger( "GOPTIONS:printLevel", def=1 )
 	GOptions_debugLevel = iParser.getInteger( "GOPTIONS:debugLevel", def=1 )
@@ -102,6 +103,7 @@ program M3C
 	write(*,"(A40,L)") "useSpinConservationRules = ", GOptionsM3C_useSpinConservationRules
 	write(*,"(A40,A5)") "angularMomentumCouplingScheme = ", trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)
 	write(*,"(A40,A10)") "structureSamplingMethod = ", trim(GOptionsM3C_structureSamplingMethod.fstr)
+	write(*,"(A40,I5)") "fixMultiplicity = ", GOptionsM3C_fixMultiplicity
 	write(*,"(A40,3F15.5,A)") "totalJ = ", GOptionsM3C_totalJ, " a.u."
 	write(*,"(A40,I5)") "printLevel = ", GOptions_printLevel
 	write(*,"(A40,I5)") "debugLevel = ", GOptions_debugLevel
