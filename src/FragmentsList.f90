@@ -125,7 +125,7 @@ module FragmentsList_
 
 		call this.changeVibrationalEnergy()
 		call this.changeGeometry( geometryFrom )
-		call this.changeOrientations()
+! 		call this.changeOrientations()
 		
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_section( "END BUILDING INITIAL CONFIGURATION "//trim(this.label()), indent=2 )
@@ -152,7 +152,11 @@ module FragmentsList_
 		end if
 		
 		if( present(other) ) then
-			call this.interpolateGeometryFragmentsListBase( other )
+			if( this.nFragments() == other.nFragments() ) then
+				call this.interpolateGeometryFragmentsListBase( other )
+			else
+				call this.changeGeometryFragmentsListBase()
+			end if
 		else
 			call this.changeGeometryFragmentsListBase()
 		end if

@@ -66,6 +66,8 @@ module FragmentsListBase_
 		
 		integer, allocatable :: currentProducts(:,:) !< This allows to get the current potential energy surface @see updateIntermolecularPotential
 		
+		logical :: state !< True if there was not any problem generating its state
+		
 		contains
 			generic :: init => initFragmentsListBase
 			generic :: assignment(=) => copyFragmentsListBase
@@ -189,7 +191,8 @@ module FragmentsListBase_
 		this.testLabel_ = .false.
 		
 		this.forceRandomCenters = .true.
-		this.forceInitializing = .true.
+! 		this.forceInitializing = .true.
+		this.forceInitializing = .false.
 		
 		this.totalComposition = -1
 		
@@ -197,6 +200,8 @@ module FragmentsListBase_
 		
 		if( allocated(this.currentProducts) ) deallocate(this.currentProducts)
 		allocate(this.currentProducts(nMolecules,nMolecules) )
+		
+		this.state = .true.
 	end subroutine initFragmentsListBase
 	
 	!>
@@ -255,6 +260,8 @@ module FragmentsListBase_
 		if( allocated(this.currentProducts) ) deallocate(this.currentProducts)
 		allocate( this.currentProducts( size(other.currentProducts,dim=1), size(other.currentProducts,dim=2) ) )
 		this.currentProducts = other.currentProducts
+		
+		this.state = other.state
 	end subroutine copyFragmentsListBase
 	
 	!>
@@ -692,7 +699,9 @@ module FragmentsListBase_
 		integer :: i, j, n
 		logical :: overlap
 		
-		effMaxIter = 1000000
+		this.state = .true.
+		
+		effMaxIter = 1000
 		if( present(maxIter) ) effMaxIter = maxIter
 		
 		if( GOptions_printLevel >= 3 ) then
@@ -880,11 +889,12 @@ module FragmentsListBase_
 		deallocate( sample )
 			
 		if( overlap ) then
-			call GOptions_error( &
-				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n))//")", &
-				"FragmentsListBase.randomCenters()", &
-				"Consider to increase GOptions:systemRadius" &
-				)
+			this.state = .false.
+! 			call GOptions_error( &
+! 				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n))//")", &
+! 				"FragmentsListBase.randomCenters()", &
+! 				"Consider to increase GOptions:systemRadius" &
+! 				)
 		end if
 		
 	end subroutine randomCenters
@@ -907,7 +917,9 @@ module FragmentsListBase_
 		integer :: i, j, n, lastCase
 		logical :: overlap
 		
-		effMaxIter = 100000
+		this.state = .true.
+		
+		effMaxIter = 1000
 		if( present(maxIter) ) effMaxIter = maxIter
 		
 		if( GOptions_printLevel >= 3 ) then
@@ -1059,11 +1071,12 @@ module FragmentsListBase_
 		deallocate(sample)
 		
 		if( overlap ) then
-			call GOptions_error( &
-				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n))//")", &
-				"FragmentsListBase.randomCentersByRandomWalkStep() case="//trim(FString_fromInteger(lastCase)), &
-				"Consider to increase GOptions:randomWalkStepRadius ( "//trim(this.label(details=.true.))//" )" &
-				)
+			this.state = .false.
+! 			call GOptions_error( &
+! 				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n))//")", &
+! 				"FragmentsListBase.randomCentersByRandomWalkStep() case="//trim(FString_fromInteger(lastCase)), &
+! 				"Consider to increase GOptions:randomWalkStepRadius ( "//trim(this.label(details=.true.))//" )" &
+! 				)
 		end if
 	end subroutine randomCentersByRandomWalkStep
 	
@@ -1110,6 +1123,8 @@ module FragmentsListBase_
 		real(8) :: centerOfMass(3)
 		logical :: check
 		
+		this.state = .true.
+		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsListBase()
 			return
@@ -1120,17 +1135,28 @@ module FragmentsListBase_
 		! la primera vez que entra a esta función
 		if( this.forceRandomCenters .or. ( .not. GOptionsM3C_useRandomWalkers ) ) then
 		
-			do n=1,100000
+			check = .true.
+			do n=1,1000
+				if( GOptions_printLevel >= 2 ) write(*,*) "Changing geometry avoiding atomic overlapping (step="//trim(FString_fromInteger(n))//")"
+				
 				call this.randomCenters()
 				
-				if( .not. this.atomicOverlapping() ) exit
+				if( .not. this.atomicOverlapping() ) then
+					check = .false.
+					exit
+				end if
 			end do
 			
-			this.forceRandomCenters = .false.
+! 			this.forceRandomCenters = .false.  !@todo forceRandomCenters debe desaparecer. Si no hay una configuración simplemente this.state=.false.
+			if( check ) then
+				this.state = .false.
+			end if
 		else
 			do m=1,10
 				check = .true.
-				do n=1,100000
+				do n=1,1000
+					if( GOptions_printLevel >= 2 ) write(*,*) "Changing geometry avoiding atomic overlapping (trial="//trim(trim(FString_fromInteger(m)))//",step="//trim(FString_fromInteger(n))//")"
+					
 					call this.randomCentersByRandomWalkStep()
 					
 					if( this.radius() < GOptionsM3C_systemRadius .and. .not. this.atomicOverlapping() ) then
@@ -1139,19 +1165,20 @@ module FragmentsListBase_
 					end if
 				end do
 				
-				if( check ) then
-					call this.randomCenters()
-				else
-					exit
-				end if
+! 				if( check ) then
+! 					call this.randomCenters()
+! 				else
+! 					exit
+! 				end if
 			end do
 				
 			if( check ) then
-				call GOptions_error( &
-				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n-1))//", m="//trim(FString_fromInteger(m-1))//")", &
-				"FragmentsListBase.changeGeometryFragmentsListBase()", &
-				"Consider to increase GOptions:systemRadius" &
-				)
+				this.state = .false.
+! 				call GOptions_error( &
+! 				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n-1))//", m="//trim(FString_fromInteger(m-1))//")", &
+! 				"FragmentsListBase.changeGeometryFragmentsListBase()", &
+! 				"Consider to increase GOptions:systemRadius" &
+! 				)
 			end if
 			
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1210,7 +1237,7 @@ module FragmentsListBase_
 ! 			call this.initialGuessFragmentsListBase()
 ! 			return
 ! 		end if
-		
+
 		if( this.nFragments() == other.nFragments() ) then
 		
 			do i=1,this.nMolecules()
@@ -1219,15 +1246,16 @@ module FragmentsListBase_
 			
 			if( GOptions_printLevel >= 2 ) write(*,*) "Geometry interpolated ... OK"
 			
-			call this.changeOrientationsFragmentsListBase()
+! 			call this.changeOrientationsFragmentsListBase()
 			
-			if( check ) then
-				call GOptions_error( &
-				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n-1))//")", &
-				"FragmentsListBase.interpolateGeometryFragmentsListBase()", &
-				"Consider to change the initial geometry" &
-				)
-			end if
+			! @todo No se por que tengo este bloque. Pero check nunca es asignado
+! 			if( check ) then
+! 				call GOptions_error( &
+! 				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n-1))//")", &
+! 				"FragmentsListBase.interpolateGeometryFragmentsListBase()", &
+! 				"Consider to change the initial geometry" &
+! 				)
+! 			end if
 		
 		else if( this.nFragments() > other.nFragments() ) then
 			
@@ -1280,6 +1308,9 @@ module FragmentsListBase_
 		class(FragmentsListBase) :: this
 		
 		integer :: i, n
+		logical :: check
+		
+		this.state = .true.
 		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsListBase()
@@ -1289,8 +1320,12 @@ module FragmentsListBase_
 		if( this.nMolecules() > 1 ) then
 			
 			if( GOptions_printLevel >= 2 ) write(*,"(A)", advance="no") "Checking overlaping"
-
-			do n=1,100000
+			
+			check = .true. 
+			do n=1,1000
+				
+				if( GOptions_printLevel >= 2 ) write(*,*) "Changing orientations avoiding atomic overlapping (step="//trim(FString_fromInteger(n))//")"
+				
 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 				! Caso átomo - molécula lineal
 				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1318,12 +1353,18 @@ module FragmentsListBase_
 				
 				if( GOptions_printLevel >= 2 ) then
 					write(*,*) this.atomicOverlapping()
-					call this.save("hola"//trim(FString_fromInteger(n))//".xyz")
+! 					call this.save("hola"//trim(FString_fromInteger(n))//".xyz")
 				end if
 				
-				if( .not. this.atomicOverlapping() ) exit
+				if( .not. this.atomicOverlapping() ) then
+					check = .false.
+					exit
+				end if
 			end do
-
+			
+			if( check ) then
+				this.state = .false.
+			end if
 		end if
 		
 		call this.updateLogVtheta()
@@ -1713,6 +1754,8 @@ module FragmentsListBase_
 		effMaxIter = 100000
 		if( present(maxIter) ) effMaxIter = maxIter
 		
+		this.state = .true.
+		
 ! Testing overlap
 #define OVERLAPPING(i,j) this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType )-GOptionsM3C_overlappingRadius > norm2( rVec2-rVec1 )
 ! Convertion from spherical to cartesian coordinates
@@ -1766,6 +1809,8 @@ module FragmentsListBase_
 			nSuccesses = 0
 			do n=1,effMaxIter
 				
+				if( GOptions_printLevel >= 3 ) write(*,*) "Calculating LogVfree avoiding fragments overlapping (step="//trim(FString_fromInteger(n))//")"
+				
 				call rs.uniform( sample )
 				
 				overlap = .false.
@@ -1793,11 +1838,12 @@ module FragmentsListBase_
 			deallocate( sample )
 		
 			if( nSuccesses == 0 ) then
-				call GOptions_error( &
-					"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(effMaxIter))//")", &
-					"FragmentsListBase.updateLogVfree(method=2)", &
-					"Consider to increase GOptions:systemRadius" &
-					)
+				this.state = .false.
+! 				call GOptions_error( &
+! 					"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(effMaxIter))//")", &
+! 					"FragmentsListBase.updateLogVfree(method=2)", &
+! 					"Consider to increase GOptions:systemRadius" &
+! 					)
 			end if
 			
 			! Probabilidad de generar un configuración no solapante
@@ -1925,16 +1971,17 @@ module FragmentsListBase_
 ! 				rvij = norm2( this.clusters(i).centerOfMass()-this.clusters(j).centerOfMass() )
 				rvij = norm2( this.clusters(i).center()-this.clusters(j).center() )
 				
-				if( this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType )-GOptionsM3C_overlappingRadius > rvij ) then
-					call GOptions_error( &
-						 "Overlapping configuration found", &
-						 "SMoleculeList.updateIntermolecularPotential()", &
-						 "( R1+R2 = "//&
-						 trim(FString_fromReal((this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType ))/angs,"(F5.3)"))//" A ) > " &
-						 //"( rij = "//trim(FString_fromReal(rvij/angs,"(F5.3)"))//" A ) " &
-						 //trim(this.clusters(i).label())//" --- "//trim(this.clusters(j).label()) &
-					)
-				end if
+				! @todo Esto solo ocurren en algunos casos concretos y no se porque. Esto ya deberia estar filtrado desde la generación de geometría. Cuando ocurre hay desviaciones de solo ~0.05A
+! 				if( this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType )-GOptionsM3C_overlappingRadius > rvij ) then
+! 					call GOptions_error( &
+! 						 "Overlapping configuration found", &
+! 						 "FragmentsListBase.updateIntermolecularPotential()", &
+! 						 "( R1+R2-S = "//&
+! 						 trim(FString_fromReal((this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType )-GOptionsM3C_overlappingRadius)/angs,"(F5.3)"))//" A ) > " &
+! 						 //"( rij = "//trim(FString_fromReal(rvij/angs,"(F5.3)"))//" A ) " &
+! 						 //trim(this.clusters(i).label())//" --- "//trim(this.clusters(j).label()) &
+! 					)
+! 				end if
 				
 				rBuffer = FragmentsDB_instance.potential( this.clusters(i).id, this.clusters(j).id, rvij )
 				

@@ -87,7 +87,7 @@ module Reactor_
 		real(8), intent(in) :: excitationEnergy
 		
 		call this.initReactor( reactives, excitationEnergy )
-		call this.reactives.initialGuessFragmentsList()
+		call this.reactives.initialGuessFragmentsList( this.reactives )
 	end subroutine init
 	
 	!>
@@ -819,10 +819,10 @@ module Reactor_
 				call this.products.setReactorEnergy( this.reactives.reactorEnergy() )
 				
 				! Para que fuerce los centros aleatorios en la siguiente iteración
-				this.products.forceRandomCenters = .true.
+! 				this.products.forceRandomCenters = .true.
 				
-				! Los productos utilizan parte de la energía
-				call this.products.initialGuessFragmentsList()
+				! Los productos utilizan parte de la energía y la geometria se interpola desde los reactivos
+				call this.products.initialGuessFragmentsList( this.reactives )
 				
 ! 				call this.products.changeVibrationalEnergy()
 ! 				call this.products.changeGeometry()
@@ -885,11 +885,18 @@ module Reactor_
 			write(*,"(A)") ""
 		end if
 		
-		if( this.products.kineticEnergy() < 0.0_8 ) then
-			if( GOptions_printLevel >= 2 ) then
+		if( this.products.kineticEnergy() < 0.0_8 .or. this.products.state == .false. ) then
+			if( this.products.kineticEnergy() < 0.0_8 .and. GOptions_printLevel >= 2 ) then
 				write(*,*) ""
 				write(*,*) "### Warning ### The kinetic energy is negative"
 				write(*,"(3X,A,F15.5,A)") "Kinetic Energy = ", this.products.kineticEnergy()/eV, "  eV"
+				write(*,*) "products <= reactives"
+				write(*,*) ""
+			end if
+			
+			if( this.products.state == .false. .and. GOptions_printLevel >= 2 ) then
+				write(*,*) ""
+				write(*,*) "### Warning ### products configuration detected"
 				write(*,*) "products <= reactives"
 				write(*,*) ""
 			end if
@@ -948,6 +955,7 @@ module Reactor_
 			end do
 			
 			call this.init( reactives, rBuffer )
+			reactives.forceInitializing = .true.
 			write(*,"(A40,F15.5,A)") "excitationEnergy = ", rBuffer/eV, " eV"
 		end if
 		
