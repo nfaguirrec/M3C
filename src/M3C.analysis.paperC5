@@ -1862,6 +1862,8 @@ set style line 15 lt 1 lc rgb "orange"
 # set style line 17 lt 1 lc rgb "orange"
 set style line 24 lt 1 lc rgb "orange"  # Cambia al amarillo
 
+set samples 35/0.25
+
 set y2range [-3:103.0]
 EOF
 	####################################################
@@ -1906,17 +1908,17 @@ EOF
 		
 		if [ "$smooth" = "TRUE" ]
 		then
+			errFact=0.4 # << SSeq
+# 			errFact=1.0 # << Srand
 			if (( $i != $nChannels ))
 			then
-				echo "'matrix.data' u 1:$yCol:(4e1/abs(1e-4+$errCol)) smooth acsplines notitle w l ls $i lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
-				echo "'matrix.data' u 1:$yCol:$errCol notitle w yerrorbars ls $i pt $i ps 0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$
+				echo "'matrix.data' u 1:$yCol:(4e1/abs(1e-4+$errCol)) smooth acsplines notitle w lp ls $i pt $i ps $M3C_PLOT_LW/4.0 lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
+				echo "'matrix.data' u 1:$yCol:($errFact*$errCol) notitle w yerrorbars ls $i pt $i ps 0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$
 				echo "'matrix.data' u 1:($yCol+1000.0):$errCol t '${keys[$(($i-1))]}' w lp ls $i pt $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$
-				echo "'matrix.data' u 1:$yCol:$errCol notitle w p ls $i pt $i ps $M3C_PLOT_LW/3.0, \\" >> .plotMtj-$iFile$$
 			else
-				echo "'matrix.data' u 1:$yCol:(4e1/abs(1e-4+$errCol)) smooth acsplines notitle w l ls $i lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$   # Lineas de la figura
-				echo "'matrix.data' u 1:$yCol:$errCol notitle w yerrorbars ls $i pt $i ps 0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$                # Lineas de las barras de error
-				echo "'matrix.data' u 1:($yCol+1000.0):$errCol t '${keys[$(($i-1))]}' w lp ls $i pt $i lw $M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$         # Lineas y puntos de los keys
-				echo "'matrix.data' u 1:$yCol:$errCol notitle w p ls $i pt $i ps $M3C_PLOT_LW/3.0" >> .plotMtj-$iFile$$                                  # Puntos de la figura
+				echo "'matrix.data' u 1:$yCol:(4e1/abs(1e-4+$errCol)) smooth acsplines notitle w lp ls $i pt $i ps $M3C_PLOT_LW/4.0 lw 1.5*$M3C_PLOT_LW, \\" >> .plotMtj-$iFile$$   # Lineas de la figura
+				echo "'matrix.data' u 1:$yCol:($errFact*$errCol) notitle w yerrorbars ls $i pt $i ps 0 lw $M3C_PLOT_LW/6.0, \\" >> .plotMtj-$iFile$$                # Lineas de las barras de error
+				echo "'matrix.data' u 1:($yCol+1000.0):$errCol t '${keys[$(($i-1))]}' w lp ls $i pt $i lw $M3C_PLOT_LW" >> .plotMtj-$iFile$$         # Lineas y puntos de los keys
 			fi
 		else
 			if (( $i != $nChannels ))
@@ -2419,9 +2421,15 @@ set mytics 5
 # "" u :3:4 notitle w l lt 0 lw 2 lc rgb "blue", \
 # "" u :2:xtic(1) t "theoretical" w lp ps 1.0 pt 4 lt 0 lw 2 lc rgb "red"
 
+# yMax = 35.0
+yMax = 60
+
 set style fill transparent pattern 7 bo
 # plot [-1.5:$nChannels+1.5] [-$yMax*0.1:$yMax*1.1]
-plot [-1.5:$nChannels+1.5] [-40.0*0.1:40.0*1.1] \
+
+# plot [-1.5:$nChannels+1.5] [25:65] \  <<<< Para el C5 parte de arriba
+
+plot [-1.5:$nChannels+1.5] [-yMax*0.1:yMax*1.1] \
 "$BRFile" u :2:(0.5):xtic(1) t "Theo." w boxes lt 1 lw 1.0 lc rgb "red", \
 "" u :3:(0.8) notitle w boxes lt 1 lw 1.5 lc rgb "black", \
 "" u :3:4 t "Exp." w yerrorbars pt 7 ps 0.5 lw 2.0 lc rgb "black"
@@ -3044,127 +3052,127 @@ EOF
 ####################################
 function main()
 {
-	# c:: esto es para argumentos cuyo valor es opcional -c2.3 y argumento largo es c-long:: para --c-long=2.3
+# 	# c:: esto es para argumentos cuyo valor es opcional -c2.3 y argumento largo es c-long:: para --c-long=2.3
+# # 	TEMP=`getopt \
+# # 		-o i:c:s:h:bh:f:n: \
+# # 		--long ifile:,channels:,species:,history:,bratio:,histogram:,filter:,energyID: \
+# # 		-n 'M3C.analysis' -- "$@"`
+# 
 # 	TEMP=`getopt \
-# 		-o i:c:s:h:bh:f:n: \
-# 		--long ifile:,channels:,species:,history:,bratio:,histogram:,filter:,energyID: \
+# 		-o bi:d:nf:s \
+# 		--long breakDownCurves,iFile:,diagram:,normalize,filter:,smooth \
 # 		-n 'M3C.analysis' -- "$@"`
-
-	TEMP=`getopt \
-		-o bi:d:nf:s \
-		--long breakDownCurves,iFile:,diagram:,normalize,filter:,smooth \
-		-n 'M3C.analysis' -- "$@"`
-
-# 	if [ $? != 0 ]
-# 	then
-# 		echo "Terminating..." >&2
-# 		exit 1
-# 	fi
-# 	
-	eval set -- "$TEMP"
-	while true
-	do
-		echo "Hola0 $1"
-		
-		case "$1" in
-			-b|--breakDownCurves)
-				shift
-				
-				while true
-				do
-					echo "Hola1 $1"
-					
-					case "$1" in
-						-i|--iFile)
-							local iFile=$2
-							shift 2
-							;;
-						-d|--diagram)
-							local diagram=$2
-							shift 2
-							;;
-						-n|--normalize)
-							local normalize="TRUE"
-							shift 1
-							;;
-						-f|--filter)
-							FILTER=$2
-							shift 2
-							;;
-						-s|--smooth)
-							smooth="TRUE"
-							shift 1
-							;;
-						--)
-							echo " Available options"
-							echo "-------------------"
-							echo ""
-							echo "       -i file"
-							echo "       --iFile ifile"
-							echo "              Read the M3C input file   "
-							echo ""
-							echo "       -d key"
-							echo "       --diagram key"
-							echo "              Kind of diagram to plot C.vs.E|S.vs.E|Cd.vs.E|Sd.vs.E"
-							echo ""
-							echo "       -n"
-							echo "       --normalize"
-							echo ""
-							echo "       -f"
-							echo "       --filter"
-							echo ""
-							echo "       -s"
-							echo "       --smooth"
-							echo ""
-							shift 1
-							break
-							;;
-						*)
-							echo "Unknown option for brake down curves ($1)"
-							shift 1
-							exit 1
-							;;
-					esac
-				done
-
-				energyDiagram "${iFile%.*}.data/" "$diagram" "$normalize" "$smooth"
-				exit
-				;;
-			-a|--a-long)
-				echo "Option a"
-				shift
-				;;
-			-b|--b-long)
-				# Este tiene un argumento por eso el shift 2
-				echo "Option b, argument \`$2'"
-				shift 2
-				;;
-			-c|--c-long) 
-				# c has an optional argument. As we are in quoted mode,
-				# an empty parameter will be generated if its optional
-				# argument is not found.
-				case "$2" in
-					"")
-						echo "Option c, no argument"
-						shift 2
-						;;
-					*)
-						echo "Option c, argument \`$2'"
-						shift 2
-						;;
-				esac
-				;;
-			--)
-				shift
-				break
-				;;
-			*)
-				echo "Internal error!"
-				exit 1
-				;;
-		esac
-	done
-# 	exit
+# 
+# # 	if [ $? != 0 ]
+# # 	then
+# # 		echo "Terminating..." >&2
+# # 		exit 1
+# # 	fi
+# # 	
+# 	eval set -- "$TEMP"
+# 	while true
+# 	do
+# 		echo "Hola0 $1"
+# 		
+# 		case "$1" in
+# 			-b|--breakDownCurves)
+# 				shift
+# 				
+# 				while true
+# 				do
+# 					echo "Hola1 $1"
+# 					
+# 					case "$1" in
+# 						-i|--iFile)
+# 							local iFile=$2
+# 							shift 2
+# 							;;
+# 						-d|--diagram)
+# 							local diagram=$2
+# 							shift 2
+# 							;;
+# 						-n|--normalize)
+# 							local normalize="TRUE"
+# 							shift 1
+# 							;;
+# 						-f|--filter)
+# 							FILTER=$2
+# 							shift 2
+# 							;;
+# 						-s|--smooth)
+# 							smooth="TRUE"
+# 							shift 1
+# 							;;
+# 						--)
+# 							echo " Available options"
+# 							echo "-------------------"
+# 							echo ""
+# 							echo "       -i file"
+# 							echo "       --iFile ifile"
+# 							echo "              Read the M3C input file   "
+# 							echo ""
+# 							echo "       -d key"
+# 							echo "       --diagram key"
+# 							echo "              Kind of diagram to plot C.vs.E|S.vs.E|Cd.vs.E|Sd.vs.E"
+# 							echo ""
+# 							echo "       -n"
+# 							echo "       --normalize"
+# 							echo ""
+# 							echo "       -f"
+# 							echo "       --filter"
+# 							echo ""
+# 							echo "       -s"
+# 							echo "       --smooth"
+# 							echo ""
+# 							shift 1
+# 							break
+# 							;;
+# 						*)
+# 							echo "Unknown option for brake down curves ($1)"
+# 							shift 1
+# 							exit 1
+# 							;;
+# 					esac
+# 				done
+# 
+# 				energyDiagram "${iFile%.*}.data/" "$diagram" "$normalize" "$smooth"
+# 				exit
+# 				;;
+# 			-a|--a-long)
+# 				echo "Option a"
+# 				shift
+# 				;;
+# 			-b|--b-long)
+# 				# Este tiene un argumento por eso el shift 2
+# 				echo "Option b, argument \`$2'"
+# 				shift 2
+# 				;;
+# 			-c|--c-long) 
+# 				# c has an optional argument. As we are in quoted mode,
+# 				# an empty parameter will be generated if its optional
+# 				# argument is not found.
+# 				case "$2" in
+# 					"")
+# 						echo "Option c, no argument"
+# 						shift 2
+# 						;;
+# 					*)
+# 						echo "Option c, argument \`$2'"
+# 						shift 2
+# 						;;
+# 				esac
+# 				;;
+# 			--)
+# 				shift
+# 				break
+# 				;;
+# 			*)
+# 				echo "Internal error!"
+# 				exit 1
+# 				;;
+# 		esac
+# 	done
+# # 	exit
 
 	local iFile=$1
 	local id=""
@@ -3189,8 +3197,8 @@ function main()
 			FILTER="$3"
 		fi
 		
-		echo "energyDiagram ${iFile%.*}.data/---$2---$3---$4---$5---$6---"
-		exit
+# 		echo "energyDiagram ${iFile%.*}.data/---$2---$3---$4---$5---$6---"
+# 		exit
 		
 		energyDiagram "${iFile%.*}.data/" "$2" "$4" "$5"
 		exit

@@ -1,0 +1,7 @@
+#p b3lyp/6-311G opt(MaxCycles=200) Symmetry=None
+
+ b3lyp opt
+
+@CHARGE @MULT
+@GEOMETRY
+

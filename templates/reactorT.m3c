@@ -1,0 +1,28 @@
+BEGIN GOPTIONS
+        systemRadius = 2.0
+        overlappingRadius = 0.3
+        
+        randomWalkStepRadius = 0.5
+        useRandomWalkers = TRUE
+	useWeightedWalkStep = TRUE
+END GOPTIONS
+
+BEGIN REACTOR
+        type = T
+
+        reactives = file:products.xyz
+        excitationEnergy = 10.0
+
+        geomProductsFile = products.xyz
+END REACTOR
+
+BEGIN FRAGMENTS_DATABASE
+        #---------------------------------------------------------
+        # Label    Z  M  L  SYM         geomFile            Eelec 
+        #                                   Angs               eV 
+        #---------------------------------------------------------
+              C    0  1  0    0           C.xyz         0.000000
+              H    0  1  0    0           H.xyz         0.000000
+              O    0  1  0    0           O.xyz         0.000000
+        #---------------------------------------------------------
+END FRAGMENTS_DATABASE

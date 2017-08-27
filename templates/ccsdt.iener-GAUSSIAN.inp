@@ -1,0 +1,7 @@
+#p ccsd(t,maxcyc=200)/6-311++G(3df,2p)
+
+ ccsd(t) iener
+
+@CHARGE @MULT
+@GEOMETRY
+
