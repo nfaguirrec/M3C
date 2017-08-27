@@ -1,19 +1,19 @@
 #####################################################################################
 #                                                                                   #
 # This file is part of M3C project                                                  #
-# Copyright (c) 2012-2016 Departamento de Química                                   #
+# Copyright (c) 2013-2016 Departamento de Química                                   #
 #                         Universidad Autónoma de Madrid                            #
 #                         All rights reserved.                                      #
 #                                                                                   #
-#                         * Néstor F. Aguirre (2012-2016)                           #
+#                         * Néstor F. Aguirre (2013-2016)                           #
 #                           nestor.aguirre@uam.es                                   #
-#                         * Sergio Díaz-Tendero (2012-2016)                         #
+#                         * Sergio Díaz-Tendero (2013-2016)                         #
 #                           sergio.diaztendero@uam.es                               #
-#                         * M. Paul-Antoine Hervieux (2012-2015)                    #
+#                         * M. Paul-Antoine Hervieux (2013-2015)                    #
 #                           Paul-Antoine.Hervieux@ipcms.unistra.fr                  #
-#                         * Manuel Alcamí (2012-2016)                               #
+#                         * Manuel Alcamí (2013-2016)                               #
 #                           manuel.alcami@uam.es                                    #
-#                         * Fernando Martín (2012-2016)                             #
+#                         * Fernando Martín (2013-2016)                             #
 #                           fernando.martin@uam.es                                  #
 #                                                                                   #
 #  Redistribution and use in source and binary forms, with or without               #
