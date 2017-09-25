@@ -1,0 +1,11 @@
+# Setup
+name:         M3C
+tagline:      Metropolis Microcanonical Monte Carlo
+baseurl:      "/M3C"
+
+# Gems
+gems:
+  - jekyll-paginate
+
+#Others
+markdown: kramdown
