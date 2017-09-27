@@ -1,6 +1,6 @@
 # Setup
 name:         M3C
-tagline:      Metropolis Microcanonical Monte Carlo
+tagline:      Microcanonical Metropolis Monte Carlo
 baseurl:      "/M3C"
 
 # Gems
