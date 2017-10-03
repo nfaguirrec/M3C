@@ -50,25 +50,6 @@
 #                                                                                   #
 #####################################################################################
 
-
-
-#    * Juan Pablo Sánchez
-#      juanp.sanchez@uam.es (2015-2015)
-#  
-#  Redistribution and use in source and binary forms, with or
-#  without modification, are permitted provided that the
-#  following conditions are met:
-#  
-#   * Redistributions of binary or source code must retain
-#     the above copyright notice and this list of conditions
-#     and/or other materials provided with the distribution.
-#   * All advertising materials mentioning features or use of
-#     this software must display the following acknowledgement:
-#     
-#     This product includes software from M3C project.
-#
-##################################################################
-
 FILTER="rxyz"
 NCOLUMNS=8
 NROWS=14
@@ -80,6 +61,7 @@ RANDOM_ORIENT="TRUE"
 # Internal variables
 TABLE_HEADER="" 
 MOL_ITERATOR=1
+ENERGY_REF="0.0"
 
 ##
 # @brief
@@ -114,7 +96,7 @@ function makeLatexTableBase()
 	
 	local nFiles=`echo $files | wc -w`
 	local effSize=`echo "2.0*$SIZE/100.0" | bc -l`  # cm   1.6 for 100px
-	local effSizeBlank=`echo "0.5*$effSize" | bc -l`
+	local effSizeBlank=`echo "0.8*$effSize" | bc -l`
 	local i=0
 	
 	echo "\vspace{0.5cm}"
@@ -131,6 +113,7 @@ function makeLatexTableBase()
 		if [ $MOL_ITERATOR -eq 1 ]
 		then
 			echo "\multicolumn{`echo "$NCOLUMNS $nFiles" | gawk '{print $1<$2?$1:$2}'`}{|c|}{$TABLE_HEADER} \\\\\hline"
+			ENERGY_REF=`grep Energy $files | sort -k3 -n | head -n1 | awk '{print $3}'`
 		else
 			echo "\multicolumn{`echo "$NCOLUMNS $nFiles" | gawk '{print $1<$2?$1:$2}'`}{|c|}{$TABLE_HEADER (\textit{Continued from previous page})} \\\\\hline"
 		fi
@@ -139,23 +122,32 @@ function makeLatexTableBase()
 	i=1
 	for f in $files
 	do
+		textFileName=`echo ${f%.*} | sed 's/_/\\\_/g'`
+		
 		symm=`grep "SYMMETRY" ${f%.*}.$FILTER | gawk '{print $2}'`
 		estate=`grep "ELECTRONIC_STATE" ${f%.*}.$FILTER | gawk '{print $2}'`
+		relEnergy=`grep "Energy" ${f%.*}.$FILTER | gawk 'BEGIN{ eV=0.0367493088244753 }{printf("%10.2f",($3-('$ENERGY_REF'))/eV)}'`
 		
 		if (( $i%$NCOLUMNS != 0 && $i != $nFiles )) 
 		then
-			if [ -n "$symm" -a  -n "$estate" ]
+			if [ -n "$symm" -a  -n "$estate" -a -n "$relEnergy" ]
 			then
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} ${f%.*} \hspace{5pt} $estate~($symm)} &"
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{${effSizeBlank}cm} $estate~($symm) \hspace{${effSizeBlank}cm} \$$relEnergy\$~eV} &"
+			elif [ -n "$symm" -a  -n "$estate" ]
+			then
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{${effSizeBlank}cm} $estate~($symm)} &"
 			else
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} ${f%.*}} &"
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName} &"
 			fi
 		else
-			if [ -n "$symm" -a  -n "$estate" ]
+			if [ -n "$symm" -a  -n "$estate" -a -n "$relEnergy" ]
 			then
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} ${f%.*} \hspace{5pt} $estate~($symm)} "
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{${effSizeBlank}cm} $estate~($symm) \hspace{${effSizeBlank}cm} \$$relEnergy\$~eV} "
+			elif [ -n "$symm" -a  -n "$estate" ]
+			then
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName \hspace{${effSizeBlank}cm} $estate~($symm)} "
 			else
-				echo "\includegraphics[width=${effSize}cm]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} ${f%.*}} "
+				echo "\includegraphics[width=${effSize}cm,height=${effSize}cm,keepaspectratio]{${f%.*}.eps} \tiny{${MOL_ITERATOR} \hspace{${effSizeBlank}cm} $textFileName} "
 			fi
 			
 			if (( $i != $nFiles ))
@@ -195,6 +187,7 @@ function makeLatexTable()
 	for item in `ls *.mkgroup`
 	do
 		list=`cat $item`
+# 		list=`cat $item | sed 's/:Energy =//g' | sort -k2 -n | awk '{print $1}'`
 		
 		makeLatexTableBase $list
 	done
@@ -370,14 +363,15 @@ function geometriesByCategories()
 		if [ -z "$mult" ]; then mult=0; fi
 		if [ -z "$id" ]; then id=0; fi
 		
-		echo $((100000000*$charge+10000000*$nAtoms+1000*$mass+100*$mult+$id)) $fileName $energy >> .molValues$$
+# 		echo $((100000000*$charge+10000000*$nAtoms+1000*$mass+100*$mult+$id)) $fileName $energy >> .molValues$$
+		echo `M3C.molecule.hashKey $fileName` $fileName `molecule.chemicalFormula $fileName` $energy >> .molValues$$
 	done
 	
-	categories=`sort -k1 -n .molValues$$ | gawk '{ gsub("[.].*","",$2); if( $2 in map ){ a=1 }else{ print $2 }; map[$2]=1 }'`
+	categories=`sort -k1 -n .molValues$$ | gawk '{ if( $3 in map ){ a=1 }else{ print $3 }; map[$3]=1 }'`
 	
 	for item in $categories
 	do
-		list=`grep " $item[.].*" .molValues$$ | sort -k1 -n | gawk '{print $2}'`
+		list=`awk '($3=="'$item'"){print $0}' .molValues$$ | sort -k1 -n | gawk '{print $2}'`
 		
 		TABLE_HEADER=`echo $item | sed -r 's/([[:alpha:]]+)([[:digit:]]+)/\1\\$_{\2}\\$/g'`
 		
@@ -421,8 +415,17 @@ function geometries()
 	
 	makeLatexHeader > geometries-$$.tex
 	
+	cat /dev/null > .molValues$$
+	ls *.$FILTER \
+	| while read fileName
+	do
+		echo `M3C.molecule.hashKey $fileName` $fileName >> .molValues$$
+	done
+	sortedList=`sort -k1 -n .molValues$$ | gawk '{print $2}'`
+	
 	MOL_ITERATOR=1
-	makeLatexTable `ls *.$FILTER` >> geometries-$$.tex
+	ENERGY_REF=`grep Energy $sortedList | sort -k3 -n | head -n1 | awk '{print $3}'`
+	makeLatexTable $sortedList >> geometries-$$.tex
 	
 	makeLatexFooter >> geometries-$$.tex
 
@@ -492,8 +495,8 @@ function main()
 	###### Reading from input line######
 	local oType=$1  # unsorted|sorted|gif
 	FILTER=$2  # xyz
-	NCOLUMNS=$3  # 5
-	NROWS=$4  # 7
+	NCOLUMNS=$3  # 6
+	NROWS=$4  # 8
 	ZOOM=$5  # IN | 30 | 50
 	SIZE=$6  # 100
 	ORIENT=$7 # TRUE
@@ -505,10 +508,10 @@ function main()
 	##### Defining default values ######
 	if [ -z "$oType" ] ; then oType="none"; fi
 	if [ -z "$FILTER" ] ; then FILTER="xyz";fi
-	if [ -z "$NCOLUMNS" ] ; then NCOLUMNS=5; fi
-	if [ -z "$NROWS" ] ; then NROWS=7; fi
-	if [ -z "$ZOOM" ] ; then ZOOM="120"; fi
-	if [ -z "$SIZE" ] ; then SIZE="120"; fi
+	if [ -z "$NCOLUMNS" ] ; then NCOLUMNS=6; fi
+	if [ -z "$NROWS" ] ; then NROWS=8; fi
+	if [ -z "$ZOOM" ] ; then ZOOM="100"; fi
+	if [ -z "$SIZE" ] ; then SIZE="100"; fi
 	if [ -z "$ORIENT" ] ; then ORIENT="TRUE"; fi
 	if [ -z "$RANDOM_ORIENT" ] ; then RANDOM_ORIENT="FALSE"; fi
 	####################################
@@ -553,7 +556,7 @@ function main()
 			;;
 		*)
 			echo "Usage: M3C.viewXYZ (u-pdf|s-pdf|pdf|gif) (xyz|rxyz) [number-of-columns] [number-of-rows] [zoom] [size] [orient] [random] [highlight-list]"
-			echo "defaults:                                                    5                  7         120    120     TRUE    FALSE                  "
+			echo "defaults:                                                    6                  8         100    100     TRUE    FALSE                  "
 			echo ""
 			echo "   @@ WARNING @@ Option to highlight molecules has been disabled in this version"
 			;;
