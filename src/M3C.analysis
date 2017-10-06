@@ -1727,7 +1727,7 @@ function reactionsDiagram()
 	
 	if [ -n "`which dot`" ]
 	then
-		dot -Tpng .dataReac-$$.dot > reactions.png
+		dot -Tpng -Nstyle=filled -Nfillcolor=skyblue .dataReac-$$.dot > reactions.png
 	else
 		echo "### ERROR ### dot command is not available. Please install graphviz"
 		echo "              sudo apt-get install graphviz"
@@ -3037,8 +3037,8 @@ function allowedReactionsDiagram()
         if [ -n "`which dot`" ]
         then
 		echo "Executing:"
-		echo "           dot -O -Tpng ${iFile%.*}.dot"
-		dot -O -Tpng ${iFile%.*}.dot
+		echo "           dot -O -Tpng -Nstyle=filled -Nfillcolor=skyblue ${iFile%.*}.dot"
+		dot -O -Tpng -Nstyle=filled -Nfillcolor=skyblue ${iFile%.*}.dot
 	fi
 	
         if [ -n "`echo $DISPLAY`" ] 
