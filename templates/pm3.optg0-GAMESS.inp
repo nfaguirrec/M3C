@@ -1,0 +1,10 @@
+$contrl runtyp = optimize icharg = @CHARGE mult = @MULT $end
+$basis gbasis = pm3 $end
+$statpt projct =. f . nstep =50 $end
+$system timlim =600000 memory =2500000 $end
+$data
+pm3
+c1
+@GEOMETRY
+$end
+

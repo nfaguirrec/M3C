@@ -1,0 +1,11 @@
+ $contrl dfttyp=b3lyp runtyp=optimize
+  maxit=200 icharg=@CHARGE mult=@MULT $end
+ $basis gbasis=N311 ngauss=6 $end
+ $statpt projct=.f. nstep =200 $end
+ $system timlim=600000 memory=2500000 $end
+ $data
+ b3lyp
+ c1
+ @GEOMETRY
+ $end
+
