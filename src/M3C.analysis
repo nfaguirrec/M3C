@@ -1974,8 +1974,8 @@ EOF
 		smoothStrength=4e3
 # 		smoothThr="1e-9"
 		smoothThr="1e-4"
-# 		errFact=0.4 # << SSeq
-		errFact=1.0 # << Srand
+		errFact=0.4 # << SSeq
+# 		errFact=1.0 # << Srand
 		
 		if [ "$smooth" = "TRUE" ]
 		then
@@ -2839,6 +2839,7 @@ plot [-0.1*maxMZ:maxMZ+0.1*maxMZ] [-5:125] \
 ".$BRFile-tmp$$" u 1:(100*\$4/maxI_exp) t "Experimental" w impulses lc rgb "red" lw 4, \
 "" u 1:(100*\$3/maxI_theo) t "Theoretical" w points pt 7 ps 0.9 lc rgb "blue", \
 "" u 1:(100*\$3/maxI_theo) notitle w points pt 7 ps 0.3 lc rgb "white", \
+"" u 1:(100*\$3/maxI_theo) notitle w impulses lc rgb "blue", \
 "" u (\$1):(100*max(\$3/maxI_theo,\$4/maxI_exp)+5.0):2 notitle w labels left font "Serif,8" rotate by 90
 
 # plot [0:] [-5:105] \
