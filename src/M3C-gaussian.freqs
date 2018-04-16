@@ -104,8 +104,8 @@ main()
 	mkdir history.freqs
 
 	xyzFile=( `ls *.xyz` )
-	charge=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'` )
-	mult=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'` )
+	charge=( `ls *.xyz | gawk 'BEGIN{FS="[.]+"}{print $2}' | sed 's/q//g'` )
+	mult=( `ls *.xyz | gawk 'BEGIN{FS="[.]+"}{print $3}' | sed -r 's/-[[:digit:]]+$//g' | sed 's/m//g'` )
 	
 	#-----------------------------------------------------------------------
 	
