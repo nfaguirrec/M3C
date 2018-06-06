@@ -1,0 +1,129 @@
+#!/bin/bash
+#####################################################################################
+#                                                                                   #
+# This file is part of M3C project                                                  #
+# Copyright (c) by authors                                                          #
+#                                                                                   #
+#  Authors:                                                                         #
+#                         * Néstor F. Aguirre (2017-2017)                           #
+#                           nfaguirrec@gmail.com                                    #
+#                                                                                   #
+#  Redistribution and use in source and binary forms, with or without               #
+#  modification, are permitted provided that the following conditions are met:      #
+#                                                                                   #
+#  1. Redistributions of source code must retain the above copyright notice, this   #
+#     list of conditions and the following disclaimer.                              #
+#  2. Redistributions in binary form must reproduce the above copyright notice,     #
+#     this list of conditions and the following disclaimer in the documentation     #
+#     and/or other materials provided with the distribution.                        #
+#  3. Neither the name of the copyright holders nor the names of its contributors   #
+#     may be used to endorse or promote products derived from this software         #
+#     without specific prior written permission.                                    #
+#                                                                                   #
+#  The copyright holders provide no reassurances that the source code provided      #
+#  does not infringe any patent, copyright, or any other intellectual property      #
+#  rights of third parties.  The copyright holders disclaim any liability to any    #
+#  recipient for claims brought against recipient by any third party for            #
+#  infringement of that parties intellectual property rights.                       #
+#                                                                                   #
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND  #
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED    #
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE           #
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR  #
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES   #
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;     #
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND      #
+#  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT       #
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS    #
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                     #
+#                                                                                   #
+#####################################################################################
+
+ADF_TEMPLATE=$1
+NPROCSHARED=$2
+
+##############################
+# Default options
+##############################
+if [ -z "$ADF_TEMPLATE" ]
+then
+	echo "usage: M3C-adf.optg adfTemplate [ nProcShared ]"
+	echo "                                       1       "
+	exit
+fi
+
+# if [ -z "`grep -i "^\s*TOTALENERGY\s*$" $ADF_TEMPLATE`" ]
+# then
+# 	echo "### Error ### TOTALENERGY keyword shoul be present in the ADF template ($ADF_TEMPLATE)"
+# 	exit
+# fi
+
+[ -z "$NPROCSHARED" ] && NPROCSHARED=1
+##############################
+
+if [ -f "$M3C_HOME/bin/adfDriver.sh" ]
+then
+	source $M3C_HOME/bin/adfDriver.sh
+else
+	source $M3C_HOME/src/adfDriver.sh
+fi
+
+if [ -f "$M3C_HOME/bin/parallel.sh" ]
+then
+	source $M3C_HOME/bin/parallel.sh
+else
+	source $M3C_HOME/src/parallel.sh
+fi
+
+function optgeom()
+{
+	local iFileXYZ=$1
+	local charge=$2
+	local mult=$3
+	
+	cp $iFileXYZ ${iFileXYZ%.*}.xyz0
+	optgADFTemplate $ADF_TEMPLATE $NPROCSHARED ${iFileXYZ%.*}.xyz0 $charge $mult > ${iFileXYZ%.*}.xyz
+	mv ${iFileXYZ%.*}.out history.optg/ 2> /dev/null
+	mv ${iFileXYZ%.*}.adf history.optg/ 2> /dev/null
+	mv ${iFileXYZ%.*}.t21 history.optg/ 2> /dev/null
+}
+
+function main()
+{
+	local xyzFile=""
+	local charge=""
+	local mult=""
+	
+	local i=0
+	local j=0
+	local ij=0
+	
+	if [ -z "$M3C_NTHREADS" ]
+	then
+		M3C_NTHREADS=`cat /proc/cpuinfo | grep processor | wc -l`
+	fi
+	nThreads=$(( $M3C_NTHREADS/$NPROCSHARED ))
+	
+	if [ -d "history.optg" ]
+	then
+		echo "@@@ WARNING @@@ There is already a history directory (history.optg). Backup copy will be generated"
+		mv history.optg history.optg.backup-`date +%Y%m%d`
+	fi
+	mkdir history.optg
+	
+	xyzFile=( `ls *.xyz` )
+	charge=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'` )
+	mult=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'` )
+	
+	cat /dev/null > .commands$$
+	for (( i=0; i<${#xyzFile[@]}; i++ ))
+	do
+		echo "optgeom ${xyzFile[$i]} ${charge[$i]} ${mult[$i]}" >> .commands$$
+	done
+	
+	parallel .commands$$ $nThreads
+	rm .commands$$
+}
+
+main $*
+

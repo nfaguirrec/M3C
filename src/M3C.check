@@ -80,7 +80,7 @@ function filterIsomers()
 		
 		local files=(`ls $category-*.$FILTER 2> /dev/null`)
 		
-		for id1 in `seq 0 $(( ${#files[@]} - 1 ))`
+		for id1 in `seq 0 $(( ${#files[@]} - 2 ))`
 		do
 			for id2 in `seq $(( $id1 + 1 )) $(( ${#files[@]} - 1 ))`
 			do
@@ -104,8 +104,6 @@ function filterIsomers()
 					else
 						echo ""
 					fi
-					
-					break
 				else
 					echo "Different"
 				fi
