@@ -113,7 +113,8 @@ module Fragment_
 			procedure, private :: updateFormula
 			procedure :: label
 			
-			procedure, private :: loadRXYZ
+! 			procedure, private :: loadRXYZ
+			procedure :: loadRXYZ
 			procedure, private :: loadMOLDEN
 			
 			procedure :: changeVibrationalEnergy
