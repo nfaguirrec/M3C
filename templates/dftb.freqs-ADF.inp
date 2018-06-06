@@ -1,0 +1,21 @@
+Task
+  RunType Frequencies
+End
+
+System
+  Atoms
+@GEOMETRY
+  End
+  
+  Charge @CHARGE
+End
+
+DFTB
+  ResourcesDir DFTB.org/tiorg-0-1
+  Model SCC-DFTB
+::  SCC
+::     Unrestricted yes|no
+::  End
+::  UnpairedElectrons @NSPIN
+End
+

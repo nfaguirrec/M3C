@@ -1,0 +1,25 @@
+Task
+  RunType GeometryOptimization
+End
+
+System
+  Atoms
+@GEOMETRY
+  End
+  
+  Charge @CHARGE
+End
+
+DFTB
+  ResourcesDir DFTB.org/tiorg-0-1
+  Model SCC-DFTB
+::  SCC
+::     Unrestricted yes|no
+::  End
+::  UnpairedElectrons @NSPIN
+End
+
+Geometry
+  Iterations 500
+::  Converge E=3.67e-7 Grad=3.67e-7 Rad=1e-3
+End

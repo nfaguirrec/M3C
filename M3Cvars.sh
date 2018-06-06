@@ -16,6 +16,14 @@ then
 	# GAUSSIAN configuration
 	export M3C_GAUSSIAN_HOME=$HOME/.gaussian09
 	export M3C_GAUSSIAN_SCRATCH=/scratch/$USER/gaussian
+	
+	# ADF configuration
+	export M3C_ADF_HOME=$HOME/.adf
+	export M3C_ADF_SCRATCH=/scratch/$USER/adf
+	
+	# NWCHEM configuration
+	export M3C_NWCHEM_HOME=$HOME/.nwchem
+	export M3C_NWCHEM_SCRATCH=/scratch/$USER/nwchem
 else
 	export PATH=$M3C_HOME/bin:$PATH
 	export PATH=$M3C_HOME/utils:$PATH

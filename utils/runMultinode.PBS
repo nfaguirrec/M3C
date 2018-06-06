@@ -1,0 +1,66 @@
+#!/bin/bash
+#PBS -q default
+#PBS -l nodes=4:ppn=32,walltime=72:00:00
+###PBS --account=-- # There is not equivalence for QOS in PBS
+###PBS --qos=-- # There is not equivalence for QOS in PBS
+#PBS -N multiNode
+#PBS -o PBS.log
+#PBS -e PBS.err
+
+#--------------------------------------------------------------------------
+# User variables
+NPROCSHARED=4
+targetExtension="*.xyz"
+historyDir="history.freqs"
+command="M3C-nwchem.freqs ../b3lyp.freqs-NWCHEM.inp $NPROCSHARED"
+
+# NPROCSHARED=4
+# targetExtension="*.xyz"
+# historyDir="history.optg"
+# command="M3C-nwchem.optg ../b3lyp.optg-NWCHEM.inp $NPROCSHARED"
+#--------------------------------------------------------------------------
+
+nNodes=$PBS_NUM_NODES
+workDir=$PBS_O_WORKDIR
+nodeName=( `cat $PBS_NODEFILE | awk '{map[$1]=1}END{for(k in map) print k}'` )
+
+cd $workDir
+
+nElem=`ls $targetExtension | wc -w`
+nElemPerNode=`echo "$nElem $nNodes" | awk '{v=$1/$2; if(v==int(v)) print int(v); else print int(v+1)}'`
+
+i=0; nodeId=-1
+for f in `ls $targetExtension`
+do
+	if (( $i%$nElemPerNode==0 ))
+	then
+		nodeId=$(($nodeId+1))
+		mkdir ${nodeName[$nodeId]}
+	fi
+	
+	echo "$f --> ${nodeName[$nodeId]}"
+	cp $f ${nodeName[$nodeId]}/
+	i=$(($i+1))
+done
+
+for (( i=0; i<${#nodeName[@]}; i++ ))
+do
+	ssh -o StrictHostKeyChecking=no ${nodeName[$i]} "[ -f ~/.bash_profile ] && source ~/.bash_profile; [ -f ~/.bashrc ] && source ~/.bashrc; cd $workDir/${nodeName[$i]}; $command" &
+done
+
+wait
+
+if [ -d "$historyDir" ]
+then
+        echo "@@@ WARNING @@@ There is already a history directory (history.freqs). Backup copy will be generated"
+        mv $historyDir $historyDir.backup-`date +%Y%m%d`
+fi
+mkdir $historyDir
+
+for (( i=0; i<${#nodeName[@]}; i++ ))
+do
+	mv ${nodeName[$i]}/$historyDir/* $historyDir/
+	mv ${nodeName[$i]}/* .
+	rm -rf ${nodeName[$i]}
+done
+

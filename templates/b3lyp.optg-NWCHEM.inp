@@ -1,0 +1,25 @@
+memory heap 1000 Mb
+set lindep:tol 1d-7
+
+charge @CHARGE
+
+geometry noautoz
+symmetry C1
+@GEOMETRY
+end
+
+basis
+  * library cc-pVTZ
+end
+
+dft
+   xc B3LYP
+   mult @MULT
+   iterations 200
+end
+
+driver
+   maxiter 200
+end
+
+task dft optimize
