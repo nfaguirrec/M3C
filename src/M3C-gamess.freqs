@@ -71,6 +71,13 @@ else
 	source $M3C_HOME/src/gamessDriver.sh
 fi
 
+if [ -f "$M3C_HOME/bin/parallel.sh" ]
+then
+	source $M3C_HOME/bin/parallel.sh
+else
+	source $M3C_HOME/src/parallel.sh
+fi
+
 frequencies()
 {
 	local iFileXYZ=$1
@@ -88,13 +95,11 @@ main()
 	local charge=""
 	local mult=""
 
-    if [ -n "$SLURM_NTASKS" ]
-    then
-		nThreads=$SLURM_NTASKS
-    else
-		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
+	if [ -z "$M3C_NTHREADS" ]
+	then
+		M3C_NTHREADS=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
-	nThreads=$(( $nThreads/$NPROCSHARED ))
+	nThreads=$(( $M3C_NTHREADS/$NPROCSHARED ))
 
 	if [ -d "history.freqs" ]
 	then
@@ -104,91 +109,17 @@ main()
 	mkdir history.freqs
 
 	xyzFile=( `ls *.xyz` )
-	charge=( `ls *.xyz | gawk 'BEGIN{FS="[.]+"}{print $2}' | sed 's/q//g'` )
-	mult=( `ls *.xyz | gawk 'BEGIN{FS="[.]+"}{print $3}' | sed -r 's/-[[:digit:]]+$//g' | sed 's/m//g'` )
+	charge=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'` )
+	mult=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'` )
 	
-	#-----------------------------------------------------------------------
-	
-	startTime=`date "+%s"`
-	
-	ij=-1
-	for (( i=0; i<=$(( ${#xyzFile[@]}/$nThreads-1 )); i++ ))
+	cat /dev/null > .commands$$
+	for (( i=0; i<${#xyzFile[@]}; i++ ))
 	do
-		iStartTime=`date "+%s"`
-		
-		echo -n "Running: "
-		
-		for (( j=1; j<=$nThreads; j++ ))
-		do
-			ij=$(( $j-1+$nThreads*$i ))
-			
-			if (( j != $nThreads ))
-			then
-				printf "%15s," "${xyzFile[$ij]%.*}"
-			else
-				printf "%15s" "${xyzFile[$ij]%.*}"
-			fi
-			
-			frequencies ${xyzFile[$ij]} ${charge[$ij]} ${mult[$ij]} &
-		done
-		
-		echo -n " ... "
-		
-		wait
-		
-		iEndTime=`date "+%s"`
-		elapsedTime=$(( $iEndTime-$iStartTime ))
-		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+		echo "frequencies ${xyzFile[$i]} ${charge[$i]} ${mult[$i]}" >> .commands$$
 	done
-
-	if (( $ij < ${#xyzFile[@]} ))
-	then
-		iStartTime=`date "+%s"`
-		
-		echo -n "Running: "
-		
-		k=1
-		for (( i=$(( $ij+1 )); i<${#xyzFile[@]}; i++ ))
-		do
-			if (( $i != $(( ${#xyzFile[@]} - 1 )) ))
-			then
-				printf "%15s," "${xyzFile[$i]%.*}"
-			else
-				printf "%15s " "${xyzFile[$i]%.*}"
-			fi
-			
-			frequencies ${xyzFile[$i]} ${charge[$i]} ${mult[$i]} &
-			
-			k=$(( $k+1 ))
-		done
-		
-		for (( i=$k; i<=$nThreads; i++ ))
-		do
-			if (( i != $nThreads ))
-			then
-				printf "%15s " ""
-			else
-				printf "%15s" ""
-			fi
-		done
-		
-		echo -n " ... "
-		
-		wait
-		
-		iEndTime=`date "+%s"`
-		elapsedTime=$(( $iEndTime-$iStartTime ))
-		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
-	fi
 	
-	endTime=`date "+%s"`
-	elapsedTime=$(( $endTime-$startTime ))
-	
-	echo -n "        "
-	printf "%$(( 15*(${nThreads}+1) ))s" ""
-	echo "            ` echo -n  "Total"`: $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
-	
-	#-----------------------------------------------------------------------
+	parallel .commands$$ $nThreads
+	rm .commands$$
 }
 
 main $*

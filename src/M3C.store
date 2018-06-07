@@ -87,13 +87,18 @@ function usage()
 		echo "                     debug: Shows detailed information."
 		echo "          spinConservation: Activates the spin conservation rule during search."
 		echo ""
+		echo "     `textbb sort` [list]"
+		echo ""
+		echo "          Sorts the xyz files in order ascending of energy. WARNING Files will be renamed."
+		echo "          list: List of the molecules in .xyz, .xyz0, .rxyz or rxyz0 format. Wildcards are accepted like *.rxyz"
+		echo ""
 		echo "     `textbb add`"
 		echo "          Includes a new molecule into the store (check M3C_STORE variable)."
 		echo ""
 		echo "          `textbb add` [molecule|list]"
 		echo ""
 		echo "                  molecule: XYZ file of the molecule to be included into the store."
-		echo "                      list: list of XYZ files of the molecules to be included into the store."
+		echo "                      list: List of XYZ files of the molecules to be included into the store."
 		echo "                            Wildcards are accepted like *.rxyz"
 		echo ""
 		echo ""
@@ -124,7 +129,7 @@ SCHARGE["3"]="ppp"
 SCHARGE["4"]="pppp"
 
 declare -A RSYMN  # Rotational symmetry number
-RSYMN["SO3"]=1 # << Atoms
+RSYMN["R3"]=1 # << Atoms
 RSYMN["C1"]=1
 RSYMN["CI"]=1
 RSYMN["CS"]=1
@@ -412,6 +417,98 @@ function makeDB()
 ##############################
 # @brief
 ##############################
+function sortMolecules()
+{
+	local listTarget=$*
+	
+	if [ -d "sort" ]
+	then
+		echo "@@@ WARNING @@@ There is already a sort directory (sort). Backup copy will be generated"
+		mv sort sort.backup-`date +%Y%m%d`
+	fi
+	mkdir sort
+	mv $listTarget sort
+	
+	if [ -d history.freqs ]
+	then
+		mv history.freqs sort
+		mkdir history.freqs
+	fi
+	
+	if [ -d history.optg  ]
+	then
+		mv history.optg  sort
+		mkdir history.optg
+	fi
+	
+	if [ -d history.iener ]
+	then
+		mv history.iener sort
+		mkdir history.iener
+	fi
+	
+	categories=`echo $listTarget | sed 's/ /\n/g' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
+	
+	for category in $categories
+	do
+		grep Energy sort/* 2> /dev/null | grep "$category" | sed 's/:Energy =//g' | sort -k 2 -n | sed 's/sort\///g' > .sortedList$$
+		
+		echo ""
+		echo "-----------------------"
+		echo "$category"
+		echo "-----------------------"
+		i=1
+		cat .sortedList$$ | while read iFile energy
+		do
+			label=`echo $iFile | sed -r 's/-[[:digit:]]+.*//g'`
+			ext=`echo $iFile | sed -r 's/.*[.]//g'`
+			
+			echo "$iFile --> $label-$i.$ext"
+			cp sort/$iFile $label-$i.$ext
+			
+			if [ -d sort/history.freqs ]
+			then
+				for sFile in `ls sort/history.freqs/${iFile%.*}.* 2> /dev/null`
+				do
+					effSFile=`echo $sFile | sed 's/sort\///g'`
+					sExt=`echo $sFile | sed -r '{s/.*[.]//g}'`
+					echo "   $effSFile --> history.freqs/$label-$i.$sExt"
+					cp sort/$effSFile history.freqs/$label-$i.$sExt
+				done
+			fi
+				
+			if [ -d sort/history.optg  ]
+			then
+				for sFile in `ls sort/history.optg/${iFile%.*}.* 2> /dev/null`
+				do
+					effSFile=`echo $sFile | sed 's/sort\///g'`
+					sExt=`echo $sFile | sed -r '{s/.*[.]//g}'`
+					echo "   $effSFile --> history.optg/$label-$i.$sExt"
+					cp sort/$effSFile history.optg/$label-$i.$sExt
+				done
+			fi
+
+			if [ -d sort/history.iener ] 
+			then
+				for sFile in `ls sort/history.iener/${iFile%.*}.* 2> /dev/null`
+				do
+					effSFile=`echo $sFile | sed 's/sort\///g'`
+					sExt=`echo $sFile | sed -r '{s/.*[.]//g}'`
+					echo "   $effSFile --> history.iener/$label-$i.$sExt"
+					cp sort/$effSFile history.iener/$label-$i.$sExt
+				done
+			fi
+			
+			i=$(( $i + 1 ))
+		done
+		
+		rm .sortedList$$
+	done
+}
+
+##############################
+# @brief
+##############################
 function addMolecules()
 {
 	local listTarget=$*
@@ -545,13 +642,18 @@ function main()
 			[ -z "$DEBUG" ] && DEBUG="FALSE"
 			[ -z "$SPIN_CONSERVATION" ] && SPIN_CONSERVATION="FALSE"
 			
-			makeDB $*
+			makeDB $@
+			
+			;;
+		sort)
+			shift # Ommits first parameter, i.e. "sort"
+			sortMolecules $@
 			
 			;;
 		add)
 			shift # Ommits first parameter, i.e. "add"
 			
-			addMolecules `echo $* | grep ".rxyz"`
+			addMolecules `echo $@ | grep ".rxyz"`
 			
 			;;
 		*)
@@ -561,4 +663,4 @@ function main()
 	esac
 }
 
-main $*
+main $@

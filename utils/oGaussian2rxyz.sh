@@ -110,7 +110,7 @@ then
 	
 	if [ "$nAtoms" -eq 1  ]
 	then
-		echo "SYMMETRY SO3"
+		echo "SYMMETRY R3"
 		echo "ELECTRONIC_STATE ??"
 	else
 		group=`grep "Full point group" $iFile | tail -n1 | gawk '{print $4}'`

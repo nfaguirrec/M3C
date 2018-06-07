@@ -53,6 +53,10 @@
 ##
 function main()
 {
+	local nSpinStates=$1
+	
+	[ -z "$nSpinStates" ] && nSpinStates=1
+	
 	mkdir backup-`date +%Y%m%d-%H.%M.%S` 2> /dev/null
 	cp *.xyz backup-`date +%Y%m%d-%H.%M.%S`/
 	
@@ -61,7 +65,6 @@ function main()
 	for category in $categories
 	do
 		charges=`ls $category.* | awk 'BEGIN{FS="[.-]"}{map[$2]=1}END{ for( key in map ) print key }' | sed 's/q//g'`
-		multiplicities=`ls $category.* | awk 'BEGIN{FS="[.-]"}{map[$3]=1}END{ for( key in map ) print key }' | sed 's/m//g'`
 		
 		echo ""
 		echo "---------------------"
@@ -89,13 +92,11 @@ function main()
 			for charge in $charges
 			do
 				minMult=`molecule.minMult geom-$i.xyz $charge`
+				maxMult=$(( $minMult+2*($nSpinStates-1) ))
 				
-				for multiplicity in $multiplicities
+				for multiplicity in `seq $minMult 2 $maxMult`
 				do
-					if (( "$multiplicity" == "$minMult" || "$multiplicity" == "$minMult"+2 ))
-					then
-						cp geom-$i.xyz $category.q$charge.m$multiplicity-$i.xyz
-					fi
+					cp geom-$i.xyz $category.q$charge.m$multiplicity-$i.xyz
 				done
 			done
 			
@@ -107,4 +108,3 @@ function main()
 }
 
 main $*
-

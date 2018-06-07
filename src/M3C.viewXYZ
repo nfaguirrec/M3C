@@ -124,9 +124,14 @@ function makeLatexTableBase()
 	do
 		textFileName=`echo ${f%.*} | sed 's/_/\\\_/g'`
 		
-		symm=`grep "SYMMETRY" ${f%.*}.$FILTER | gawk '{print $2}'`
-		estate=`grep "ELECTRONIC_STATE" ${f%.*}.$FILTER | gawk '{print $2}'`
-		relEnergy=`grep "Energy" ${f%.*}.$FILTER | gawk 'BEGIN{ eV=0.0367493088244753 }{printf("%10.2f",($3-('$ENERGY_REF'))/eV)}'`
+		symm=""
+		[ -n "`grep "SYMMETRY" ${f%.*}.$FILTER`" ] && symm=`grep "SYMMETRY" ${f%.*}.$FILTER | gawk '{print $2}'`
+		
+		estate=""
+		[ -n "`grep "ELECTRONIC_STATE" ${f%.*}.$FILTER`" ] && estate=`grep "ELECTRONIC_STATE" ${f%.*}.$FILTER | gawk '{print $2}'`
+		
+		relEnergy=""
+		[ -n "`grep "Energy" ${f%.*}.$FILTER`" ] && relEnergy=`grep "Energy" ${f%.*}.$FILTER | gawk 'BEGIN{ eV=0.0367493088244753 }{printf("%10.2f",($3-('$ENERGY_REF'))/eV)}'`
 		
 		if (( $i%$NCOLUMNS != 0 && $i != $nFiles )) 
 		then

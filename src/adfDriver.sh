@@ -667,22 +667,32 @@ function freqsADFTemplate()
 		else
 # 			energy=`grep "<.*Total energy" input$SID.out | tail -n1 | gawk '{print $5}'`  # <<< This not available in all cases, I think is just atoms
 			
+			cat /dev/null > .freqs$SID
+			
 			if [ "$program" = "adf" ]
 			then
-				energy=`grep "<.*current energy" input$SID.out | tail -n1 | gawk '{print $5}'`
+# 				energy=`grep "<.*current energy" input$SID.out | tail -n1 | gawk '{print $5}'` # <<< I think this is just for geometry optimization
+				energy=`grep "<.*Bond Energy.*a.u." input$SID.out | tail -n1 | gawk '{print $5}'`  # <<< When only a frequencies calculation was carried out.
+				
+				awk '
+					BEGIN{ loc=0 }
+					(loc==2&&$0~/^[[:blank:]]*$/){ loc=0 }
+					(loc==2){ print $1 }
+					($0~/List of All Frequencies:/){loc=1}
+					(loc==1&&$1=="----------"){loc=2}
+				' input$SID.out >> .freqs$SID
 				
 			# We can afford geometry convergence errors (looking for ERROR). It is not necessary to recover any good geometry candidate
 # 			elif [ "$program" = "dftb" -a -z "`grep "ERROR DETECTED" input$SID.out`" ]
 			elif [ "$program" = "dftb" ]
 			then
 				energy=`grep "Total Energy (hartree)" input$SID.out | tail -n1 | awk '{print $NF}'`
+				
+				awk '
+					($0~/Index:.*Frequency \(cm-1\)/){print $5}
+				' input$SID.out >> .freqs$SID
 			fi
 			
-			cat /dev/null > .freqs$SID
-			
-			awk '
-				($0~/Index:.*Frequency \(cm-1\)/){print $5}
-			' input$SID.out >> .freqs$SID
 			
 			fv=`cat .freqs$SID | wc -l`
 			

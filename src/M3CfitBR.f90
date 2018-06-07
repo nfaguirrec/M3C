@@ -314,6 +314,11 @@ program M3CfitBR
 	!-------------------------------------------------------------------
 	! Loading the channel probabilities
 	!-------------------------------------------------------------------
+	
+	write(*,*) "----------------------------------------"
+	write(*,*) "Loading probabilities from "//trim(dataFileName.fstr)
+	write(*,*) "----------------------------------------"
+	
 	call energyGrid.fromFile( dataFileName.fstr, column=1 )
 	
 	allocate( P(nChannels) )

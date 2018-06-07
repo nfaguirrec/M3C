@@ -31,7 +31,7 @@ BEGIN MARKOV_CHAIN
 #         numberOfExperiments = 6
 #         numberOfEvents = 100000
         numberOfExperiments = 3
-        numberOfEvents = 20000
+        numberOfEvents = 50000
         historyFileFrequency = 100
 
 #        geometryHistoryFilePrefix = geom
