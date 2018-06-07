@@ -1,45 +1,25 @@
-BEGIN EXCITATION_ENERGY_SCAN
-	excitationEnergy  =  0:35:36  # dE = 1.0 eV
-# 	excitationEnergy  =  0:35:71  # dE = 0.5 eV
-# 	excitationEnergy  =  0:35:141  # dE = 0.25 eV
-	
-# 	numberOfEvents = 300000:30000:141
-END EXCITATION_ENERGY_SCAN
-
 BEGIN GOPTIONS
-        systemRadius = 10.0
-        overlappingRadius = 0.2
-        
-        useRandomWalkers = FALSE
-        randomWalkStepRadius = 1.0
-        
-        useZPECorrection = TRUE
-        useSpinConservationRules = FALSE
-        
-        angularMomentumCouplingScheme = JJL
+	systemRadius = 10.0
+	overlappingRadius = 0.2
+
+	useRandomWalkers = FALSE
+	randomWalkStepRadius = 1.0
 END GOPTIONS
 
 BEGIN MARKOV_CHAIN
-	task = 5*V,T,R,S:0,5*V,T,R,S:-1:1
-        burnInFraction = 0.1
-        
-	reactives = C5(s1)
-        excitationEnergy = 18.0
-        
-        tracking = none
-        
-#         numberOfExperiments = 6
-#         numberOfEvents = 100000
-        numberOfExperiments = 3
-        numberOfEvents = 50000
-        historyFileFrequency = 100
+	task = V
+	burnInFraction = 0.0
 
-#        geometryHistoryFilePrefix = geom
-        energyHistoryFile = energy.dat
-        weightHistoryFile = weight.dat
-#        JHistoryFile = J.dat
-#        LHistoryFile = L.dat
-        histogramFile = histogram.dat
+	reactives = file:C5.xyz
+	excitationEnergy = 18.0
+
+	tracking = energy
+
+	numberOfExperiments = 1
+	numberOfEvents = 1000
+	historyFileFrequency = 1
+
+	geometryHistoryFilePrefix = geom
 END MARKOV_CHAIN
 
 BEGIN FRAGMENTS_DATABASE
@@ -77,47 +57,3 @@ BEGIN FRAGMENTS_DATABASE
                        C5(t6)    0  3  1    1               C5.q0.m3-6.rxyz        -5162.206671     C2(s1)+C3(s1)    # 2.50965    C1, 3-A
 	#---------------------------------------------------------------------------------------------------------------------
 END FRAGMENTS_DATABASE
-
-BEGIN EXPERIMENTAL_BRANCHING_RATIOS
-	error = absolute
-	diagram = C.vs.E
-	
-        #----------------------------------
-        #  Channel       BR   error   q/m
-        #----------------------------------
-           C5                 15.0     1.0
-           
-           C+C4                8.0     1.0
-           C2+C3              59.0     3.0
-           
-           C+C+C3              8.0     1.0
-           C+C2+C2             7.0     1.0
-           
-           C+C+C+C2            2.5     0.6
-           
-           C+C+C+C+C          0.27     0.2
-        #----------------------------------
-END EXPERIMENTAL_BRANCHING_RATIOS
-
-BEGIN FIT_BRANCHING_RATIOS
-        method = NNLS
-        basis = 5,5
-        eDistfile = C5-ccsdt.edist.dat
-        BRfile = C5-ccsdt.fitBR.dat
-END FIT_BRANCHING_RATIOS
-
-BEGIN BRANCHING_RATIOS
-        eDistOFile = C5-ccsdt.edist.dat
-        BRfile = C5-ccsdt.BR.dat
-        diagram = C.vs.E
-        
-        #-----------------------
-        #   Coeff  basis
-        #-----------------------
-        22.261800  B(1,8)
-        21.639932  B(1,9)
-        45.714079  B(2,5)
-        10.384190  B(2,6)
-        #-----------------------
-END BRANCHING_RATIOS
-

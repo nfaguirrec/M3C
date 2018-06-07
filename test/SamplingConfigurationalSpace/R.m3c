@@ -1,0 +1,59 @@
+BEGIN GOPTIONS
+	systemRadius = 10.0
+	overlappingRadius = 0.2
+
+	useRandomWalkers = FALSE
+	randomWalkStepRadius = 1.0
+END GOPTIONS
+
+BEGIN MARKOV_CHAIN
+	task = R
+	burnInFraction = 0.0
+
+	reactives = file:C5.xyz
+	excitationEnergy = 18.0
+
+	tracking = energy
+
+	numberOfExperiments = 1
+	numberOfEvents = 1000
+	historyFileFrequency = 1
+
+	geometryHistoryFilePrefix = geom
+END MARKOV_CHAIN
+
+BEGIN FRAGMENTS_DATABASE
+
+	store = /home/nestor/Develop/M3C-store/master/6-311++G.3df.2p/ccsdt
+	reference = C5(s1)
+
+	#---------------------------------------------------------------------------------------------------------------------
+	#               Label    Z  M WL  SYM                      geomFile               Eelec     maxVib
+	#---------------------------------------------------------------------------------------------------------------------
+                        C(s1)    0  1  5    1                C.q0.m1-1.rxyz        -1026.574168                      #           ¹D (2s²2p²) 
+                        C(t1)    0  3  3    1                C.q0.m3-1.rxyz        -1028.024016                      #           ³P (2s²2p²)
+                        
+                       C2(s1)    0  1  1    2               C2.q0.m1-1.rxyz        -2062.151541     C(t1)+C(t1)      # 6.10351   ^1\Sigma_g^+
+                       C2(t1)    0  3  2    2               C2.q0.m3-1.rxyz        -2062.058719     C(t1)+C(t1)      # 6.01069   ^3\Pi_u     
+                       
+                       C3(s1)    0  1  1    2               C3.q0.m1-1.rxyz        -3097.545476     C(t1)+C2(s1)     # 7.36992   D*H, 1-SGG
+                       C3(t1)    0  3  1    6               C3.q0.m3-1.rxyz        -3096.702170     C(t1)+C2(s1)     # 6.52661   D3H, 3-A1'
+                       C3(t2)    0  3  1    1               C3.q0.m3-2.rxyz        -3095.328290     C(t1)+C2(s1)     # 5.15273    CS, 3-A''
+                      
+                       C4(s1)    0  1  1    2               C4.q0.m1-1.rxyz        -4130.023944     C(t1)+C3(s1)     # 4.45445   D*H, --
+                       C4(t1)    0  3  1    2               C4.q0.m3-1.rxyz        -4130.415052     C(t1)+C3(s1)     # 4.84556   D*H, 3-SGG
+                       C4(s2)    0  1  1    4               C4.q0.m1-2.rxyz        -4130.503317     C(t1)+C3(s1)     # 4.93382   D2H, 1-AG
+                       C4(t2)    0  3  1    4               C4.q0.m3-2.rxyz        -4128.396925     C(t1)+C3(s1)     # 2.82743   D2H, 3-B2G
+                       C4(s3)    0  1  1    1               C4.q0.m1-3.rxyz        -4129.321150     C(t1)+C3(s1)     # 3.75166    C1, 1-A
+                       C4(t5)    0  3  1    1               C4.q0.m3-5.rxyz        -4129.245480     C(t1)+C3(s1)     # 3.67599    C1, 3-A
+                       
+                       C5(s1)    0  1  1    2               C5.q0.m1-1.rxyz        -5165.692754     C2(s1)+C3(s1)    # 5.99574   D*H, 1SGG
+                       C5(t1)    0  3  1    2               C5.q0.m3-1.rxyz        -5163.414736     C2(s1)+C3(s1)    # 3.71772   D*H, --
+                       C5(s2)    0  1  1    1               C5.q0.m1-2.rxyz        -5163.669217     C2(s1)+C3(s1)    # 3.97220    C1, 1-A
+                       C5(t2)    0  3  1    1               C5.q0.m3-2.rxyz        -5162.597064     C2(s1)+C3(s1)    # 2.90005    C1, 3-A
+                       C5(s4)    0  1  1    1               C5.q0.m1-4.rxyz        -5162.602660     C2(s1)+C3(s1)    # 2.90564    C1, 1-A
+                       C5(s5)    0  1  1    1               C5.q0.m1-5.rxyz        -5162.746792     C2(s1)+C3(s1)    # 3.04978    C1, 1-A
+                       C5(t5)    0  3  1    1               C5.q0.m3-5.rxyz        -5161.474556     C2(s1)+C3(s1)    # 1.77754    C1, 3-A
+                       C5(t6)    0  3  1    1               C5.q0.m3-6.rxyz        -5162.206671     C2(s1)+C3(s1)    # 2.50965    C1, 3-A
+	#---------------------------------------------------------------------------------------------------------------------
+END FRAGMENTS_DATABASE
