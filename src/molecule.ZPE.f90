@@ -1,9 +1,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                                   !!
 !! This file is part of M3C project                                                  !!
-!! Copyright (c) by authors                                                          !!
 !!                                                                                   !!
-!!  Authors:                                                                         !!
+!! Copyright (c) 2017-2017 by authors                                                !!
+!! Authors:                                                                          !!
 !!                         * Néstor F. Aguirre (2017-2017)                           !!
 !!                           nfaguirrec@gmail.com                                    !!
 !!                                                                                   !!

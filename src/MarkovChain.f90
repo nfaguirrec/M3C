@@ -1,6 +1,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                                   !!
 !! This file is part of M3C project                                                  !!
+!!                                                                                   !!
+!! Copyright (c) 2017-2017 by authors                                                !!
+!! Authors:                                                                          !!
+!!                         * Néstor F. Aguirre (2017-2017)                           !!
+!!                           nfaguirrec@gmail.com                                    !!
+!!                                                                                   !!
 !! Copyright (c) 2013-2016 Departamento de Química                                   !!
 !!                         Universidad Autónoma de Madrid                            !!
 !!                         All rights reserved.                                      !!
@@ -57,13 +63,15 @@ module MarkovChain_
 	use RandomUtils_
 	use UnitsConverter_
 	use IOStream_
+	use BlocksIFileParser_
 	use StringIntegerPair_
 	use StringRealPair_
 	use StringIntegerMap_
 	use StringRealMap_
 	use RealHistogram_
 	use StringHistogram_
-	use BlocksIFileParser_
+	use StringRealHistogramMap_
+	use StringRealHistogramPair_
 	
 	use GOptions_
 	use FragmentsList_
@@ -83,8 +91,10 @@ module MarkovChain_
 		real(8) :: excitationEnergy
 		integer :: historyFileFrequency = -1
 		type(String) :: geometryHistoryFilePrefix
+		type(String) :: KERHistoryFilePrefix
 		integer :: freqBlockingCheck = 4
 		type(String) :: tracking
+		Logical :: acceptAll
 		
 		type(OFStream) :: energyHistoryFile
 		type(OFStream) :: weightHistoryFile
@@ -111,6 +121,8 @@ module MarkovChain_
 		
 		type(StringHistogram) :: transitionHistogram         ! One for all experiments. Probability to change from one channel to another
 		type(StringHistogram) :: transitionDetHistogram      ! One for all experiments. Probability to change from one channel to another
+		
+		type(StringRealHistogramMap) :: channelKERHistogram  ! One for all experiments. Translational energy distribution for each channel
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Histogramas
@@ -169,7 +181,7 @@ module MarkovChain_
 		
 		call GOptions_error( &
 			"This method is not implemented", &
-			"Reactor.copyReactor()" &
+			"MarkovChain.copy()" &
 		)
 	end subroutine copy
 	
@@ -210,6 +222,8 @@ module MarkovChain_
 		
 		call this.transitionHistogram.clear()
 		call this.transitionDetHistogram.clear()
+		
+		call this.channelKERHistogram.clear()
 		
 		if( allocated(this.nFragsHistogram) ) then
 			do nExp=1,this.numberOfExperiments
@@ -287,6 +301,8 @@ module MarkovChain_
 		call this.transitionHistogram.initStringHistogram( algorithm=Histogram_RUNNING )
 		call this.transitionDetHistogram.initStringHistogram( algorithm=Histogram_RUNNING )
 		
+		call this.channelKERHistogram.init()
+		
 		do nExp=1,this.numberOfExperiments
 			call this.iTemperatureHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
 			
@@ -330,6 +346,9 @@ module MarkovChain_
 		type(String) :: sBuffer
 		character(100) :: geometryFileName
 		character(2) :: origin
+		
+		type(RealHistogram) :: tmpHistKER
+		class(StringRealHistogramMapIterator), pointer :: ptrKER
 
 		!!--------------------------------------------------------------------
 		!! Este bloque expande los operadores n*(XXX) a XXX,XXX,XXX,...,XXX
@@ -445,6 +464,42 @@ module MarkovChain_
 
 						call react.run()
 						
+						if( this.acceptAll ) then
+							if( trim(react.reactives.label( details=.false. )) /= trim(react.products.label( details=.false. )) ) then
+								sBuffer = trim(react.reactives.label( details=.false. ))//"-->"//trim(react.products.label( details=.false. ))
+								call this.transitionHistogram.add( sBuffer )
+							end if
+						
+							if( trim(react.reactives.label( details=.true. )) /= trim(react.products.label( details=.true. )) ) then
+								sBuffer = trim(react.reactives.label( details=.true. ))//"-->"//trim(react.products.label( details=.true. ))
+								call this.transitionDetHistogram.add( sBuffer )
+							end if
+							
+							
+							if( this.channelKERHistogram.find( FString_toString( react.products.label( details=.false. ) ), ptrKER ) ) then
+								call ptrKER.data.second.add( react.products.translationalEnergy() )
+							else
+								if( .not. this.KERHistoryFilePrefix.isEmpty() ) then
+									call tmpHistKER.init( rule=Histogram_STURGES, algorithm=Histogram_STORING )
+								else
+									call tmpHistKER.init( algorithm=Histogram_RUNNING )
+								end if
+								call tmpHistKER.add( react.products.translationalEnergy() )
+								call this.channelKERHistogram.set( FString_toString( react.products.label( details=.false. ) ), tmpHistKER )
+								call tmpHistKER.clear()
+							end if
+							
+							react.reactives = react.products
+							
+							call GOptions_info( &
+							"Step accepted ( MARKOV_CHAIN:acceptAll = TRUE )", "MarkovChain" )
+							
+							origin = "a"//trim(currentTask)
+							
+							call this.reactorAcceptedHistogram.add( FString_toString( trim(currentTask) ) )
+							call this.reactorStatusHistogram.add( FString_toString( "a.ACCEPTED      " ) )
+						end if
+						
 						! Si la energía cinetica es negativa
 						if( .not. react.state ) then
 							
@@ -496,6 +551,19 @@ module MarkovChain_
 									call this.transitionDetHistogram.add( sBuffer )
 								end if
 								
+								if( this.channelKERHistogram.find( FString_toString( react.products.label( details=.false. ) ), ptrKER ) ) then
+									call ptrKER.data.second.add( react.products.translationalEnergy() )
+								else
+									if( .not. this.KERHistoryFilePrefix.isEmpty() ) then
+										call tmpHistKER.init( rule=Histogram_STURGES, algorithm=Histogram_STORING )
+									else
+										call tmpHistKER.init( algorithm=Histogram_RUNNING )
+									end if
+									call tmpHistKER.add( react.products.translationalEnergy() )
+									call this.channelKERHistogram.set( FString_toString( react.products.label( details=.false. ) ), tmpHistKER )
+									call tmpHistKER.clear()
+								end if
+								
 								react.reactives = react.products
 								
 								call GOptions_info( &
@@ -518,7 +586,20 @@ module MarkovChain_
 										sBuffer = trim(react.reactives.label( details=.true. ))//"-->"//trim(react.products.label( details=.true. ))
 										call this.transitionDetHistogram.add( sBuffer )
 									end if
-
+									
+									if( this.channelKERHistogram.find( FString_toString( react.products.label( details=.false. ) ), ptrKER ) ) then
+										call ptrKER.data.second.add( react.products.translationalEnergy() )
+									else
+										if( .not. this.KERHistoryFilePrefix.isEmpty() ) then
+											call tmpHistKER.init( rule=Histogram_STURGES, algorithm=Histogram_STORING )
+										else
+											call tmpHistKER.init( algorithm=Histogram_RUNNING )
+										end if
+										call tmpHistKER.add( react.products.translationalEnergy() )
+										call this.channelKERHistogram.set( FString_toString( react.products.label( details=.false. ) ), tmpHistKER )
+										call tmpHistKER.clear()
+									end if
+									
 									react.reactives = react.products
 									
 									call GOptions_info( &
@@ -640,8 +721,11 @@ module MarkovChain_
 				end if
 				
 ! 			end if
-			write(6,"(A)") ""
-			write(6,"(A)") ""
+
+			if( this.tracking == "energy" .or. this.tracking == "weight" ) then
+				write(6,"(A)") ""
+				write(6,"(A)") ""
+			end if
 			
 			if( this.JHistoryFile.isOpen() ) then
 				write( this.JHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)
@@ -999,6 +1083,9 @@ module MarkovChain_
 		class(StringRealMapIterator), pointer :: simIter
 		type(StringRealPair) :: srPair
 		
+		class(StringRealHistogramMapIterator), pointer :: iterKER
+		type(StringRealHistogramPair) :: pairKER
+		
 		integer :: i
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1333,6 +1420,35 @@ module MarkovChain_
 		write(unit,*) ""
 		write(unit,*) ""
 		
+		write(unit,"(A)") "#------------------------------------"
+		write(unit,"(A)") "# KER histograms"
+		write(unit,"(A)") "#------------------------------------"
+		write(unit,"(A1,9X,A15,5X,2A15)") "#", "channel", "aver", "desv"
+		write(unit,"(A1,9X,A15,5X,2A15)") "#", "-------", "----", "----"
+		iterKER => this.channelKERHistogram.begin
+		do while( associated(iterKER) )
+			pairKER = this.channelKERHistogram.pair( iterKER )
+			
+			if( .not. this.KERHistoryFilePrefix.isEmpty() ) then
+				call pairKER.second.build()
+				call pairKER.second.density.save( trim(this.KERHistoryFilePrefix.fstr)//"-"//trim(pairKER.first.fstr)//"-hist.dat" )
+				call pairKER.second.save( trim(this.KERHistoryFilePrefix.fstr)//"-"//trim(pairKER.first.fstr)//".dat" )
+			end if
+			
+			write(unit,"(10X,A15,5X,2F15.5)",advance="no") trim(pairKER.first.fstr), pairKER.second.mean(), pairKER.second.stdev()
+			
+			if( .not. this.KERHistoryFilePrefix.isEmpty() ) then
+				write(unit,"(5X,A)") trim(this.KERHistoryFilePrefix.fstr)//"-"//trim(pairKER.first.fstr)//"-hist.dat, "//trim(this.KERHistoryFilePrefix.fstr)//"-"//trim(pairKER.first.fstr)//".dat"
+			else
+				write(unit,*) ""
+			end if
+			
+			iterKER => iterKER.next
+		end do
+		
+		write(unit,*) ""
+		write(unit,*) ""
+		
 		if( present(oFileName) ) then
 			call oFile.close()
 		end if
@@ -1394,19 +1510,23 @@ module MarkovChain_
 		this.historyFileFrequency = iParser.getInteger( "MARKOV_CHAIN:historyFileFrequency", def=iBuffer )
 		this.task = iParser.getString( "MARKOV_CHAIN:task", def="V" )
 		this.geometryHistoryFilePrefix = iParser.getString( "MARKOV_CHAIN:geometryHistoryFilePrefix", def="" )
+		this.KERHistoryFilePrefix = iParser.getString( "MARKOV_CHAIN:KERHistoryFilePrefix", def="" )
 		this.freqBlockingCheck = iParser.getInteger( "MARKOV_CHAIN:freqBlockingCheck", def=4 )
 		this.tracking = iParser.getString( "MARKOV_CHAIN:tracking", def="none" )
+		this.acceptAll = iParser.getLogical( "MARKOV_CHAIN:acceptAll", def=.false. )
 		
-		write(*,*)
-		write(*,"(A40,A)") "reactives = ", strReactives.fstr
+		write(*,*) ""
+		write(*,"(A40,A)") "reactives = ", trim(reactives.label())
 		write(*,"(A40,F15.5)") "burnInFraction = ", this.burnInFraction
 		write(*,"(A40,F15.5,A)") "excitationEnergy = ", this.excitationEnergy/eV, " eV"
 		write(*,"(A40,I15)") "numberOfEvents = ", this.numberOfEvents
 		write(*,"(A40,I15)") "numberOfExperiments = ", this.numberOfExperiments
 		write(*,"(A40,A)") "task = ", trim(this.task.fstr)
 		write(*,"(A40,A)") "geometryHistoryFilePrefix = ", trim(this.geometryHistoryFilePrefix.fstr)
+		write(*,"(A40,A)") "KERHistoryFilePrefix = ", trim(this.KERHistoryFilePrefix.fstr)
 		write(*,"(A40,I15)") "freqBlockingCheck = ", this.freqBlockingCheck
 		write(*,"(A40,A)") "tracking = ", trim(this.tracking.fstr)
+		write(*,"(A40,L)") "acceptAll = ", this.acceptAll
 		
 		sBuffer = iParser.getString( "MARKOV_CHAIN:energyHistoryFile", def="#@NONE@#" )
 		if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
