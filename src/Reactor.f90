@@ -136,7 +136,6 @@ module Reactor_
 		real(8), intent(in) :: excitationEnergy
 		
 		call this.initReactor( reactives, excitationEnergy )
-		call this.reactives.initialGuessFragmentsList()
 	end subroutine init
 	
 	!>
@@ -279,6 +278,7 @@ module Reactor_
 		
 		integer :: n
 		integer :: maxIterForbidden
+		real(8) :: rBuffer
 		
 		maxIterForbidden = 0
 		do while( .true. )
@@ -609,6 +609,7 @@ module Reactor_
 		real(8) :: St1, St2, S ! spin target molecule 1, 2 and total
 		
 		logical :: successFrag
+		real(8) :: centerOfMass(3)
 		
 		if( dNfrag >= 0 ) then
 		
@@ -693,12 +694,17 @@ module Reactor_
 			do i=1,reactives.nMolecules()
 				if( i /= targetMolecule1  ) then
 					call products.set( j, reactives.clusters(i) )
+					
 					j = j + 1
 				end if
 			end do
 			
 			do i=1,dNfrag+1
 				call products.set( j-1+i, FragmentsDB_instance.clusters( channelInfo(i) ) )
+				
+				if( dNfrag == 0 ) then
+					call products.clusters(j-1+i).setCenter( reactives.clusters(targetMolecule1).center() )
+				end if
 			end do
 			
 		else
@@ -843,6 +849,9 @@ module Reactor_
 		
 		call this.showReactorHeader()
 		
+! 		call this.reactives.save("salida.xyz")
+! 		stop
+		
 		select case( this.type )
 			case( STRUCTURE_REACTOR )
 			
@@ -853,10 +862,10 @@ module Reactor_
 				call this.products.setReactorEnergy( this.reactives.reactorEnergy() )
 				
 				! Para que fuerce los centros aleatorios en la siguiente iteración
-				this.products.forceRandomCenters = .true.
+! 				this.products.forceRandomCenters = .true.
 				
 				! Los productos utilizan parte de la energía
-				call this.products.initialGuessFragmentsList()
+! 				call this.products.initialGuessFragmentsList()
 				
 ! 				call this.products.changeVibrationalEnergy()
 ! 				call this.products.changeGeometry()
@@ -919,7 +928,7 @@ module Reactor_
 			write(*,"(A)") ""
 		end if
 		
-		if( this.products.kineticEnergy() < 0.0_8 ) then
+		if( this.products.kineticEnergy() < 0.0_8 .or. this.products.state == .false. ) then
 			if( GOptions_printLevel >= 2 ) then
 				write(*,*) ""
 				write(*,*) "### Warning ### The kinetic energy is negative"

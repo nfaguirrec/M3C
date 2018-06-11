@@ -1,0 +1,18 @@
+Download the base structure from http://doye.chem.ox.ac.uk/jon/structures/LJ/tables.150.html for the right number of units
+----------------------------------------------------------------------------------------------------------------------------
+# Molde 3.3
+# Pykook  2.7
+
+wget http://doye.chem.ox.ac.uk/jon/structures/LJ/points/<NUNITS> -O baseStructure.dat
+awk -v label="O2Ti-1" -v scale=3.3 'BEGIN{d0=1.11519;n=0}{map[n]=$1*scale/d0"   "$2*scale/d0"   "$3*scale/d0; n++}END{print n; print""; for(k in map) print label,map[k]}' baseStructure.dat > reactives.xyz0
+
+Modify the SystemRadius in a copy of reactorT.m3c to obtain a good performace
+-----------------------------------------------------------------------------
+cp ../reactorT.m3c .
+vim reactorT.m3c
+M3C -i reactorT.m3c &> reactorT.out
+
+mkdir split
+cd split
+splitXYZ.sh ../products-1.xyz
+M3C.check -f xyz -c DISCONNECTED -r

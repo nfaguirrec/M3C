@@ -77,6 +77,20 @@ BEGIN{
 echo ""
 echo ""
 
+# Removes repeated molecules which were generated sequentially
+# ### WARNING ### it is only for actinide project
+echo "### WARNING ### Removing sequential repeated molecules. It is only for actinide project"
+files=( `ls mol-*.xyz` )
+for (( i=1; i<${#files[@]}; i++ ))
+do
+	test=`molecule.compare ${files[$i]} ${files[$(($i-1))]} false 0.90 1.2 | grep OK | wc -l`
+	if [ "$test" -eq 3 ]
+	then
+		echo "Removed ${files[$(($i-1))]} ( Accepted ${files[$i]} )"
+		rm ${files[$(($i-1))]}
+	fi
+done
+
 declare -A labelsMap
 
 for f in `ls mol-*.xyz`

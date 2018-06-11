@@ -1,0 +1,36 @@
+BEGIN GOPTIONS
+	systemRadius = 3.0
+# 	overlappingRadius = 2.0
+	overlappingRadius = 0.5
+	
+	randomWalkStepRadius = 2.0
+	useRandomWalkers = FALSE
+	useWeightedWalkStep = TRUE
+	
+#	printLevel = 4
+END GOPTIONS
+
+BEGIN MARKOV_CHAIN
+	task = T
+
+	tracking = energy	
+	burnInFraction = 0.0
+	numberOfExperiments = 1
+#	numberOfEvents = 50000
+	numberOfEvents = 1000
+	historyFileFrequency = 1
+	reactives = file:products.xyz0
+	excitationEnergy = 10.0
+	acceptAll = TRUE
+	geometryHistoryFilePrefix = products
+END MARKOV_CHAIN
+
+BEGIN FRAGMENTS_DATABASE
+        #--------------------------------------------------------------
+        # Label    Z  M  L  SYM               geomFile           Eelec 
+        #                                         Angs              eV 
+        #--------------------------------------------------------------
+           Ti      0  1  1    1                Ti.rxyz        0.000000
+            O      0  1  1    1                 O.rxyz        0.000000
+        #--------------------------------------------------------------
+END FRAGMENTS_DATABASE

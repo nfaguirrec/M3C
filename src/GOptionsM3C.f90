@@ -71,4 +71,7 @@ module GOptionsM3C_
 	type(String) :: GOptionsM3C_angularMomentumCouplingScheme ! = "JJ"
 	real(8) :: GOptionsM3C_totalJ(3) = 0.0_8
 	type(String) :: GOptionsM3C_structureSamplingMethod ! = "RANDOM"
+	integer :: GOptionsM3C_fixMultiplicity = -1
+	logical :: GOptionsM3C_checkAtomicOverlapping = .false.
+	real(8) :: GOptionsM3C_atomicOverlappingRadius = 0.0_8*angs
 end module GOptionsM3C_

@@ -1496,6 +1496,7 @@ module MarkovChain_
 				iBuffer = FragmentsDB_instance.getIdFromName( reactiveTokens(i) )
 				call reactives.set( i, FragmentsDB_instance.clusters(iBuffer) )
 			end do
+			! 		call this.reactives.initialGuessFragmentsList() !@todo Aca tengo que llamar a algo que inicialice la geometria
 		end if
 		
 		if( allocated(reactiveTokens) ) deallocate( reactiveTokens )

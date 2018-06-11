@@ -1,0 +1,42 @@
+BEGIN GOPTIONS
+	systemRadius = 3.5
+	overlappingRadius = 2.0
+	
+	randomWalkStepRadius = 1.0
+	useRandomWalkers = FALSE
+	useWeightedWalkStep = TRUE
+	
+	checkAtomicOverlapping = TRUE
+	atomicOverlappingRadius = 0.5
+
+	structureSamplingMethod = SEQUENTIAL
+	
+# 	printLevel = 2
+END GOPTIONS
+
+BEGIN MARKOV_CHAIN
+	task = 5*R,T,S:0
+	burnInFraction = 0.0
+	tracking = energy
+	numberOfExperiments = 1
+ 	numberOfEvents = 50000
+#	numberOfEvents = 100
+	historyFileFrequency = 1
+	reactives = file:reactives.xyz0
+	excitationEnergy = 10.0
+	acceptAll = TRUE
+	geometryHistoryFilePrefix = products
+END MARKOV_CHAIN
+
+BEGIN FRAGMENTS_DATABASE
+	store = units
+	
+        #--------------------------------------------------------------
+        # Label    Z  M  L  SYM               geomFile           Eelec 
+        #                                         Angs              eV 
+        #--------------------------------------------------------------
+          O2Ti-1    0  1  1    1  O2Ti.q0.m1-1027.rxyz        0.000000
+          O2Ti-2    0  1  1    1   O2Ti.q0.m1-117.rxyz        0.000000
+          O2Ti-3    0  1  1    1  O2Ti.q0.m1-1545.rxyz        0.000000
+        #--------------------------------------------------------------
+END FRAGMENTS_DATABASE
