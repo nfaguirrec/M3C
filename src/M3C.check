@@ -48,14 +48,127 @@
 #                                                                                   #
 #####################################################################################
 
-BONDING_TOL_SCALE=1.2  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
+eV=0.0367493088244753
+
+BONDING_TOL_SCALE=1.1  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
 SIMILARITY_THR=0.90 # coarse2
 #SIMILARITY_THR=0.92 # coarse
 #SIMILARITY_THR=0.97 # fine
+ENERGY_WINDOW=`echo "1.0*$eV" | bc -l | awk '{printf("%.5f",$1)}'`
+
+if [ -f "$M3C_HOME/bin/parallel.sh" ]
+then
+        source $M3C_HOME/bin/parallel.sh
+else
+        source $M3C_HOME/src/parallel.sh
+fi
 
 ##
 # @brief
-# @todo Esta función se utiliza en varios script, así que hay que centralizarla. OJO en este fichero no tiene el rm
+##
+function checkPair()
+{
+	local iFile1=$1
+	local iFile2=$2
+	local energy1=$3
+	local energy2=$4
+	
+	if [ ! -f $iFile1 -o ! -f $iFile2 ]
+	then
+		return 1
+	fi
+	
+	if [ -n "$energy1" -a -n "$energy2" ]
+	then
+		local dE=`echo "sqrt(($energy1-($energy2))^2)" | bc -l | awk '{printf("%.5f",$1)}'`
+		echo "      Comparing $iFile1 <-> $iFile2 >>>>> dE=$dE"
+	else
+		echo "      Comparing $iFile1 <-> $iFile2"
+	fi
+	
+	test=`molecule.compare $iFile1 $iFile2 false $SIMILARITY_THR $BONDING_TOL_SCALE | grep OK | wc -l`
+	
+	if [ "$test" -eq 3 ]
+	then
+# 		echo -n "Equal"
+		
+		if [ "$forceRemove" = "TRUE" ]
+		then
+			echo "      --> Removed ($iFile2)"
+			rm $iFile2
+		else
+			echo "      --> Removed ($iFile2)"
+# 			echo ""
+		fi
+		
+# 					break
+# 	else
+# 		echo "Different"
+	fi
+}
+
+# ##
+# # @brief
+# # @todo Esta función se utiliza en varios script, así que hay que centralizarla. OJO en este fichero no tiene el rm
+# ##
+# function checkRepeated()
+# {
+# 	local format=$1
+# 	local resultsDir=$2
+# 	local forceRemove=$3
+# 	
+# 	local id1=""
+# 	local id2=""
+# 	local value=""
+# 	local nAtoms1=""
+# 	local nAtoms2=""
+# 	
+# 	if [ -z "$M3C_NTHREADS" ]
+# 	then
+# 			M3C_NTHREADS=`cat /proc/cpuinfo | grep processor | wc -l`
+# 	fi
+# 	nThreads=$((20*$M3C_NTHREADS))
+# # 	nThreads=1
+# 	REFRESH_TIME="0s"
+# 	
+# 	pushd . &> /dev/null
+# 	cd $resultsDir
+# 	
+# 	local categories=`ls *.$format | awk 'BEGIN{FS="[-]"}{map[$1]=1}END{for(item in map) print item}'`
+# 	
+# # 	cat /dev/null > .commands$$
+# 	
+# 	for category in $categories
+# 	do
+# # 		local files=(`ls $category-*.$format 2> /dev/null`)
+# 		#@todo Para usar la energia hay que asegurarse que todas las moleculas tienen la energi, de lo contrario se debe usar el anterior esquema
+# 		
+# 		grep Energy $category-*.$format | sort -k3 -n | sed 's/:Energy =//g' 2> /dev/null > .data$$
+# 		local files=(`cat .data$$ | awk '{print $1}' 2> /dev/null`)
+# 		local energies=(`cat .data$$ | awk '{print $2}' 2> /dev/null`)
+# 		rm .data$$
+# 		
+# 		for id1 in `seq 0 $(( ${#files[@]} - 1 ))`
+# 		do
+# 			for id2 in `seq $(( $id1 + 1 )) $(( ${#files[@]} - 1 ))`
+# 			do
+# 				if [ "`echo "sqrt((${energies[$id1]}-(${energies[$id2]}))^2) <= $ENERGY_WINDOW" | bc -l`" -eq "1" ]
+# 				then
+# # 					echo "checkPair ${files[$id1]} ${files[$id2]}" >> .commands$$
+# 					checkPair ${files[$id1]} ${files[$id2]} ${energies[$id1]} ${energies[$id2]}
+# 				fi
+# 			done
+# 		done
+# 	done
+# 	
+# # 	parallel .commands$$ $nThreads
+# # 	rm .commands$$
+# 	
+# 	popd &> /dev/null
+# }
+
+##
+# @brief
 ##
 function checkRepeated()
 {
@@ -63,57 +176,14 @@ function checkRepeated()
 	local resultsDir=$2
 	local forceRemove=$3
 	
-	local id1=""
-	local id2=""
-	local value=""
-	local nAtoms1=""
-	local nAtoms2=""
-	
 	pushd . &> /dev/null
 	cd $resultsDir
 	
-	local categories=`ls *.$format | awk 'BEGIN{FS="[-]"}{map[$1]=1}END{for(item in map) print item}'`
+	ls *.$format > .list$$
 	
-	for category in $categories
-	do
-		echo "   Group $category"
-		
-		local files=(`ls $category-*.$format 2> /dev/null`)
-		
-		for id1 in `seq 0 $(( ${#files[@]} - 1 ))`
-		do
-			for id2 in `seq $(( $id1 + 1 )) $(( ${#files[@]} - 1 ))`
-			do
-				if [ ! -f ${files[$id1]} -o ! -f ${files[$id2]} ]
-				then
-					continue
-				fi
-				
-				echo -n "      Comparing ${files[$id1]} <-> ${files[$id2]} ... "
-				
-				test=`molecule.compare ${files[$id1]} ${files[$id2]} false $SIMILARITY_THR $BONDING_TOL_SCALE | grep OK | wc -l`
-				
-				if [ "$test" -eq 3 ]
-				then
-					echo -n "Equal"
-					
-					if [ "$forceRemove" = "TRUE" ]
-					then
-						echo "--> Removed (${files[$id2]})"
-						rm ${files[$id2]}
-					else
-						echo ""
-					fi
-					
-# 					break
-				else
-					echo "Different"
-				fi
-			done
-		done
-		
-		echo ""
-	done
+	molecule.duplicate .list$$ $forceRemove false $SIMILARITY_THR $BONDING_TOL_SCALE
+	
+	rm .list$$
 	
 	popd &> /dev/null
 }
@@ -309,7 +379,7 @@ function main()
 {
 	local format=""
 	local action=""
-	local forceRemove=""
+	local forceRemove="FALSE"
 	
 	if [ "$#" -lt 1 ]
 	then
@@ -378,6 +448,7 @@ function main()
 	echo ""
 	echo "Bonding scale factor: $BONDING_TOL_SCALE"
 	echo "Similarity threshold: $SIMILARITY_THR"
+	echo "Energy window: $ENERGY_WINDOW"
 	echo ""
 	
 	case "$action" in
