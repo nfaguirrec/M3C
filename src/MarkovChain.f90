@@ -518,9 +518,9 @@ module MarkovChain_
 									call GOptions_info( &
 										"Blocked. Reducing randomWalkStepRadius in 1% ("//FString_fromReal(GOptionsM3C_randomWalkStepRadius/angs)//" A)", &
 										"MarkovChain" )
-								else
-									call GOptions_info( "Blocked. Forcing centers completely random", "MarkovChain" )
-									react.reactives.forceRandomCenters = .true.
+! 								else
+! 									call GOptions_info( "Blocked. Forcing centers completely random", "MarkovChain" )
+! 									react.reactives.forceRandomCenters = .true.
 								end if
 								
 								nTimesBlocked = 0

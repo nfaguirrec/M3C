@@ -106,7 +106,7 @@ module FragmentsListBase_
 		character(200), private :: dlabel_   !< Detailed label given by the user, for example C1(sl)
 		logical, private :: testLabel_       !< Checks that actualization of the label is made only one time
 		
-		logical :: forceRandomCenters    !< Fuerza a utilizar randomCenters en el siguiente llamado a changeGeometryFragmentsListBase
+! 		logical :: forceRandomCenters    !< Fuerza a utilizar randomCenters en el siguiente llamado a changeGeometryFragmentsListBase
 		logical :: forceInitializing     !< Fuerza a utilizar initialGuessFragmentsListBase
 		
 		integer :: totalComposition( AtomicElementsDB_nElems ) !< [ n1, n2, ..., nN ] n=numberOfAtomsWithZ, pos = atomicNumber 
@@ -239,7 +239,7 @@ module FragmentsListBase_
 		this.dlabel_ = ""
 		this.testLabel_ = .false.
 		
-		this.forceRandomCenters = .true.
+! 		this.forceRandomCenters = .true.
 ! 		this.forceInitializing = .true.
 		this.forceInitializing = .false.
 		
@@ -299,7 +299,7 @@ module FragmentsListBase_
 		this.dlabel_ = other.dlabel_
 		this.testLabel_ = other.testLabel_
 		
-		this.forceRandomCenters = other.forceRandomCenters
+! 		this.forceRandomCenters = other.forceRandomCenters
 		this.forceInitializing = other.forceInitializing
 		
 		this.totalComposition = other.totalComposition
@@ -474,7 +474,7 @@ module FragmentsListBase_
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Ya no es necesario generar centros aleatorios
 		! pues se han leido del fichero de gemetría
-		this.forceRandomCenters = .false.
+! 		this.forceRandomCenters = .false.
 		
 	end subroutine loadXYZ
 	
@@ -947,7 +947,7 @@ module FragmentsListBase_
 		end if
 		
 	end subroutine randomCenters
-
+	
 	!>
 	!! @brief
 	!! @param[in]  maxIter
@@ -1171,10 +1171,11 @@ module FragmentsListBase_
 		integer :: i, j, n, m
 		real(8) :: centerOfMass(3)
 		logical :: check
+		integer :: iostat
 		
 		real(8), allocatable :: geomBackup(:,:)
 		
-		allocate( geomBackup(3,this.nMolecules()) )
+		allocate( geomBackup(this.nMolecules(),3) )
 		
 		do i=1,this.nMolecules()
 			geomBackup(i,:) = this.clusters(i).center()
@@ -1183,26 +1184,28 @@ module FragmentsListBase_
 		this.state = .true.
 		
 ! 		if( this.forceInitializing ) then
-! 			call this.initialGuessFragmentsListBase()
+			call this.initialGuessFragmentsListBase()
 ! 			return
 ! 		end if
-		
+
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Por omisión se generan centros aleatorios
 		! la primera vez que entra a esta función
-		if( this.forceRandomCenters .or. ( .not. GOptionsM3C_useRandomWalkers ) ) then
+! 		if( this.forceRandomCenters .or. ( .not. GOptionsM3C_useRandomWalkers ) ) then
+		if( .not. GOptionsM3C_useRandomWalkers ) then
 			
-			write(*,"(A)",advance="no") "Random ... "
+! 			write(*,"(A)",advance="no") "Random ... "
+			
 			check = .true.
 			do n=1,1000
 				if( GOptions_printLevel >= 2 ) write(*,*) "Changing geometry avoiding atomic overlapping (step="//trim(FString_fromInteger(n))//")"
 				
 				call this.randomCenters()
-				write(*,"(A)",advance="no") ":"
+! 				write(*,"(A)",advance="no") ":"
 				
 				if( .not. this.atomicOverlapping() ) then
 					check = .false.
-					write(*,"(A)",advance="no") " OK"
+! 					write(*,"(A)",advance="no") " OK"
 					exit
 				end if
 			end do
@@ -1211,15 +1214,14 @@ module FragmentsListBase_
 			if( check ) then
 				this.state = .false.
 				
-				call this.save("hola.xyz")
-				read(*,*)
-				
 				do i=1,this.nMolecules()
 					call this.clusters(i).setCenter( geomBackup(i,:) )
 				end do
 			end if
 		else
+			
 			do m=1,10
+			
 				check = .true.
 				do n=1,1000
 					if( GOptions_printLevel >= 2 ) write(*,*) "Changing geometry avoiding atomic overlapping (trial="//trim(trim(FString_fromInteger(m)))//",step="//trim(FString_fromInteger(n))//")"
@@ -2002,6 +2004,8 @@ module FragmentsListBase_
 		
 		this.intermolEnergy_ = 0.0_8
 		
+		if( .not. this.state ) return ! If state=F, likely the configuration is overlapping so this method is going to fail!
+		
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_paragraph( "Intermolecular energy contributions", indent=2 )
 			
@@ -2040,17 +2044,17 @@ module FragmentsListBase_
 ! 				rvij = norm2( this.clusters(i).centerOfMass()-this.clusters(j).centerOfMass() )
 				rvij = norm2( this.clusters(i).center()-this.clusters(j).center() )
 				
-				! @todo Esto solo ocurren en algunos casos concretos y no se porque. Esto ya deberia estar filtrado desde la generación de geometría. Cuando ocurre hay desviaciones de solo ~0.05A
-! 				if( this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType )-GOptionsM3C_overlappingRadius > rvij ) then
-! 					call GOptions_error( &
-! 						 "Overlapping configuration found", &
-! 						 "FragmentsListBase.updateIntermolecularPotential()", &
-! 						 "( R1+R2-S = "//&
-! 						 trim(FString_fromReal((this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType )-GOptionsM3C_overlappingRadius)/angs,"(F5.3)"))//" A ) > " &
-! 						 //"( rij = "//trim(FString_fromReal(rvij/angs,"(F5.3)"))//" A ) " &
-! 						 //trim(this.clusters(i).label())//" --- "//trim(this.clusters(j).label()) &
-! 					)
-! 				end if
+				if( this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType )-GOptionsM3C_overlappingRadius > rvij ) then
+					call GOptions_error( &
+						 "Overlapping configuration found", &
+						 "SMoleculeList.updateIntermolecularPotential()", &
+						 "( R1+R2 = "//&
+						 trim(FString_fromReal((this.clusters(i).radius( type=GOptionsM3C_radiusType )+this.clusters(j).radius( type=GOptionsM3C_radiusType ))/angs,"(F5.3)"))//" A ) > " &
+						 //"( rij = "//trim(FString_fromReal(rvij/angs,"(F5.3)"))//" A ) " &
+						 //trim(this.clusters(i).label())//" --- "//trim(this.clusters(j).label()) &
+						 //". State="//trim(FString_fromLogical(this.state)) &
+					)
+				end if
 				
 				rBuffer = FragmentsDB_instance.potential( this.clusters(i).id, this.clusters(j).id, rvij )
 				
@@ -2605,7 +2609,7 @@ module FragmentsListBase_
 		do while( GOptionsM3C_systemRadius >= rMin )
 			
 			do i=1,nExp
-				this.forceRandomCenters = .true.
+! 				this.forceRandomCenters = .true.
 				call this.changeGeometryFragmentsListBase()
 				
 				logIData(i) = 0.0_8

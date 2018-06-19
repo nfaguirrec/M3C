@@ -201,16 +201,16 @@ module FragmentsList_
 		
 		integer :: j
 		
-		if( this.forceInitializing ) then
-			call this.initialGuessFragmentsList()
-			return
-		end if
+! 		if( this.forceInitializing ) then
+! 			call this.initialGuessFragmentsList()
+! 			return
+! 		end if
 		
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_section( "CHANGE GEOMETRY "//trim(this.label()), indent=2 )
 			write(IO_STDOUT,*) ""
 		end if
-
+		
 		call this.changeGeometryFragmentsListBase()
 		
 		!-----------------------------------------------------------------------------------------

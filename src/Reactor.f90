@@ -578,7 +578,17 @@ module Reactor_
 		
 		do i=1,nProducts
 			call products.set( i, FragmentsDB_instance.clusters( channelInfo(i) ) )
+		
+			if( dNfrag == 0 ) then
+				call products.clusters(i).setCenter( reactives.clusters(i).center() )
+			end if
+			
+			! @todo Hace falta hacer algo en caso que dNfrag>0. Esto es fundamental para que la parte estadistica funcione
 		end do
+		
+		if( products.atomicOverlapping() ) then
+			products.state = .false.
+		end if
 		
 		if( GOptions_printLevel >= 2 ) then
 			write(*,*) ""
@@ -683,6 +693,7 @@ module Reactor_
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Se muestran lo valores importantes
 			if( GOptions_printLevel >= 2 ) then
+				write(*,"(A10,I20)") "dNFrag", dNFrag
 				write(*,"(A10,I20,5X,A)") "massNumber", internalMassNumber, "used for reactor"
 				write(*,"(A10,I20,5X,A)") "charge", internalCharge, "used for reactor"
 				write(*,"(A10,I20,5X,A)") "nTrials", internalNTrials, "used for reactor"
@@ -706,6 +717,10 @@ module Reactor_
 					call products.clusters(j-1+i).setCenter( reactives.clusters(targetMolecule1).center() )
 				end if
 			end do
+			
+			if( products.atomicOverlapping() ) then
+				products.state = .false.
+			end if
 			
 		else
 			if( dNfrag < -1 ) then
