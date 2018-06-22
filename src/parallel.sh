@@ -87,6 +87,7 @@ function parallel()
 		
 		if [ "$sizeJobs" -eq 0 ]
 		then
+			wait
 			break
 		fi
 		
