@@ -87,23 +87,27 @@ function parallel()
 		
 		if [ "$sizeJobs" -eq 0 ]
 		then
+			wait
 			break
 		fi
 		
 		if [ "${#pidJobs[@]}" -le "$nThreads" -a "$sizeJobs" -ne 0 ]
 		then
-			stack_pop jobs command
-			
-			if [ -n "$command" ]
-			then
-				`echo "$command"` &
-				pid="$!"
+			while [ "${#pidJobs[@]}" -lt "$nThreads" ]
+			do
+				stack_pop jobs command
 				
-				pidJobs[$pid]=$pid
-				commands[$pid]=$command
-				echo "Running: $command ($pid)"
-				iStartTime[$pid]=`date "+%s"`
-			fi
+				if [ -n "$command" ]
+				then
+					`echo "$command"` &
+					pid="$!"
+					
+					pidJobs[$pid]=$pid
+					commands[$pid]=$command
+					echo "Running: $command ($pid)"
+					iStartTime[$pid]=`date "+%s"`
+				fi
+			done
 		fi
 		
 		if [ "$firstTime" -eq 1 ]
