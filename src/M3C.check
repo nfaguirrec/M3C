@@ -54,6 +54,11 @@ BONDING_TOL_SCALE=1.1  # Se consideran unidos aquellos atomos que satisfacen dij
 SIMILARITY_THR=0.90 # coarse2
 #SIMILARITY_THR=0.92 # coarse
 #SIMILARITY_THR=0.97 # fine
+USEMASSWEIGHT="FALSE"
+USEIM="FALSE"
+USENODEWEIGHTS="FALSE"
+USEEDGEWEIGHTS="FALSE"
+
 ENERGY_WINDOW=`echo "1.0*$eV" | bc -l | awk '{printf("%.5f",$1)}'`
 
 if [ -f "$M3C_HOME/bin/parallel.sh" ]
@@ -181,7 +186,10 @@ function checkRepeated()
 	
 	ls *.$format > .list$$
 	
-	molecule.duplicate .list$$ $forceRemove false $SIMILARITY_THR $BONDING_TOL_SCALE
+	# molecule.duplicate file [remove] [ debug ] [ thr ] [alpha] [useMassWeight] [useIm] [useNodeWeights] [useEdgeWeights]
+	#                           false     false     0.92    1.1        true        true        true              true     
+
+	molecule.duplicate .list$$ $forceRemove false $SIMILARITY_THR $BONDING_TOL_SCALE $USEMASSWEIGHT $USEIM $USENODEWEIGHTS $USEEDGEWEIGHTS
 	
 	rm .list$$
 	
@@ -369,6 +377,24 @@ function usage()
 	echo -e "          Similarity threshold. Two molecules are considered the same if their similarity indices differ less that `underline threshold`"
 	echo -e "          Suggested values: 0.90-0.92 (coarse), 0.97 (fine)"
 	echo -e "          (default 0.9)"
+	echo -e ""
+	echo -e "     -m"
+	echo -e "     --useMassWeight"
+	echo -e "          Enables the Ballester descriptors are weighted by the mass of the atoms"
+	echo -e ""
+	echo -e "     -I"
+	echo -e "     --useIm"
+	echo -e "          The main components of the unitary inertia tensor of the molecules are used in addition to the"
+	echo -e "          Ballester's descriptors in the geometry comparison."
+	echo -e ""
+	echo -e "     -N"
+	echo -e "     --useNodeWeights"
+	echo -e "          The mass of the atoms is used to weight the nodes of the molecular graph."
+	echo -e ""
+	echo -e "     -E"
+	echo -e "     --useEdgeWeights"
+	echo -e "          The interatomic distance is used to weight the edges of the molecular graph."
+	echo -e ""
 	exit
 }
 
@@ -387,8 +413,8 @@ function main()
 	fi
 	
 	TEMP=`getopt \
-		-o f:c:rb:s: \
-		--long format:,check:,remove,bond,similarity \
+		-o f:c:rb:s:mINE \
+		--long format:,check:,remove,bond,similarity,useMassWeight,useIm,useNodeWeights,useEdgeWeights \
 		-n 'M3C.check' -- "$@"`
 
 	eval set -- "$TEMP"
@@ -433,6 +459,22 @@ function main()
 				SIMILARITY_THR=$2
 				shift 2
 				;;
+			-m|--useMassWeight)
+				USEMASSWEIGHT="TRUE"
+				shift 1
+				;;
+			-I|--useIm)
+				USEIM="TRUE"
+				shift 1
+				;;
+			-N|--useNodeWeights)
+				USENODEWEIGHTS="TRUE"
+				shift 1
+				;;
+			-E|--useEdgeWeights)
+				USEEDGEWEIGHTS="TRUE"
+				shift 1
+				;;
 			--)
 				shift
 				break
@@ -449,6 +491,10 @@ function main()
 	echo "Bonding scale factor: $BONDING_TOL_SCALE"
 	echo "Similarity threshold: $SIMILARITY_THR"
 	echo "Energy window: $ENERGY_WINDOW"
+	echo "Use Mass Weights: $USEMASSWEIGHT"
+	echo "Use Im: $USEIM"
+	echo "Use Node Weights: $USENODEWEIGHTS"
+	echo "Use Edge Weights: $USEEDGEWEIGHTS"
 	echo ""
 	
 	case "$action" in
