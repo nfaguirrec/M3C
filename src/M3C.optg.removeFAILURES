@@ -1,1 +1,15 @@
-mkdir -p FAILURE/history.optg; for f in `grep -H "FAILURE" *.xyz | sed 's/:.*$//g'`; do echo $f; mv history.optg/${f%.*}.* FAILURE/history.optg; mv ${f%.*}.* FAILURE/; done
+mkdir -p FAILURE/history.optg
+
+for f in `grep -H "FAILURE" *.xyz | sed 's/:.*$//g'`
+do
+	echo $f
+	mv history.optg/${f%.*}.* FAILURE/history.optg
+	mv ${f%.*}.* FAILURE/
+done
+
+for f in `grep -H "Geometry from" *.xyz | sed 's/:.*$//g'`
+do
+	echo $f
+	mv history.optg/${f%.*}.* FAILURE/history.optg
+	mv ${f%.*}.* FAILURE/
+done
