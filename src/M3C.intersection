@@ -140,11 +140,13 @@ function main()
 		echo "usage:"
 		echo "    M3C.merge [xyz|rxyz|rxyz0] dir1 dir2"
 		echo "                    xyz                 "
-		echo " Do not use / character in the directories"
 		exit
 	fi
 	
-	categories=`ls $dir1 $dir2 | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
+	ln -s $dir1 .dir1
+	ln -s $dir2 .dir2
+	
+	categories=`ls .dir1 .dir2 | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
 	
 	mkdir merge
 	
@@ -156,10 +158,10 @@ function main()
 	
 	for category in $categories
 	do
-		for dirName in $dir1 $dir2
+		for dirName in .dir1 .dir2
 		do
-			targetFiles1=`( ls $dir1/$category*.$FILTER | sed 's/'$dir1'\///g' ) 2> /dev/null`
-			targetFiles2=`( ls $dir2/$category*.$FILTER | sed 's/'$dir2'\///g' ) 2> /dev/null`
+			targetFiles1=`( ls .dir1/$category*.$FILTER | sed 's/.dir1\///g' ) 2> /dev/null`
+			targetFiles2=`( ls .dir2/$category*.$FILTER | sed 's/.dir2\///g' ) 2> /dev/null`
 			
 			if [ -n "$targetFiles1" ]
 			then
@@ -167,11 +169,11 @@ function main()
 				do
 					if [ "$FILTER" != "rxyz0" ]
 					then
-# 						echo "   $dir1/$target1"  " ----> "  "merge/a_$target1.$FILTER"
-						cp $dir1/$target1 merge/a_$target1.$FILTER
+# 						echo "   .dir1/$target1"  " ----> "  "merge/a_$target1"
+						cp .dir1/$target1 merge/a_$target1
 					else
-# 						echo "   $dir1/$target1"  " ----> "  "merge/a_$target1.rxyz"
-						cp $dir1/$target1 merge/a_$target1.rxyz
+# 						echo "   .dir1/$target1"  " ----> "  "merge/a_$target1"
+						cp .dir1/$target1 merge/a_$target1
 					fi
 				done
 			fi
@@ -182,11 +184,11 @@ function main()
 				do
 					if [ "$FILTER" != "rxyz0" ]
 					then
-# 						echo "   $dir2/$target2"  " ----> "  "merge/b_$target2.$FILTER"
-						cp $dir2/$target2 merge/b_$target2.$FILTER
+# 						echo "   .dir2/$target2"  " ----> "  "merge/b_$target2"
+						cp .dir2/$target2 merge/b_$target2
 					else
-# 						echo "   $dir2/$target2"  " ----> "  "merge/b_$target2.rxyz"
-						cp $dir2/$target2 merge/b_$target2.rxyz
+# 						echo "   .dir2/$target2"  " ----> "  "merge/b_$target2"
+						cp .dir2/$target2 merge/b_$target2
 					fi
 				done
 			fi
@@ -199,15 +201,16 @@ function main()
 		FILTER="rxyz"
 	fi
 	
-	echo "-----------------------------"
+	echo "----------------------------------------"
 	echo " Checking for common isomers "
 	echo " a- for directory $dir1      "
 	echo " b- for directory $dir2      "
-	echo "-----------------------------"
+	echo "----------------------------------------"
 	echo ""
 	checkRepeated $FILTER merge FALSE
 	
 	rm -rf merge
+	rm .dir1 .dir2
 }
 
 main $*
