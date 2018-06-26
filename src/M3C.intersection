@@ -1,0 +1,214 @@
+#!/bin/bash
+#####################################################################################
+#                                                                                   #
+# This file is part of M3C project                                                  #
+# Copyright (c) by authors                                                          #
+#                                                                                   #
+#  Authors:                                                                         #
+#                         * Néstor F. Aguirre (2017-2017)                           #
+#                           nfaguirrec@gmail.com                                    #
+#                                                                                   #
+#  Redistribution and use in source and binary forms, with or without               #
+#  modification, are permitted provided that the following conditions are met:      #
+#                                                                                   #
+#  1. Redistributions of source code must retain the above copyright notice, this   #
+#     list of conditions and the following disclaimer.                              #
+#  2. Redistributions in binary form must reproduce the above copyright notice,     #
+#     this list of conditions and the following disclaimer in the documentation     #
+#     and/or other materials provided with the distribution.                        #
+#  3. Neither the name of the copyright holders nor the names of its contributors   #
+#     may be used to endorse or promote products derived from this software         #
+#     without specific prior written permission.                                    #
+#                                                                                   #
+#  The copyright holders provide no reassurances that the source code provided      #
+#  does not infringe any patent, copyright, or any other intellectual property      #
+#  rights of third parties.  The copyright holders disclaim any liability to any    #
+#  recipient for claims brought against recipient by any third party for            #
+#  infringement of that parties intellectual property rights.                       #
+#                                                                                   #
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND  #
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED    #
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE           #
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR  #
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES   #
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;     #
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND      #
+#  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT       #
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS    #
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                     #
+#                                                                                   #
+#####################################################################################
+
+FILTER="xyz"
+
+BONDING_TOL_SCALE=1.2  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
+SIMILARITY_THR=0.92 # coarse
+# SIMILARITY_THR=0.97 # fine
+
+##
+# @brief
+##
+function checkRepeated()
+{
+        local format=$1
+        local resultsDir=$2
+        local forceRemove=$3
+        
+        pushd . &> /dev/null
+        cd $resultsDir
+        
+        ls *.$format > .list$$
+        
+        # molecule.duplicate file [remove] [ debug ] [ thr ] [alpha] [useMassWeight] [useIm] [useNodeWeights] [useEdgeWeights]
+        #                           false     false     0.92    1.1        true        true        true              true     
+
+        molecule.duplicate .list$$ $forceRemove false $SIMILARITY_THR $BONDING_TOL_SCALE $USEMASSWEIGHT $USEIM $USENODEWEIGHTS $USEEDGEWEIGHTS
+        
+        rm .list$$
+        
+        popd &> /dev/null
+}
+
+##
+# @brief
+##
+function filterIsomers()
+{
+	local resultsDir=$1
+	
+	local id1=""
+	local id2=""
+	local value=""
+	local nAtoms1=""
+	local nAtoms2=""
+	
+	pushd . &> /dev/null
+	cd $resultsDir
+	
+	local categories=`ls *.$FILTER | awk 'BEGIN{FS="[-]"}{map[$1]=1}END{for(item in map) print item}'`
+	
+	for category in $categories
+	do
+		echo "   Group $category"
+		
+		local files=(`ls $category-*.$FILTER 2> /dev/null`)
+		
+		for id1 in `seq 0 $(( ${#files[@]} - 1 ))`
+		do
+			for id2 in `seq $(( $id1 + 1 )) $(( ${#files[@]} - 1 ))`
+			do
+				if [ ! -f ${files[$id1]} -o ! -f ${files[$id2]} ]
+				then
+					continue
+				fi
+				
+				echo -n "      Comparing ${files[$id1]} <-> ${files[$id2]} ... "
+				
+				test=`molecule.compare ${files[$id1]} ${files[$id2]} false $SIMILARITY_THR $BONDING_TOL_SCALE | grep OK | wc -l`
+				
+				if [ "$test" -eq 3 ]
+				then
+					echo "Equal"
+					rm ${files[$id1]}
+					break
+				else
+					echo "Different"
+				fi
+			done
+		done
+		
+		echo ""
+	done
+	
+	popd &> /dev/null
+}
+
+##
+# @brief
+##
+function main()
+{
+	if [ "$1" = "xyz" -o "$1" = "rxyz" -o "$1" = "rxyz0" ]
+	then
+		FILTER=$1
+		local dir1=$2
+		local dir2=$3
+	fi
+	
+	if [ -z "$FILTER" -o -z "$dir1" -o -z "$dir2" ]
+	then
+		echo "usage:"
+		echo "    M3C.merge [xyz|rxyz|rxyz0] dir1 dir2"
+		echo "                    xyz                 "
+		echo " Do not use / character in the directories"
+		exit
+	fi
+	
+	categories=`ls $dir1 $dir2 | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
+	
+	mkdir merge
+	
+# 	echo ""
+# 	echo "-------------------"
+# 	echo " Combining isomers "
+# 	echo "-------------------"
+# 	echo ""
+	
+	for category in $categories
+	do
+		for dirName in $dir1 $dir2
+		do
+			targetFiles1=`( ls $dir1/$category*.$FILTER | sed 's/'$dir1'\///g' ) 2> /dev/null`
+			targetFiles2=`( ls $dir2/$category*.$FILTER | sed 's/'$dir2'\///g' ) 2> /dev/null`
+			
+			if [ -n "$targetFiles1" ]
+			then
+				for target1 in $targetFiles1
+				do
+					if [ "$FILTER" != "rxyz0" ]
+					then
+# 						echo "   $dir1/$target1"  " ----> "  "merge/a_$target1.$FILTER"
+						cp $dir1/$target1 merge/a_$target1.$FILTER
+					else
+# 						echo "   $dir1/$target1"  " ----> "  "merge/a_$target1.rxyz"
+						cp $dir1/$target1 merge/a_$target1.rxyz
+					fi
+				done
+			fi
+			
+			if [ -n "$targetFiles2" ]
+			then
+				for target2 in $targetFiles2
+				do
+					if [ "$FILTER" != "rxyz0" ]
+					then
+# 						echo "   $dir2/$target2"  " ----> "  "merge/b_$target2.$FILTER"
+						cp $dir2/$target2 merge/b_$target2.$FILTER
+					else
+# 						echo "   $dir2/$target2"  " ----> "  "merge/b_$target2.rxyz"
+						cp $dir2/$target2 merge/b_$target2.rxyz
+					fi
+				done
+			fi
+		done
+# 		echo ""
+	done
+	
+	if [ "$FILTER" = "rxyz0" ]
+	then
+		FILTER="rxyz"
+	fi
+	
+	echo "-----------------------------"
+	echo " Checking for common isomers "
+	echo " a- for directory $dir1      "
+	echo " b- for directory $dir2      "
+	echo "-----------------------------"
+	echo ""
+	checkRepeated $FILTER merge FALSE
+	
+	rm -rf merge
+}
+
+main $*
+
