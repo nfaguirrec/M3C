@@ -293,6 +293,7 @@ module Fragment_
 			write(IO_STDOUT,"(A)") ""
 			write(IO_STDOUT,"(4X,A22,A)") "file name = ", this.fileName
 			write(IO_STDOUT,"(4X,A22,A)") "name = ", this.name
+			write(IO_STDOUT,"(4X,A22,A)") "formula = ", trim(this.chemicalFormula())
 			write(IO_STDOUT,"(4X,A23,3F20.5,A)") "Moments of inertia = [", &
 					this.diagInertiaTensor.get(1,1)/amu/angs**2, &
 					this.diagInertiaTensor.get(2,2)/amu/angs**2, &
