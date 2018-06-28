@@ -121,7 +121,7 @@ function main()
 			E0_1=`grep "Energy" .dir1/$category*.$FILTER 2> /dev/null | sort -k3 -n | awk '{print $NF;exit}'`
 			E0_2=`grep "Energy" .dir2/$category*.$FILTER 2> /dev/null | sort -k3 -n | awk '{print $NF;exit}'`
 			
-			E0=0.0
+			E0=$E0_1
 			if [ -n "$E0_1" -a -n "$E0_2" ]
 			then
 				if [ `echo "$E0_1<$E0_2" | bc -l` -eq 1  ]

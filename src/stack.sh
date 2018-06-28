@@ -128,7 +128,7 @@ function stack_pop
 
     if [[ "$_i" -eq 0 ]]
     then
-        echo "Empty stack -- $1" >&2
+#         echo "Empty stack -- $1" >&2
         return 1
     fi
 
