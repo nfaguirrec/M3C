@@ -5,7 +5,7 @@
 # Copyright (c) by authors                                                          #
 #                                                                                   #
 #  Authors:                                                                         #
-#                         * Néstor F. Aguirre (2017-2017)                           #
+#                         * Néstor F. Aguirre (2017-2018)                           #
 #                           nfaguirrec@gmail.com                                    #
 #                                                                                   #
 #  Redistribution and use in source and binary forms, with or without               #
@@ -83,29 +83,34 @@ function main()
 	if [ "$1" = "xyz" -o "$1" = "rxyz" -o "$1" = "rxyz0" ]
 	then
 		FILTER=$1
-		local dir1=$2
-		local dir2=$3
-		local dEMax=$4
+		local dEMax=$2
+		shift 2
+		local listDir=$*
 	fi
 	
-	if [ -z "$FILTER" -o -z "$dir1" -o -z "$dir2" ]
+	if [ -z "$FILTER" -o -z "$dEMax" ]
 	then
 		echo "usage:"
-		echo "    M3C.merge (xyz|rxyz|rxyz0) dir1 dir2 [Emax] "
-		echo "                    xyz                  inf_eV "
+		echo "    M3C.merge (xyz|rxyz|rxyz0)   Emax dir1 dir2 dir3 ..."
+		echo "                    xyz        inf_eV "
 		exit
 	fi
 	
 	rm -rf merge &> /dev/null
-	rm .dir1 .dir2 &> /dev/null
+	
+	dirId=1
+	allDirs=""
+	for dir in $listDir
+	do
+		rm .dir$dirId &> /dev/null
+		ln -s $dir .dir$dirId
+		allDirs="$allDirs .dir$dirId"
+		dirId=$(( $dirId+1 ))
+	done
+	
 	mkdir merge
 	
-	[ -z "$dEMax" ] && dEMax=10000000
-	
-	ln -s $dir1 .dir1
-	ln -s $dir2 .dir2
-	
-	categories=`ls .dir1 .dir2 | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
+	categories=`ls $allDirs | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
 	
 # 	echo ""
 # 	echo "-------------------"
@@ -116,30 +121,32 @@ function main()
 	sumFilesInMerge=0
 	for category in $categories
 	do
-		for dirName in .dir1 .dir2
+		E0="None"
+		for dir in $allDirs
 		do
-			E0_1=`grep "Energy" .dir1/$category*.$FILTER 2> /dev/null | sort -k3 -n | awk '{print $NF;exit}'`
-			E0_2=`grep "Energy" .dir2/$category*.$FILTER 2> /dev/null | sort -k3 -n | awk '{print $NF;exit}'`
+			E0_1=`grep "Energy" $dir/$category*.$FILTER 2> /dev/null | sort -k3 -n | awk '{print $NF;exit}'`
 			
-			E0=$E0_1
-			if [ -n "$E0_1" -a -n "$E0_2" ]
+			if [ $E0 != "None" ]
 			then
-				if [ `echo "$E0_1<$E0_2" | bc -l` -eq 1  ]
+				if [ -n "$E0_1" ]
 				then
-					E0=$E0_1
-				else
-					E0=$E0_2
+					[ `echo "$E0_1<$E0" | bc -l` -eq 1  ] && E0=$E0_1
 				fi
+			else
+				E0=$E0_1
 			fi
+		done
+		
+		dirId=1
+		for dir in $allDirs
+		do
+			targetFiles=`ls $dir/$category*.$FILTER 2> /dev/null | sed 's/'$dir'\///g'`
 			
-			targetFiles1=`ls .dir1/$category*.$FILTER 2> /dev/null | sed 's/.dir1\///g'`
-			targetFiles2=`ls .dir2/$category*.$FILTER 2> /dev/null | sed 's/.dir2\///g'`
-			
-			if [ -n "$targetFiles1" ]
+			if [ -n "$targetFiles" ]
 			then
-				for target1 in $targetFiles1
+				for target in $targetFiles
 				do
-					dE=`grep "Energy" .dir1/$target1 | awk '{printf "%10.8f",($NF-('$E0'))/0.0367493088244753;exit}'`
+					dE=`grep "Energy" $dir/$target | awk '{printf "%10.8f",($NF-('$E0'))/0.0367493088244753;exit}'`
 					test1=`echo "$dE < $dEMax" | bc -l`
 # 					echo "dE = $dE < $dEMax    $test1"
 					
@@ -147,39 +154,18 @@ function main()
 					
 					if [ "$FILTER" != "rxyz0" ]
 					then
-# 						echo "   .dir1/$target1"  " ----> "  "merge/a_$target1"
-						[ "$test1" -eq 1 ] && cp .dir1/$target1 merge/a_$target1
+# 						echo "   $dir/$target"  " ----> "  "merge/${dirId}__${target}"
+						[ "$test1" -eq 1 ] && cp $dir/$target merge/${dirId}__${target}
 					else
-# 						echo "   .dir1/$target1"  " ----> "  "merge/a_$target1"
-						[ "$test1" -eq 1 ] && cp .dir1/$target1 merge/a_$target1
+# 						echo "   $dir/$target"  " ----> "  "merge/${dirId}__${target}"
+						[ "$test1" -eq 1 ] && cp $dir/$target merge/${dirId}__${target}
 					fi
 					
 					sumFilesInMerge=$(( $sumFilesInMerge + $test1 ))
 				done
 			fi
 			
-			if [ -n "$targetFiles2" ]
-			then
-				for target2 in $targetFiles2
-				do
-					dE=`grep "Energy" .dir2/$target2 | awk '{printf "%10.8f", ($NF-('$E0'))/0.0367493088244753;exit}'`
-# 					echo "dE = $dE < $dEMax  $test1"
-					test2=`echo "$dE < $dEMax" | bc -l`
-					
-					[ -z "$test2" ] && test2=1
-					
-					if [ "$FILTER" != "rxyz0" ]
-					then
-# 						echo "   .dir2/$target2"  " ----> "  "merge/b_$target2"
-						[ "$test2" -eq 1 ] && cp .dir2/$target2 merge/b_$target2
-					else
-# 						echo "   .dir2/$target2"  " ----> "  "merge/b_$target2"
-						[ "$test2" -eq 1 ] && cp .dir2/$target2 merge/b_$target2
-					fi
-					
-					sumFilesInMerge=$(( $sumFilesInMerge + $test2 ))
-				done
-			fi
+			dirId=$(( $dirId+1 ))
 		done
 # 		echo ""
 	done
@@ -197,18 +183,38 @@ function main()
 	
 	echo "----------------------------------------"
 	echo " Checking for common isomers "
-	echo " a- for directory $dir1      "
-	echo " b- for directory $dir2      "
+	dirId=1
+	for dir in $listDir
+	do
+		echo " ${dirId}__ for directory $dir      "
+		dirId=$(( $dirId+1 ))
+	done
 	echo "----------------------------------------"
 	echo ""
 	
 	checkRepeated $FILTER merge FALSE > .output$$
-	grep -v "\-\->" .output$$
-	cat .output$$ | grep -E "a_.*\s+b_.*"
+# 	grep -v "\-\->" .output$$
+	cat .output$$ | grep "\-\->" \
+	| awk '
+		{
+			map[$1]=map[$1]" "$2$3
+		}
+		END{
+			for(k in map){
+				split(map[k],arr)
+				
+				if( '`echo $allDirs | wc -w`' == length(arr)+1 )
+					print k, map[k], "--> Equal"
+			}
+		}'
 	
 	rm -rf merge
-	rm .dir1 .dir2
 	rm .output$$
+	
+	for dir in $allDirs
+	do
+		rm $dir &> /dev/null
+	done
 }
 
 main $*
