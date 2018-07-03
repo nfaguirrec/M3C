@@ -57,53 +57,23 @@ SIMILARITY_THR=0.97 # fine
 ##
 # @brief
 ##
-function filterIsomers()
+function checkRepeated()
 {
-	local resultsDir=$1
-	
-	local id1=""
-	local id2=""
-	local value=""
-	local nAtoms1=""
-	local nAtoms2=""
+	local format=$1
+	local resultsDir=$2
+	local forceRemove=$3
 	
 	pushd . &> /dev/null
 	cd $resultsDir
 	
-	local categories=`ls *.$FILTER | awk 'BEGIN{FS="[-]"}{map[$1]=1}END{for(item in map) print item}'`
+	ls *.$format > .list$$
 	
-	for category in $categories
-	do
-		echo "   Group $category"
-		
-		local files=(`ls $category-*.$FILTER 2> /dev/null`)
-		
-		for id1 in `seq 0 $(( ${#files[@]} - 1 ))`
-		do
-			for id2 in `seq $(( $id1 + 1 )) $(( ${#files[@]} - 1 ))`
-			do
-				if [ ! -f ${files[$id1]} -o ! -f ${files[$id2]} ]
-				then
-					continue
-				fi
-				
-				echo -n "      Comparing ${files[$id1]} <-> ${files[$id2]} ... "
-				
-				test=`molecule.compare ${files[$id1]} ${files[$id2]} false $SIMILARITY_THR $BONDING_TOL_SCALE | grep OK | wc -l`
-				
-				if [ "$test" -eq 3 ]
-				then
-					echo "Equal"
-					rm ${files[$id1]}
-					break
-				else
-					echo "Different"
-				fi
-			done
-		done
-		
-		echo ""
-	done
+	# molecule.duplicate file [remove] [ debug ] [ thr ] [alpha] [useMassWeight] [useIm] [useNodeWeights] [useEdgeWeights]
+	#                           false     false     0.92    1.1        true        true        true              true     
+
+	molecule.duplicate .list$$ $forceRemove false $SIMILARITY_THR $BONDING_TOL_SCALE $USEMASSWEIGHT $USEIM $USENODEWEIGHTS $USEEDGEWEIGHTS
+	
+	rm .list$$
 	
 	popd &> /dev/null
 }
@@ -183,7 +153,7 @@ function main()
 	echo " Checking for repeated isomers "
 	echo "-------------------------------"
 	echo ""
-	filterIsomers merge
+	checkRepeated $FILTER merge TRUE
 }
 
 main $*

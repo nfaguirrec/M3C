@@ -56,23 +56,23 @@ USEEDGEWEIGHTS="FALSE"
 ##
 function checkRepeated()
 {
-        local format=$1
-        local resultsDir=$2
-        local forceRemove=$3
-        
-        pushd . &> /dev/null
-        cd $resultsDir
-        
-        ls *.$format > .list$$
-        
-        # molecule.duplicate file [remove] [ debug ] [ thr ] [alpha] [useMassWeight] [useIm] [useNodeWeights] [useEdgeWeights]
-        #                           false     false     0.92    1.1        true        true        true              true     
+	local format=$1
+	local resultsDir=$2
+	local forceRemove=$3
+	
+	pushd . &> /dev/null
+	cd $resultsDir
+	
+	ls *.$format > .list$$
+	
+	# molecule.duplicate file [remove] [ debug ] [ thr ] [alpha] [useMassWeight] [useIm] [useNodeWeights] [useEdgeWeights]
+	#                           false     false     0.92    1.1        true        true        true              true     
 
-        molecule.duplicate .list$$ $forceRemove false $SIMILARITY_THR $BONDING_TOL_SCALE $USEMASSWEIGHT $USEIM $USENODEWEIGHTS $USEEDGEWEIGHTS
-        
-        rm .list$$
-        
-        popd &> /dev/null
+	molecule.duplicate .list$$ $forceRemove false $SIMILARITY_THR $BONDING_TOL_SCALE $USEMASSWEIGHT $USEIM $USENODEWEIGHTS $USEEDGEWEIGHTS
+	
+	rm .list$$
+	
+	popd &> /dev/null
 }
 
 ##
