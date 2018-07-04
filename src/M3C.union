@@ -50,9 +50,9 @@
 
 FILTER="xyz"
 
-BONDING_TOL_SCALE=1.1  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
-SIMILARITY_THR=0.92 # coarse
-# SIMILARITY_THR=0.97 # fine
+BONDING_TOL_SCALE=1.2  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
+# SIMILARITY_THR=0.92 # coarse
+SIMILARITY_THR=0.97 # fine
 
 ##
 # @brief
@@ -62,71 +62,63 @@ function main()
 	if [ "$1" = "xyz" -o "$1" = "rxyz" -o "$1" = "rxyz0" ]
 	then
 		FILTER=$1
+		shift # $1 will be discarded
+		local listDir=$*
+	else
+		local listDir=$*
 	fi
 	
-	local dir1=$2
-	local dir2=$3
-	
-	if [ -z "$dir1" -o -z "$dir2" ]
+	if [ -z "$listDir" ]
 	then
 		echo "usage:"
-		echo "    M3C.difference [xyz|rxyz] dir1 dir2"
-		echo "                      xyz              "
+		echo "    M3C.union [xyz|rxyz|rxyz0] dir1 dir2 dir3 ... "
+		echo "                    xyz                           "
+		echo "    M3C.union [xyz|rxyz|rxyz0] results*           "
+		echo "                    xyz                           "
 		exit
 	fi
 	
-	categories1=`ls $dir1 | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
+	categories=`ls $listDir | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
 	
-	if [ -d "difference" ]
+	if [ -d "union" ]
 	then
-		echo "@@@ WARNING @@@ There is already a difference directory (difference). Backup copy will be generated"
-		mv difference difference.backup-`date +%Y%m%d`
+		echo "@@@ WARNING @@@ There is already a union directory (union). Backup copy will be generated"
+		mv union union.backup-`date +%Y%m%d`
 	fi
-	mkdir difference
+	mkdir union
 	
 	echo ""
-	echo -n "Copying files from $dir1 to difference ... "
-	cp $dir1/*.$FILTER difference/
-	echo "OK"
-	
-	echo ""
-	echo "----------------------"
-	echo " Checking differences "
-	echo "----------------------"
+	echo "-------------------"
+	echo " Combining isomers "
+	echo "-------------------"
 	echo ""
 	
-	for category in $categories1
+	for category in $categories
 	do
-		pointerFiles=`ls $dir2/$category*.$FILTER 2> /dev/null`
-		targetFiles=`ls difference/$category*.$FILTER 2> /dev/null`
-		
-		if [ -n "$pointerFiles" -a -n "$targetFiles" ]
-		then
-			for pointer in $pointerFiles
-			do
+		i=1
+		for dirName in $listDir
+		do
+			targetFiles=`ls $dirName/$category*.$FILTER 2> /dev/null`
+			
+			if [ -n "$targetFiles" ]
+			then
 				for target in $targetFiles
 				do
-					
-					if [ ! -f $pointer -o ! -f $target ]
+					if [ "$FILTER" != "rxyz0" ]
 					then
-						continue
+						echo "   $target"  " ----> "  "union/$category-$i.$FILTER"
+# 						cp $target union/$category-$i.$FILTER
+						ln -s $PWD/$target $PWD/union/$category-$i.$FILTER
+					else
+						echo "   $target"  " ----> "  "union/$category-$i.rxyz"
+# 						cp $target union/$category-$i.rxyz
+						ln -s $PWD/$target $PWD/union/$category-$i.rxyz
 					fi
 					
-# 					echo -n "      Comparing $pointer --> $target ... "
-					
-					test=`molecule.compare $pointer $target false $SIMILARITY_THR $BONDING_TOL_SCALE | grep OK | wc -l`
-					
-					if [ "$test" -eq 3 ]
-					then
-						echo "Equal"
-						rm $target
-						break
-# 					else
-# 						echo "Different"
-					fi
+					i=$(( i+1 ))
 				done
-			done
-		fi
+			fi
+		done
 		echo ""
 	done
 }

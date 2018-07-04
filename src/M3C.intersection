@@ -91,12 +91,12 @@ function main()
 	if [ -z "$FILTER" -o -z "$dEMax" ]
 	then
 		echo "usage:"
-		echo "    M3C.merge (xyz|rxyz|rxyz0)   Emax dir1 dir2 dir3 ..."
+		echo "    M3C.intersection (xyz|rxyz|rxyz0)   Emax dir1 dir2 dir3 ..."
 		echo "                    xyz        inf_eV "
 		exit
 	fi
 	
-	rm -rf merge &> /dev/null
+	rm -rf intersection &> /dev/null
 	
 	dirId=1
 	allDirs=""
@@ -108,7 +108,7 @@ function main()
 		dirId=$(( $dirId+1 ))
 	done
 	
-	mkdir merge
+	mkdir intersection
 	
 	categories=`ls $allDirs | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
 	
@@ -154,11 +154,11 @@ function main()
 					
 					if [ "$FILTER" != "rxyz0" ]
 					then
-# 						echo "   $dir/$target"  " ----> "  "merge/${dirId}__${target}"
-						[ "$test1" -eq 1 ] && cp $dir/$target merge/${dirId}__${target}
+# 						echo "   $dir/$target"  " ----> "  "intersection/${dirId}__${target}"
+						[ "$test1" -eq 1 ] && cp $dir/$target intersection/${dirId}__${target}
 					else
-# 						echo "   $dir/$target"  " ----> "  "merge/${dirId}__${target}"
-						[ "$test1" -eq 1 ] && cp $dir/$target merge/${dirId}__${target}
+# 						echo "   $dir/$target"  " ----> "  "intersection/${dirId}__${target}"
+						[ "$test1" -eq 1 ] && cp $dir/$target intersection/${dirId}__${target}
 					fi
 					
 					sumFilesInMerge=$(( $sumFilesInMerge + $test1 ))
@@ -192,7 +192,7 @@ function main()
 	echo "----------------------------------------"
 	echo ""
 	
-	checkRepeated $FILTER merge FALSE > .output$$
+	checkRepeated $FILTER intersection FALSE > .output$$
 # 	grep -v "\-\->" .output$$
 	cat .output$$ | grep "\-\->" \
 	| awk '
@@ -208,7 +208,7 @@ function main()
 			}
 		}'
 	
-	rm -rf merge
+	rm -rf intersection
 	rm .output$$
 	
 	for dir in $allDirs
