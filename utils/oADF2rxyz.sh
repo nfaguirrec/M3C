@@ -14,42 +14,61 @@ else
 	exit
 fi
 
-nAtoms=`grep "NAtoms=" $iFile | awk '{print $2; exit}'`
-( grep -A$(( $nAtoms+4 )) "Input orientation:" $iFile | tail -n$nAtoms | \
-while read a1 a2 a3 a4 a5 a6
-do
-	printf "%5s%12.6f%12.6f%12.6f\n" ${ATOMIC_SYMBOL[$a2]} $a4 $a5 $a6
-done ) > .geom
+awk '
+BEGIN{
+	loc=0
+}
+{
+	if($0~/^ </) loc=0
+	if(loc==1 &&$1~/^[[:digit:]]+./){
+		gsub("^[[:digit:]]+.","",$1)
+		print $0
+	}
+	if($0~/>>>> FRAGM/) loc=1
+}
+' $iFile > .geom
+nAtoms=`cat .geom | wc -l`
+
+if [ "$nAtoms" -eq 0  ]
+then
+	awk '
+	BEGIN{
+		angs=1.88972612456506
+		loc=0
+	}
+	{
+		if($0~/^[[:blank:]]*$/) loc=0
+		if(loc==1 && $1~/^[[:digit:]]+$/){
+			printf("%5s%15.8f%15.8f%15.8f\n",$2,$3/angs,$4/angs,$5/angs)
+		}
+		if($0~/Geometry/) loc=1
+	}' $iFile > .geom
+	nAtoms=`cat .geom | wc -l`
+fi
 
 if [ "$nAtoms" -gt 0  ]
 then
-	energy=`grep -E "^[[:blank:]]+CCSD\(T\)= " $iFile | sed 's/D/E/g' | gawk '{printf "%.10f\n", $2}'`
+	energy=`grep "<.*Bond Energy.*a.u." $iFile | tail -n1 | gawk '{print $5}'`  # <<< When only a frequencies calculation was carried out.
 	
-	if [ -z "$energy" ]
-	then
-		energy=`grep "SCF Done" $iFile | tail -n 1 | cut -d "=" -f 2 | cut -d "A" -f 1`
-	fi
+	[ -z "$energy" ] && energy=`grep "<.*current energy" $iFile | tail -n1 | gawk '{print $5}'` # <<< I think this is just for geometry optimization
+	[ -z "$energy" ] && energy=`grep "Total Energy (hartree)" $iFile | tail -n1 | awk '{print $NF}'` # <<< This is for DFTB
 	
-	cat /dev/null > .freqs
-	
-	grep "Frequencies" $iFile | while read a1 a2 freq1 freq2 freq3
-	do
-		if [ -n "$freq1" ]
-		then
-			echo $freq1 >> .freqs
-		fi
-		
-		if [ -n "$freq2" ]
-		then
-			echo $freq2 >> .freqs
-		fi
-		
-		if [ -n "$freq3" ]
-		then
-			echo $freq3 >> .freqs
-		fi
-	done
+	awk '
+		BEGIN{ loc=0 }
+		(loc==2&&$0~/^[[:blank:]]*$/){ loc=0 }
+		(loc==2){ print $1 }
+		($0~/List of All Frequencies:/){loc=1}
+		(loc==1&&$1=="----------"){loc=2}
+	' $iFile > .freqs
 	fv=`cat .freqs | wc -l`
+	
+	if [ "$fv" -eq 0 ]
+	then
+		awk '
+			($0~/Index:.*Frequency \(cm-1\)/){print $5}
+		' $iFile > .freqs
+		fv=`cat .freqs | wc -l`
+	fi
 	
 	echo $nAtoms
 	echo "Energy = $energy"
@@ -65,7 +84,10 @@ then
 		echo "SYMMETRY R3"
 		echo "ELECTRONIC_STATE ??"
 	else
-		group=`grep "Full point group" $iFile | tail -n1 | gawk '{print $4}'`
+		group=`grep "Symmetry:" $iFile | tail -n1 | gawk '{print $2}'`
+		[ -z "$group" ] && group="NOSYM" # < Just to fix a warning message in dftb. dftb does not use symmetry
+		
+		group=${SYMMETRY_GROUP_MAP[$group]}
 		if [ "$group" = "Nop" -o "$group" = "NOp" ]
 		then
 			echo "SYMMETRY ??"
@@ -73,7 +95,8 @@ then
 			echo "SYMMETRY $group"
 		fi
 		
-		state=`grep "The electronic state is" $iFile | tail -n1 | gawk '{print $5}' | sed 's/\.//'`
+		# @todo This is not available in ADF
+		state=`grep "The electronic state is" $iFile | gawk '{print $5}' | sed 's/\.//'`
 		if [ -n "$state" ]
 		then
 			echo "ELECTRONIC_STATE $state"
