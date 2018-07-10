@@ -189,45 +189,48 @@ function main()
 		echo " ${dirId}__ for directory $dir      "
 		dirId=$(( $dirId+1 ))
 	done
+	echo "@@WARNING@@ This version is incomplete. It only supports 2 directories"
 	echo "----------------------------------------"
 	echo ""
 	
 	checkRepeated $FILTER intersection FALSE > .output$$
 # 	grep -v "\-\->" .output$$
-	cat .output$$ | grep "\-\->" \
-	| awk '
-		function checkLine( line )
-		{
-			print "checking", line
-			split( line, arr, "[[:blank:]_]+" )
-			
-			j=1
-			for( i=1; i<length(arr)-1; i+=2 ){
-				print "  prev", j, arr[i]
-				prev[j]=arr[i]
-				j++
-			}
-			
-			for( i=2; i<=length(prev); i++ ){
-				print "i, i-1", prev[i], prev[i-1]
-				if( prev[i]==prev[i-1] )
-					return -1
-			}
-			
-			return 0
-		}
-		{
-			map[$1]=map[$1]" "$2$3
-		}
-		END{
-			for( k in map ){
-				split( map[k], arr )
-				
-				if( checkLine(map[k]) == 0 && '`echo $allDirs | wc -w`' == length(arr)+1 )
-# 				if( '`echo $allDirs | wc -w`' == length(arr)+1 )
-					print k, map[k], "--> Equal"
-			}
-		}'
+# 	cat .output$$ | grep "\-\->" \
+# 	| awk '
+# 		function checkLine( line )
+# 		{
+# 			print "checking", line
+# 			split( line, arr, "[[:blank:]_]+" )
+# 			
+# 			j=1
+# 			for( i=1; i<length(arr)-1; i+=2 ){
+# 				print "  prev", j, arr[i]
+# 				prev[j]=arr[i]
+# 				j++
+# 			}
+# 			
+# 			for( i=2; i<=length(prev); i++ ){
+# 				print "i, i-1", prev[i], prev[i-1]
+# 				if( prev[i]==prev[i-1] )
+# 					return -1
+# 			}
+# 			
+# 			return 0
+# 		}
+# 		{
+# 			map[$1]=map[$1]" "$2$3
+# 		}
+# 		END{
+# 			for( k in map ){
+# 				split( map[k], arr )
+# 				
+# 				if( checkLine(map[k]) == 0 && '`echo $allDirs | wc -w`' == length(arr)+1 )
+# # 				if( '`echo $allDirs | wc -w`' == length(arr)+1 )
+# 					print k, map[k], "--> Equal"
+# 			}
+# 		}'
+	
+	cat .output$$ | grep -E "^[[:blank:]]*1__.*[[:blank:]]*2__.*Equal" | gawk '{map[$1]=$0}END{for(k in map) print map[k]}'
 	
 	rm -rf intersection
 	rm .output$$
