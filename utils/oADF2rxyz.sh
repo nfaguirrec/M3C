@@ -14,17 +14,30 @@ else
 	exit
 fi
 
+optg=`grep "Coordinates in Geometry Cycle" $iFile | wc -l`
 awk '
 BEGIN{
 	loc=0
+	n = 0
 }
 {
 	if($0~/^ </) loc=0
 	if(loc==1 &&$1~/^[[:digit:]]+./){
 		gsub("^[[:digit:]]+.","",$1)
-		print $0
+		line[n] = $0
+		n++
 	}
-	if($0~/>>>> FRAGM/) loc=1
+	if( '$optg' == 0 && $0~/>>>> FRAGM/){
+		loc=1
+		n = 0
+	}else if( '$optg' != 0 && $0~/Coordinates in Geometry Cycle/){
+		loc=1
+		n = 0
+	}
+}
+END{
+	for( k in line )
+		print line[k]
 }
 ' $iFile > .geom
 nAtoms=`cat .geom | wc -l`
