@@ -596,7 +596,7 @@ function optgADFTemplate()
 		cp input$SID.adf ${xyzFile%.*}.adf 2> /dev/null
 		
 # 		if grep "ERROR:" input$SID.out > /dev/null
-		if [ -n "`grep "ERROR" input$SID.out`" ]
+		if [ -n "`grep "ERROR:" input$SID.out`" ]
 		then
 			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
 		else
