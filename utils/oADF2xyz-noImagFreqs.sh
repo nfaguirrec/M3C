@@ -1,6 +1,19 @@
 #/bin/bash
 
 iFile=$1
+direction=$2
+
+function usage()
+{
+	echo "Usage: oADF2xyz-noImagFreqs.sh ADF_output [ direction ]"
+	echo "                                               +1      "
+	echo ""
+	exit -1
+}
+
+[ -z "$iFile" ] && usage
+[ -z "$direction" ] && direction=1
+[ "$direction" != "-1" -a "$direction" != "+1" -a "$direction" != "1" ] && usage
 
 optg=`grep "Coordinates in Geometry Cycle" $iFile | wc -l`
 awk '
@@ -85,12 +98,20 @@ for n,line in enumerate(iFile.readlines()):
 		
 iFile.close()
 
+first = True
 for i,mode in enumerate(modes):
 	if( mode is not None and freqs[i]<0.0 ):
-		for j,atom in enumerate(coords):
-# 			print j, i, freqs[i], mode[j][0:3]
-			atom[1] = atom[1] + 0.3*mode[j]
-# 		print ""
+		if( first ): # Largest negative frequency
+			for j,atom in enumerate(coords):
+# 				print j, i, freqs[i], mode[j][0:3]
+				atom[1] = atom[1] + 0.3*float('$direction')*mode[j]
+		else:
+			for j,atom in enumerate(coords):
+# 				print j, i, freqs[i], mode[j][0:3]
+				atom[1] = atom[1] + 0.3*mode[j]
+# 			print ""
+
+		first = False
 			
 print len(coords)
 print ""
