@@ -172,10 +172,10 @@ function main()
 	fi
 	nThreads=$(( $M3C_NTHREADS/$NPROCSHARED ))
 	
-	local charge1=`echo "$iFileMol1" | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
-	local charge2=`echo "$iFileMol2" | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
-	local mult1=`echo "$iFileMol1" | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
-	local mult2=`echo "$iFileMol2" | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
+	local charge1=`echo "$iFileMol1" | gawk 'BEGIN{FS="[.]+"}{print $2}' | sed 's/q//g'`
+	local charge2=`echo "$iFileMol2" | gawk 'BEGIN{FS="[.]+"}{print $2}' | sed 's/q//g'`
+	local mult1=`echo "$iFileMol1" | gawk 'BEGIN{FS="[.]+"}{print $3}' | sed 's/m//g'`
+	local mult2=`echo "$iFileMol2" | gawk 'BEGIN{FS="[.]+"}{print $3}' | sed 's/m//g'`
 	
 	local maxMult=`echo "$mult1+$mult2-1" | bc`
 	local minMult=`echo "sqrt(($mult1-$mult2)*($mult1-$mult2))+1" | bc`
