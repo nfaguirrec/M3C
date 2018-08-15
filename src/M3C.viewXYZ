@@ -358,7 +358,7 @@ function geometriesByCategories()
 	| while read line
 	do
 		fileName=`echo $line | gawk '{print $1}'`
-		charge=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
+		charge=`echo $fileName | gawk 'BEGIN{FS="[.]+"}{print $2}' | sed 's/q//g'`
 		
 		if [ -z "$charge" ]; then charge=0; fi
 		
