@@ -93,7 +93,7 @@ function parallel()
 		
 		if [ "${#pidJobs[@]}" -le "$nThreads" -a "$sizeJobs" -ne 0 ]
 		then
-			while [ "${#pidJobs[@]}" -lt "$nThreads" ]
+			while [ "${#pidJobs[@]}" -lt "$nThreads" -a "$sizeJobs" -ne 0 ]
 			do
 				stack_pop jobs command
 				
@@ -107,6 +107,8 @@ function parallel()
 					echo "Running: $command ($pid)"
 					iStartTime[$pid]=`date "+%s"`
 				fi
+				
+				stack_size jobs sizeJobs
 			done
 		fi
 		
