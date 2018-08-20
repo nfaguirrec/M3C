@@ -63,6 +63,7 @@ if [ "$nAtoms" -gt 0  ]
 then
 	energy=`grep "<.*Bond Energy.*a.u." $iFile | tail -n1 | gawk '{print $5}'`  # <<< When only a frequencies calculation was carried out.
 	
+	[ -z "$energy" ] && energy=`grep "Bond Energy" $iFile | tail -n1 | awk '{print $3}'` # <<< This is just for frequency calcculations with hybrid functionals
 	[ -z "$energy" ] && energy=`grep "<.*current energy" $iFile | tail -n1 | gawk '{print $5}'` # <<< I think this is just for geometry optimization
 	[ -z "$energy" ] && energy=`grep "Total Energy (hartree)" $iFile | tail -n1 | awk '{print $NF}'` # <<< This is for DFTB
 	
