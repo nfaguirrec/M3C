@@ -84,7 +84,8 @@ function main()
 	then
 		FILTER=$1
 		local dEMax=$2
-		shift 2
+		local prefix=$3
+		shift 3
 		local listDir=$*
 	fi
 	
@@ -96,19 +97,19 @@ function main()
 		exit
 	fi
 	
-	rm -rf intersection &> /dev/null
+	rm -rf intersection.$prefix &> /dev/null
 	
 	dirId=1
 	allDirs=""
 	for dir in $listDir
 	do
-		rm .dir$dirId &> /dev/null
-		ln -s $dir .dir$dirId
-		allDirs="$allDirs .dir$dirId"
+		rm .dir-$$-$dirId &> /dev/null
+		ln -s $dir .dir-$$-$dirId
+		allDirs="$allDirs .dir-$$-$dirId"
 		dirId=$(( $dirId+1 ))
 	done
 	
-	mkdir intersection
+	mkdir intersection.$prefix
 	
 	categories=`ls $allDirs | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
 	
@@ -154,11 +155,11 @@ function main()
 					
 					if [ "$FILTER" != "rxyz0" ]
 					then
-# 						echo "   $dir/$target"  " ----> "  "intersection/${dirId}__${target}"
-						[ "$test1" -eq 1 ] && cp $dir/$target intersection/${dirId}__${target}
+# 						echo "   $dir/$target"  " ----> "  "intersection.$prefix/${dirId}__${target}"
+						[ "$test1" -eq 1 ] && cp $dir/$target intersection.$prefix/${dirId}__${target}
 					else
-# 						echo "   $dir/$target"  " ----> "  "intersection/${dirId}__${target}"
-						[ "$test1" -eq 1 ] && cp $dir/$target intersection/${dirId}__${target}
+# 						echo "   $dir/$target"  " ----> "  "intersection.$prefix/${dirId}__${target}"
+						[ "$test1" -eq 1 ] && cp $dir/$target intersection.$prefix/${dirId}__${target}
 					fi
 					
 					sumFilesInMerge=$(( $sumFilesInMerge + $test1 ))
@@ -193,7 +194,7 @@ function main()
 	echo "----------------------------------------"
 	echo ""
 	
-	checkRepeated $FILTER intersection FALSE > .output$$
+	checkRepeated $FILTER intersection.$prefix FALSE > .output$$
 # 	grep -v "\-\->" .output$$
 # 	cat .output$$ | grep "\-\->" \
 # 	| awk '
@@ -232,7 +233,7 @@ function main()
 	
 	cat .output$$ | grep -E "^[[:blank:]]*1__.*[[:blank:]]*2__.*Equal" | gawk '{map[$1]=$0}END{for(k in map) print map[k]}'
 	
-	rm -rf intersection
+	rm -rf intersection.$prefix
 	rm .output$$
 	
 	for dir in $allDirs
