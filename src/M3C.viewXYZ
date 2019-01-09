@@ -6,8 +6,9 @@
 #                         Universidad Autónoma de Madrid                            #
 #                         All rights reserved.                                      #
 #                                                                                   #
-#                         * Néstor F. Aguirre (2013-2016)                           #
+#                         * Néstor F. Aguirre (2013-2018)                           #
 #                           nestor.aguirre@uam.es                                   #
+#                           nfaguirrec@gmail.com                                    #
 #                         * Sergio Díaz-Tendero (2013-2016)                         #
 #                           sergio.diaztendero@uam.es                               #
 #                         * M. Paul-Antoine Hervieux (2013-2015)                    #
@@ -50,6 +51,12 @@
 #                                                                                   #
 #####################################################################################
 
+# Known bug: Last versions of convert need to modify files as follows:
+#            File: /etc/ImageMagick-6/policy.xml
+#            Before:    <policy domain="coder" rights="none" pattern="EPS" />
+#            After:     <policy domain="coder" rights="read|write" pattern="EPS" />
+
+
 FILTER="rxyz"
 NCOLUMNS=8
 NROWS=14
@@ -62,6 +69,23 @@ RANDOM_ORIENT="TRUE"
 TABLE_HEADER="" 
 MOL_ITERATOR=1
 ENERGY_REF="0.0"
+
+##
+# @brief
+##
+function convertImage()
+{
+  local iFile=$1
+  local oFile=$2
+  
+  if [ "$CONVERTER" = "convert" ]
+  then
+    convert $iFile $oFile > /dev/null 2>&1
+  elif [ "$CONVERTER" = "inkscape" ]
+  then
+    inkscape -z -f $iFile -E $oFile > /dev/null 2>&1
+  fi
+}
 
 ##
 # @brief
@@ -304,7 +328,7 @@ write image $effSize $effSize ${iFile%.*}.gif
 EOF
 	
 		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1
-		convert ${iFile%.*}.gif ${iFile%.*}.eps > /dev/null 2>&1
+		convertImage ${iFile%.*}.gif ${iFile%.*}.eps
 		rm ${iFile%.*}.gif geom$sID.jmol
 		
 		rm rand${iFile}${sID}
@@ -463,7 +487,6 @@ function geometries()
 function checkDependencies()
 {
 	JAVA_INTERP=""
-	
 	if [ -n "`which gij`" ]
 	then
 		JAVA_INTERP="gij"
@@ -488,10 +511,22 @@ function checkDependencies()
 	else
 		JAVA_INTERP="$JAVA_INTERP"
 	fi
-
-	if [ -z "`which convert`" ]
+  
+	CONVERTER=""
+	if [ -z "$CONVERTER" -a -n "`which convert`" ]
 	then
-		echo "### Error ### It's neccessary to have installed an image converter, e.g. convert"
+    version=`convert -version | gawk '{split($3,arr,"."); print arr[1]; exit}'`
+    
+    if [ "$version" -g 6 ]
+    then
+      CONVERTER=convert
+    fi
+  fi
+	if [ -z "$CONVERTER" -a -n "`which inkscape`" ]
+	then
+    CONVERTER=inkscape
+	else
+		echo "### Error ### It's neccessary to have installed an image converter, e.g. convert(version<6) or inkscape"
 		exit
 	fi
 }
@@ -540,6 +575,7 @@ function main()
 	echo "Highlighted structures: $highlight"
 	echo ""
 	echo "Java: $JAVA_INTERP"
+	echo "Converter: $CONVERTER"
 	echo ""
 	####################################
 
