@@ -131,9 +131,10 @@ function runNWCHEM()
 		$M3C_NWCHEM_HOME/bin/LINUX64/nwchem $iFile
 	else
 		# Using MPI
-		mpirun -n $nProcShared $M3C_NWCHEM_HOME/bin/LINUX64/nwchem $iFile
+#		mpirun -n $nProcShared $M3C_NWCHEM_HOME/bin/LINUX64/nwchem $iFile
 		# If you have all nodes connected via shared memory and you have installed the ch_shmem version of MPICH
-# 		$M3C_NWCHEM_HOME/bin/LINUX64/nwchem -np $nProcShared $iFile
+ 		$M3C_NWCHEM_HOME/bin/LINUX64/nwchem -np $nProcShared $iFile
+# 		nwchem -np $nProcShared $iFile
 	fi
 	
 	rm -rf $SCRATCH_DIR

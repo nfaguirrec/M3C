@@ -437,6 +437,7 @@ function runADF()
 	export ADFHOME=$M3C_ADF_HOME
 	export ADFBIN=$ADFHOME/bin
 	export ADFRESOURCES=$ADFHOME/atomicdata
+	export SCM_DOMAINCHECK=yes
 	export SCMLICENSE=$ADFHOME/license.txt
 	export SCM_TMPDIR=$M3C_ADF_SCRATCH
 	

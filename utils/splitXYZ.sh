@@ -49,6 +49,9 @@
 #####################################################################################
 
 iFile=$1
+keepLabels=$2
+
+[ -z "$keepLabels" ] && keepLabels="False"
 
 awk '
 BEGIN{
@@ -57,13 +60,22 @@ BEGIN{
 {
 	if($0==$1){
 		n=$1
-		fname=sprintf("mol-%05d.xyz",id)
+		
+		if( "'$keepLabels'" == "True" )
+# 			fname=title".q0.m1.xyz"
+			fname=title".xyz"
+		else
+			fname=sprintf("mol-%05d.xyz",id)
 		
 		printf( "Generating ... %s ", fname )
 		
 		print n >> fname
 		for(i=1;i<=n+1;i++){
 			getline
+			if( "'$keepLabels'" == "True" && i==1 ){
+				title=$0
+				gsub("[[:blank:]]+","_",title)
+			}
 			print $0 >> fname
 		}
 		
@@ -73,6 +85,8 @@ BEGIN{
 	id++
 }
 ' $iFile
+
+[ "$keepLabels" = "True" ] && exit
 
 echo ""
 echo ""

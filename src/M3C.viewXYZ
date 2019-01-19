@@ -208,7 +208,7 @@ function buildGifFiles()
 	local iFile=""
 	local sID=""
 	
-	local effSize=`echo "100*$SIZE/100.0" | bc -l`  # 100px para 100%
+	local effSize=`echo "100*$SIZE/100.0" | bc -l | awk '{printf("%d",$1)}'`  # 100px para 100%
 	
 	echo "--------------------"
 	echo " Building GIF files"
@@ -246,7 +246,7 @@ zoom $ZOOM
 write image $effSize $effSize ${iFile%.*}.gif
 EOF
 		
-		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1
+		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b > /dev/null 2>&1
 		rm geom$sID.jmol
 		
 		rm rand${iFile}${sID}
@@ -263,7 +263,7 @@ function buildEPSFiles()
 	local iFile=""
 	local sID=""
 	
-	local effSize=`echo "100.0*$SIZE/100.0" | bc`  # 100px para 100%
+	local effSize=`echo "100.0*$SIZE/100.0" | bc | awk '{printf("%d",$1)}'`  # 100px para 100%
 	
 	echo "--------------------"
 	echo " Building EPS files"
@@ -304,7 +304,8 @@ write image $effSize $effSize ${iFile%.*}.gif
 EOF
 	
 		$JAVA_INTERP -jar $M3C_HOME/utils/Jmol.jar -xin -s geom$sID.jmol -L -n -b  > /dev/null 2>&1
-		convert ${iFile%.*}.gif ${iFile%.*}.eps > /dev/null 2>&1
+		#convert ${iFile%.*}.gif ${iFile%.*}.eps > /dev/null 2>&1
+		inkscape -z -f ${iFile%.*}.gif -E ${iFile%.*}.eps
 		rm ${iFile%.*}.gif geom$sID.jmol
 		
 		rm rand${iFile}${sID}
