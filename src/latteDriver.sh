@@ -246,7 +246,7 @@ function optgLATTETemplate()
 		then
 			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
 		else
-			energy=`grep "FREE ENERGY" input$SID.out | awk '{print $NF}'`
+			energy=`grep "FREE ENERGY" input$SID.out | awk '{print $NF*0.0367493088244753}'`
 			awk 'BEGIN{loc=0}($0!~/^[[:blank:]]*$/){if(loc==1) print $0; if($0~/LAST GEOMETRY/) loc=1}' input$SID.out > .finalGeom$SID
 			geom2xyz .finalGeom$SID $energy
 		fi
@@ -268,80 +268,8 @@ function freqsLATTETemplate()
 	local charge=$4
 	local mult=$5
 	
-	local SID="-$xyzFile$RANDOM"
-	
-	local nAtoms=""
-	local energy=""
-	local fv="" # Vibrational degrees of freedom
-	
-	nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' $xyzFile`
-	
-	if [ "$nAtoms" -gt 0  ]
-	then
-		fillTemplate $template $xyzFile $charge $mult > input$SID.latte
-		
-		runLATTE input$SID.latte $nProcShared &> input$SID.out
-		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
-		cp input$SID.latte ${xyzFile%.*}.latte 2> /dev/null
-		
-# 		if grep "ERROR:" input$SID.out > /dev/null
-		if [ -n "`grep "ERROR:" input$SID.out`" ]
-		then
-			echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****"
-		else
-			cat /dev/null > .freqs$SID
-			
-			energy=`grep "<.*Bond Energy.*a.u." input$SID.out | tail -n1 | gawk '{print $5}'`  # <<< When only a frequencies calculation was carried out.
-			
-			awk '
-				BEGIN{ loc=0 }
-				(loc==2&&$0~/^[[:blank:]]*$/){ loc=0 }
-				(loc==2){ print $1 }
-				($0~/List of All Frequencies:/){loc=1}
-				(loc==1&&$1=="----------"){loc=2}
-			' input$SID.out >> .freqs$SID
-			
-			fv=`cat .freqs$SID | wc -l`
-			
-			echo $nAtoms
-			echo "Energy = $energy"
-			cat $xyzFile | gawk '(NR>2){print $0}'
-			echo ""
-			
-			echo "FREQUENCIES $fv"
-			cat .freqs$SID
-			echo ""
-			
-			if [ "$nAtoms" -eq 1  ]
-			then
-				echo "SYMMETRY R3"
-				echo "ELECTRONIC_STATE ??"
-			else
-				group=`grep "Symmetry:" input$SID.out | tail -n1 | gawk '{print $2}'`
-				
-				[ -z "$group" ] && group="NOSYM" # < Just to fix a warning message in dftb. dftb does not use symmetry
-				
-				group=${SYMMETRY_GROUP_MAP[$group]}
-				if [ "$group" = "Nop" -o "$group" = "NOp" ]
-				then
-					echo "SYMMETRY ??"
-				else
-					echo "SYMMETRY $group"
-				fi
-				
-				# @todo This is not available in LATTE
-				state=`grep "The electronic state is" input$SID.out | gawk '{print $5}' | sed 's/\.//'`
-				if [ -n "$state" ]
-				then
-					echo "ELECTRONIC_STATE $state"
-				else
-					echo "ELECTRONIC_STATE ??"
-				fi
-			fi
-		fi
-	fi
-	
-	rm -rf .freqs$SID input$SID.latte input$SID.out
+	echo "### Error ### freqsLATTETemplate is not implemented yet"
+	exit
 }
 
 ##
