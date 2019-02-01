@@ -113,7 +113,8 @@ then
 		echo "SYMMETRY SO3"
 		echo "ELECTRONIC_STATE ??"
 	else
-		group=`grep "Full point group" $iFile | tail -n1 | gawk '{print $4}'`
+		#group=`grep "Full point group" $iFile | tail -n1 | gawk '{print $4}'`
+		group=`grep "Framework group" $iFile | sed 's/\[/ /g' | gawk '{print $3}'`
 		if [ "$group" = "Nop" -o "$group" = "NOp" ]
 		then
 			echo "SYMMETRY ??"

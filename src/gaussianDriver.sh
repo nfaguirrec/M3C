@@ -291,7 +291,8 @@ function freqsGAUSSIANTemplate()
 			echo "SYMMETRY SO3"
 			echo "ELECTRONIC_STATE ??"
 		else
-			group=`grep "Full point group" input$SID.out | gawk '{print $4}'`
+			#group=`grep "Full point group" input$SID.out | gawk '{print $4}'`
+			group=`grep "Framework group" input$SID.out | sed 's/\[/ /g' | gawk '{print $3}'`
 			if [ "$group" = "Nop" -o "$group" = "NOp" ]
 			then
 				echo "SYMMETRY ??"
