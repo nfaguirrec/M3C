@@ -253,6 +253,9 @@ declare -A MAXVIBCHANNEL
 function showDataBase()
 {
 	local maxVibChannelsFile=$1
+	local maxCharge=$2
+	
+	[ -z "$maxCharge" ] && maxCharge=0
 	
 	cd $M3C_STORE
 	
@@ -277,8 +280,11 @@ function showDataBase()
 			if [ -z "$charge" ]; then charge=0; fi
 			if [ -z "$mult" ]; then mult=0; fi
 			if [ -z "$id" ]; then id=0; fi
-
-			echo $((100000000*$charge+10000000*$nAtoms+1000*$mass+100*$mult+$id)) $fileName $energy >> $TEMPDIR/.molValues$$
+			
+			if [ "$charge" -le "$maxCharge" ]
+			then
+				echo $((100000000*$charge+10000000*$nAtoms+1000*$mass+100*$mult+$id)) $fileName $energy >> $TEMPDIR/.molValues$$
+			fi
 		fi
 	done
 	
@@ -403,7 +409,7 @@ function makeDB()
 	printf "\t%s\n" "store = $M3C_STORE"
 	printf "\t%s\n" "reference = $finalLabel"
 	echo ""
-	showDataBase $TEMPDIR/.channels$$
+	showDataBase $TEMPDIR/.channels$$ $charge
 	echo "END FRAGMENTS_DATABASE"
 	
 	if [ "$DEBUG" = "TRUE" ]

@@ -28,6 +28,10 @@ then
 	# LATTE configuration
 	export M3C_LATTE_HOME=$HOME/bin
 	export M3C_LATTE_SCRATCH=/scratch/$USER/latte
+	
+	# LAMMPS configuration
+	export M3C_LAMMPS_HOME=$HOME/bin
+	export M3C_LAMMPS_SCRATCH=/scratch/$USER/lammps
 else
 	export PATH=$M3C_HOME/bin:$PATH
 	export PATH=$M3C_HOME/utils:$PATH

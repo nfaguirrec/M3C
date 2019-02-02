@@ -1,0 +1,35 @@
+#----------------------------------
+# Initialize system
+#----------------------------------
+
+units metal
+atom_style full
+
+read_data buckcoul.optg-LAMMPS.lmp
+
+group  O type 1
+group Ti type 2 
+
+#----------------------------------
+# Potential
+#----------------------------------
+
+set group  O charge -1.098 
+set group Ti charge  2.196 
+
+pair_style buck/coul/cut 10.0 40.0
+pair_coeff  1 1 271719.0 0.234 696.941 
+pair_coeff  1 2 391053.0 0.194 290.392 
+pair_coeff  2 2 717654.0 0.154 120.997 
+
+#----------------------------------
+# Minimization
+#----------------------------------
+dump iddump all xyz 1 dump.xyz
+dump_modify iddump element O Ti
+
+thermo 1
+min_style cg
+min_modify dmax 0.1
+min_modify line quadratic
+minimize 1.0e-6 1.0e-6 10000 10000
