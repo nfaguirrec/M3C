@@ -1,0 +1,75 @@
+LATTE INPUT FILE
+================
+#This input file resumes the content of MDcontroller and TBparam/control.in
+#The parser will only read it if it's present inside the running folder. 
+#In case this file is not present Latte will read the two files as original.
+#The order of the kewords is not important in this file. 
+#To get a full description of these keywords please see: 
+## https://github.com/lanl/LATTE/blob/master/Manual/LATTE_manual.pdf
+
+#General controls
+CONTROL{
+  XCONTROL= 1
+  BASISTYPE= NONORTHO
+  PARAMPATH= "TiO2param.latte"
+  #COORDSFILE= 'geom.dat'
+  KBT= 0.0
+  ENTROPYKIND= 1
+  VERBOSE= 0
+  PPOTON= 1 
+  SPINON= 0 SPINTOL= 1.0e-4
+  ELECTRO= 1 ELECMETH= 0 ELEC_ETOL= 0.001 ELEC_QTOL= 1.0e-5
+  MAXSCF= 450
+  BREAKTOL= 1.0E-6 MINSP2ITER= 22 SP2CONV= REL
+  FULLQCONV= 1 QITER= 0
+  QMIX= 0.25 SPINMIX= 0.25 MDMIX= 0.25
+  SPARSEON= 0 THRESHOLDON= 0 NUMTHRESH= 1.0e-6 FILLINSTOP= 100 BLKSZ= 4
+  MSPARSE= 0
+  RELAX= 0 RELAXTYPE= SD MAXITER= 100000 RLXFTOL= 0.0000001
+  SKIN= 1.0
+  CHARGE= 0
+  XBO= 1
+  XBODISON= 1
+  XBODISORDER= 5
+  KON= 0
+  COULACC= 1.0e-4 COULCUT= -500.0 COULR1= 500.0
+  MIXER= 1
+  MDON= 1
+}
+
+#Controls for QMD
+MDCONTROL{
+  MAXITER= -1
+  UDNEIGH= 25
+  DT= 0.25
+  TEMPERATURE= 300.00 RNDIST= GAUSSIAN SEEDINIT= UNIFORM
+  DUMPFREQ= 100000
+  RSFREQ= 100000
+  WRTFREQ= 100000
+  TOINITTEMP5= 1
+  THERMPER= 500
+  THERMRUN= 50000
+  NVTON= 0 NPTON= 0 AVEPER= 1000  FRICTION= 1000.0 SEED= 54
+  PTARGET= 0.0 NPTTYPE= ISO
+  SHOCKON= 0
+  SHOCKSTART= 100000
+  SHOCKDIR= 1
+  UPARTICLE= 500.0 USHOCK= -4590.0 C0= 1300.0
+  MDADAPT= 0
+  GETHUG= 0 E0= -795.725  V0= 896.984864 P0= 0.083149
+}
+
+
+#Pulay Mixer. This options are available when LATTE is compiled with
+#PROGRESS/BML
+MIXER{
+   MixerType= Linear  #Will use the Pulay mixer (Linear is an other option)
+   Verbose= 0
+   MPulay= 5  #Number of pulay vectors/matrices
+   MixCoeff= 0.05  #Coefficient for mixing charges
+   MixerON= T    #This variable is equivalent to commenting the whole lines in MIXER
+  
+ }
+ 
+
+

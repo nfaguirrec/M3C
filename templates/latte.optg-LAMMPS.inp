@@ -1,0 +1,28 @@
+#----------------------------------
+# Initialize system
+#----------------------------------
+
+units metal
+atom_style full
+atom_modify     sort 0 0.0    # turn off sorting of the coordinates
+
+read_data latte.optg-LAMMPS.lmp
+
+#----------------------------------
+# Potential
+#----------------------------------
+
+fix             1 all latte NULL
+fix_modify      1 energy yes
+
+#----------------------------------
+# Minimization
+#----------------------------------
+dump iddump all xyz 1 dump.xyz
+dump_modify iddump element O Ti
+
+thermo 1
+min_style cg
+min_modify dmax 0.1
+min_modify line quadratic
+minimize 1.0e-6 1.0e-6 10000 10000
