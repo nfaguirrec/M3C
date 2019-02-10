@@ -640,6 +640,129 @@ module Reactor_
 		if( allocated(reactiveInTScomb) ) deallocate( reactiveInTScomb )
 		if( allocated(productInTScomb) ) deallocate( productInTScomb )
 		
+		do i=1,products.nMolecules()
+			id = FragmentsDB_instance.getIdFromName( products.clusters(i).label() )
+			if( FragmentsDB_instance.involvedInTS( id ) ) then
+					call productInTS.append( i )
+			end if
+		end do
+		
+		if( .not. reactiveInTS.isEmpty() .and. .not. productInTS.isEmpty() ) then
+! 			write(*,"(A)",advance="no") "Reactives "
+! 			do i=1,reactives.nMolecules()
+! 				write(*,"(A)",advance="no") trim(reactives.clusters(i).label())//"+"
+! 			end do
+! 			write(*,*) ""
+! 			write(*,*) "reactiveInTS = ", reactiveInTS.data(1:reactiveInTS.size())
+! 			write(*,"(A)",advance="no") "Products "
+! 			do i=1,products.nMolecules()
+! 				write(*,"(A)",advance="no") trim(products.clusters(i).label())//"+"
+! 			end do
+! 			write(*,*) ""
+! 			write(*,*) "productInTS = ", productInTS.data(1:productInTS.size())
+			
+			locatedTS = .false.
+			
+			do ir=1,reactiveInTS.size()
+				call Math_combinations( reactiveInTS.size(), ir, reactiveInTScomb )
+				
+				do jr=1,size(reactiveInTScomb,dim=1)
+					
+					nAtomsR = 0
+					massNumberR = 0
+					do kr=1,size(reactiveInTScomb,dim=2)
+						massNumberR = massNumberR + reactives.clusters( reactiveInTS.at(reactiveInTScomb(jr,kr)) ).massNumber()
+						nAtomsR = nAtomsR + reactives.clusters( reactiveInTS.at(reactiveInTScomb(jr,kr)) ).nAtoms()
+					end do
+					
+					do ip=1,productInTS.size()
+						call Math_combinations( productInTS.size(), ip, productInTScomb )
+						
+						do jp=1,size(productInTScomb,dim=1)
+							
+							nAtomsP = 0
+							massNumberP = 0
+							do kp=1,size(productInTScomb,dim=2)
+								massNumberP = massNumberP + products.clusters( productInTS.at(productInTScomb(jp,kp)) ).massNumber()
+								nAtomsP = nAtomsP + products.clusters( productInTS.at(productInTScomb(jp,kp)) ).nAtoms()
+							end do
+							
+							if( massNumberR == massNumberP .and. nAtomsR > 1 .and. nAtomsP > 1 ) then
+								
+								call lReactives.init( size(reactiveInTScomb,dim=2) )
+								call lProducts.init( size(productInTScomb,dim=2) )
+								
+								do kr=1,size(reactiveInTScomb,dim=2)
+									lReactives.clusters(kr) = reactives.clusters( reactiveInTS.at(reactiveInTScomb(jr,kr)) )
+								end do
+							
+								do kp=1,size(productInTScomb,dim=2)
+									lProducts.clusters(kp) = products.clusters( productInTS.at(productInTScomb(jp,kp)) )
+								end do
+								
+								if( trim(lReactives.label()) /= trim(lProducts.label()) ) then
+									
+									labelTS = trim(lReactives.label())//"<-->"//trim(lProducts.label())
+									
+									if( GOptions_debugLevel >= 2 ) then
+										write(*,*) "      reactives = ", trim(reactives.label())
+										write(*,*) "       products = ", trim(products.label())
+										write(*,*) "     TS located = ", trim(labelTS.fstr)
+									end if
+									
+									call productsTS.init( products.nMolecules() - lProducts.nMolecules() + 1 )
+									
+									! @TODO Aca el problema aparece cuando todos los productos estan en un TS como C(t1)+C(t1)+C(t1)
+									!       En este caso nunca se entra en el if
+									j=1
+									do i=1,products.nMolecules()
+										do kp=1,size(productInTScomb,dim=2)
+											label = trim(products.clusters( productInTS.at(productInTScomb(jp,kp)) ).label())
+											if( label /= trim(products.clusters(i).label()) &
+												.and. j<=lProducts.nMolecules() ) then
+												call productsTS.set( j, products.clusters(i) )
+												j = j+1
+												exit
+											end if
+										end do
+									end do
+									
+									call productsTS.set( j, &
+													FragmentsDB_instance.transitionState( FragmentsDB_instance.str2id_TS.at( labelTS ) ) )
+									
+									if( GOptions_debugLevel >= 2 ) then
+										write(*,*) "    Eff channel = ", trim(reactives.label())//"-->"//trim(productsTS.label())
+									end if
+									
+									locatedTS = .true.
+									exit ! Only one TS is accepted. The one with minimum size
+									
+								end if
+								
+							end if
+							
+						end do
+						
+						if( locatedTS ) exit
+						
+					end do
+					
+					if( locatedTS ) exit
+					
+				end do
+				
+				if( locatedTS ) exit
+				
+			end do
+			
+		end if
+		
+		if( GOptions_debugLevel >= 2 ) then
+			write(*,*) ""
+		end if
+		
+		if( allocated(reactiveInTScomb) ) deallocate( reactiveInTScomb )
+		if( allocated(productInTScomb) ) deallocate( productInTScomb )
 	end subroutine reduceToTransitionStates
 	
 	!>
@@ -1031,6 +1154,8 @@ module Reactor_
 				! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
 				call this.products.setReactorEnergy( this.reactives.reactorEnergy() )
 				
+				if( this.replaceTS ) this.products = this.productsTS
+				
 				! Para que fuerce los centros aleatorios en la siguiente iteración
 				this.products.forceRandomCenters = .true.
 				
@@ -1133,6 +1258,8 @@ module Reactor_
 			this.products = this.reactives
 			this.state = .false.
 		end if
+		
+		if( this.replaceTS ) this.replaceTS = .false.
 		
 	end subroutine run
 	
