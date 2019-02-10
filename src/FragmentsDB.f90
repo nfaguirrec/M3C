@@ -62,6 +62,7 @@ module FragmentsDB_
 	use StringIntegerMap_
 	
 	use Fragment_
+	use FragmentsList_
 	use ModelPotential_
 	use GOptionsM3C_
 	
@@ -79,11 +80,11 @@ module FragmentsDB_
 		type(StringIntegerMap) :: forbiddenReactions
 		logical :: useForbiddenReactionsDetails
 		
-! 		"C2(d1)+C(t1)-->C3(s1)" --> 5 --> transitionState(5)
+! 		"C2(d1)+C(t1)-->C3(s1)" --> 5 . It means transitionState(5)
 ! 		|----------str2id_TS----------|
 		type(Fragment), allocatable :: transitionState(:)
 		type(StringIntegerMap) :: str2id_TS
-		logical, allocatable :: involvedInTS(:) ! One for each group. For speed purposes only.
+		logical, allocatable :: involvedInTS(:) ! One for each cluster. For speed purposes only.
 		
 		real(8), private :: energyReference_
 		logical, private :: useAtomicPotentials
@@ -360,6 +361,10 @@ module FragmentsDB_
 		character(100), allocatable :: tokens(:), tokens2(:), tokens3(:)
 		real(8) :: rBuffer
 		
+		! Only for transition states. They are neccessary to calculate the right label (mass sorted)
+		type(FragmentsList) :: reactives
+		type(FragmentsList) :: products
+		
 		if( allocated(this.transitionState) ) deallocate( this.transitionState )
 		allocate( this.transitionState(size(transitionStatesTable)) )
 		
@@ -395,28 +400,28 @@ module FragmentsDB_
 			! Choosing the reactives and products
 			!------------------------------------------
 			if( size(tokens) >= 9 .and. this.transitionState(i).nAtoms() /= 1 ) then
-				call FString_split( trim(adjustl(tokens(9))), tokens2, "-->" )
+				call FString_split( trim(adjustl(tokens(9))), tokens2, "<-->" )
 				
-				write(*,*) "Reactivos"
 				call FString_split( trim(adjustl(tokens2(1))), tokens3, "+" )
+				call reactives.init( size(tokens3) )
+				
 				do j=1,size(tokens3)
-					write(*,*) "token = ", trim(tokens3(j))
 					do k=1,size(this.clusters)
 						if( trim(tokens3(j)) == this.clusters(k).label() ) then
-							write(IO_STDOUT,*) k, this.clusters(k).id
+							reactives.clusters(j) = this.clusters(k)
 							this.involvedInTS(k) = .true.
 						end if
 					end do
 				end do
 				deallocate( tokens3 )
 				
-				write(*,*) "Productos"
 				call FString_split( trim(adjustl(tokens2(2))), tokens3, "+" )
+				call products.init( size(tokens3) )
+				
 				do j=1,size(tokens3)
-					write(*,*) "token = ", trim(tokens3(j))
 					do k=1,size(this.clusters)
 						if( trim(tokens3(j)) == this.clusters(k).label() ) then
-							write(IO_STDOUT,*) k, this.clusters(k).id
+							products.clusters(j) = this.clusters(k)
 							this.involvedInTS(k) = .true.
 						end if
 					end do
@@ -425,8 +430,10 @@ module FragmentsDB_
 				
 				deallocate( tokens2 )
 				
-				write(*,*) "Agregado: ", FString_toString(trim(adjustl(tokens(9)))//"-->"//trim(adjustl(tokens(10)))), ">>", i
-				call this.str2id_TS.insert( FString_toString(trim(adjustl(tokens(9)))//"-->"//trim(adjustl(tokens(10)))), i )
+				write(*,"(4X,A22,A)")  "Path = ", trim(reactives.label())//"<-->"//trim(products.label())
+				call this.str2id_TS.insert( FString_toString(trim(reactives.label())//"<-->"//trim(products.label())), i )
+				call this.str2id_TS.insert( FString_toString(trim(products.label())//"<-->"//trim(reactives.label())), i )
+				
 			else
 				call GOptions_error( &
 						"Bad number of atoms in transition state (N=0)", &
