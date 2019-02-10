@@ -389,14 +389,7 @@ module Fragment_
 	subroutine updateFormula( this )
 		class(Fragment) :: this 
 		
-		integer :: isLineal
 		character(100), allocatable :: tokens(:)
-		
-		if( this.isLineal() ) then
-			isLineal = 1
-		else
-			isLineal = 0
-		end if
 		
 		this.dlabel_ = this.name
 		
