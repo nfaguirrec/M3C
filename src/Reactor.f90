@@ -639,6 +639,7 @@ module Reactor_
 		
 		if( allocated(reactiveInTScomb) ) deallocate( reactiveInTScomb )
 		if( allocated(productInTScomb) ) deallocate( productInTScomb )
+		
 	end subroutine reduceToTransitionStates
 	
 	!>
