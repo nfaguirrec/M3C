@@ -112,6 +112,7 @@ module Reactor_
 			procedure, private, NOPASS :: isSpinForbidden
 			procedure, private, NOPASS :: reactorConstraint
 			procedure, private, NOPASS :: reactionString
+			procedure, private, NOPASS :: reduceToTransitionStates
 			
 			procedure :: execute
 			procedure :: executeMinFragmentationEnergy
@@ -315,6 +316,11 @@ module Reactor_
 				maxIterForbidden = maxIterForbidden + 1
 				cycle
 			else
+				
+				if( allocated(FragmentsDB_instance.transitionState) ) then
+					call reduceToTransitionStates( this.reactives, this.products )
+				end if
+				
 				exit
 			end if
 			
@@ -463,6 +469,15 @@ module Reactor_
 		
 		output = trim(reactives.label( details=effDetails ))//"-->"//trim(products.label( details=effDetails ))
 	end function reactionString
+	
+	!>
+	!! @brief Replaces products for the corresponding transition states. Only composition is changed
+	!!
+	subroutine reduceToTransitionStates( reactives, products )
+		type(FragmentsList), intent(in) :: reactives
+		type(FragmentsList), intent(inout) :: products
+		
+	end subroutine reduceToTransitionStates
 	
 	!>
 	!! @brief Change the composition of the system
