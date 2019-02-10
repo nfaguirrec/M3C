@@ -1030,6 +1030,8 @@ module Reactor_
 				! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
 				call this.products.setReactorEnergy( this.reactives.reactorEnergy() )
 				
+				if( this.replaceTS ) this.products = this.productsTS
+				
 				! Para que fuerce los centros aleatorios en la siguiente iteración
 				this.products.forceRandomCenters = .true.
 				
@@ -1132,6 +1134,8 @@ module Reactor_
 			this.products = this.reactives
 			this.state = .false.
 		end if
+		
+		if( this.replaceTS ) this.replaceTS = .false.
 		
 	end subroutine run
 	
