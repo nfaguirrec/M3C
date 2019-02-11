@@ -1027,10 +1027,10 @@ module Reactor_
 				! Se actualiza la composición
 				call this.changeComposition( this.dNFrag )
 				
+				if( this.replaceTS ) this.products = this.productsTS
+				
 				! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
 				call this.products.setReactorEnergy( this.reactives.reactorEnergy() )
-				
-				if( this.replaceTS ) this.products = this.productsTS
 				
 				! Para que fuerce los centros aleatorios en la siguiente iteración
 				this.products.forceRandomCenters = .true.
