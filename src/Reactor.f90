@@ -712,14 +712,17 @@ module Reactor_
 									
 									call productsTS.init( products.nMolecules() - lProducts.nMolecules() + 1 )
 									
+									call productsTS.set( 1, &
+													FragmentsDB_instance.transitionState( FragmentsDB_instance.str2id_TS.at( labelTS ) ) )
+									
 									! @TODO Aca el problema aparece cuando todos los productos estan en un TS como C(t1)+C(t1)+C(t1)
 									!       En este caso nunca se entra en el if
-									j=1
+									j=2
 									do i=1,products.nMolecules()
 										do kp=1,size(productInTScomb,dim=2)
 											label = trim(products.clusters( productInTS.at(productInTScomb(jp,kp)) ).label())
 											if( label /= trim(products.clusters(i).label()) &
-												.and. j<=lProducts.nMolecules() ) then
+												.and. j<=productsTS.nMolecules() ) then
 												call productsTS.set( j, products.clusters(i) )
 												j = j+1
 												exit
@@ -727,8 +730,14 @@ module Reactor_
 										end do
 									end do
 									
-									call productsTS.set( j, &
-													FragmentsDB_instance.transitionState( FragmentsDB_instance.str2id_TS.at( labelTS ) ) )
+									if( j==2 ) then
+										do i=1,products.nMolecules()
+											if( j<=productsTS.nMolecules() ) then
+												call productsTS.set( j, products.clusters(i) )
+												j = j+1
+											end if
+										end do
+									end if
 									
 									if( GOptions_debugLevel >= 2 ) then
 										write(*,*) "    Eff channel = ", trim(reactives.label())//"-->"//trim(productsTS.label())
@@ -1151,10 +1160,10 @@ module Reactor_
 				! Se actualiza la composición
 				call this.changeComposition( this.dNFrag )
 				
+				if( this.replaceTS ) this.products = this.productsTS
+				
 				! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
 				call this.products.setReactorEnergy( this.reactives.reactorEnergy() )
-				
-				if( this.replaceTS ) this.products = this.productsTS
 				
 				! Para que fuerce los centros aleatorios en la siguiente iteración
 				this.products.forceRandomCenters = .true.
