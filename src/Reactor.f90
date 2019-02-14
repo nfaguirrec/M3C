@@ -606,6 +606,7 @@ module Reactor_
 									end if
 									
 									if( GOptions_debugLevel >= 2 ) then
+										write(*,*) "       products = ", trim(products.label())
 										write(*,*) "    Eff channel = ", trim(reactives.label())//"-->"//trim(productsTS.label())
 									end if
 									
@@ -1011,11 +1012,12 @@ module Reactor_
 		
 		real(8) :: min_dLnW
 		
-		integer :: n, nMin
+		integer :: nMin
 		real(8) :: rBuffer
 		type(String) :: sBuffer
 		
 		this.state = .true.
+		this.replaceTS = .false.
 		
 		call this.showReactorHeader()
 		
@@ -1024,8 +1026,6 @@ module Reactor_
 			
 				! Se actualiza la composición
 				call this.changeComposition( this.dNFrag )
-				
-				if( this.replaceTS ) this.products = this.productsTS
 				
 				! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
 				call this.products.setReactorEnergy( this.reactives.reactorEnergy() )
@@ -1039,16 +1039,37 @@ module Reactor_
 ! 				call this.products.changeVibrationalEnergy()
 ! 				call this.products.changeGeometry()
 ! 				call this.products.changeOrientations()
+
+				if( this.replaceTS ) then
+					! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
+					call this.productsTS.setReactorEnergy( this.reactives.reactorEnergy() )
+					
+					! Para que fuerce los centros aleatorios en la siguiente iteración
+					this.productsTS.forceRandomCenters = .true.
+					
+					! Los productos utilizan parte de la energía
+					call this.productsTS.initialGuessFragmentsList()
+					
+! 					write(*,*) "reactive ", trim(this.reactives.label())
+! 					write(*,*) "products ", trim(this.products.label())
+! 					write(*,*) "TS located ", trim(this.productsTS.label())
+! 					sBuffer = this.products.energyHistoryLine()
+! 					write(*,"(A)") trim(sBuffer.fstr)
+! 					sBuffer = this.productsTS.energyHistoryLine()
+! 					write(*,"(A)") trim(sBuffer.fstr)
+					
+				end if
 				
 			case( VIBRATIONAL_REACTOR )
-				
+			
 				! La composición es igual antes y después
 				this.products = this.reactives
 				
 				! Los productos utilizan parte de la energía cinética en vibracional
 				call this.products.changeVibrationalEnergy()
-			
+				
 			case( TRANSLATIONAL_REACTOR )
+			
 				! La composición es igual antes y después
 				this.products = this.reactives
 				
@@ -1056,11 +1077,13 @@ module Reactor_
 				call this.products.changeGeometry()
 				
 			case( ROTATIONAL_REACTOR )
+			
 				! La composición es igual antes y después
 				this.products = this.reactives
 				
 				! Los productos utilizan parte de la energía
 				call this.products.changeOrientations()
+				
 		end select
 		
 		if( GOptions_printLevel >= 2 ) then
@@ -1109,8 +1132,6 @@ module Reactor_
 			this.products = this.reactives
 			this.state = .false.
 		end if
-		
-		if( this.replaceTS ) this.replaceTS = .false.
 		
 	end subroutine run
 	

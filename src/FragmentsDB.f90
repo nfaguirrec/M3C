@@ -377,6 +377,7 @@ module FragmentsDB_
 		
 		do i=1,size(transitionStatesTable)
 			call this.transitionState(i).fromMassTableRow( transitionStatesTable(i).fstr, id=i, store=store.fstr )
+			this.transitionState(i).isTransitionState = .true.
 			
 			call FString_split( transitionStatesTable(i).fstr, tokens, " " )
 			
