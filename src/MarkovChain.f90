@@ -442,7 +442,7 @@ module MarkovChain_
 	! 							sBuffer = react.reactives.weightHistoryLine( origin )
 	! 						end if
 	! 					end if
-
+	
 						call react.run()
 						
 						! Si la energía cinetica es negativa
@@ -483,7 +483,12 @@ module MarkovChain_
 						
 							nTimesBlocked = 0  ! El bloqueo debe ser consecutivo, así que si no pasa por negative energy se cuenta nuevamente
 							
-							Pi = react.products.LnW()-react.reactives.LnW()
+							if( react.replaceTS ) then
+								react.replaceTS = .false.
+								Pi = react.productsTS.LnW()-react.reactives.LnW()
+							else
+								Pi = react.products.LnW()-react.reactives.LnW()
+							end if
 							
 							if( Pi > 0.0_8 ) then
 								if( trim(react.reactives.label( details=.false. )) /= trim(react.products.label( details=.false. )) ) then
@@ -518,7 +523,7 @@ module MarkovChain_
 										sBuffer = trim(react.reactives.label( details=.true. ))//"-->"//trim(react.products.label( details=.true. ))
 										call this.transitionDetHistogram.add( sBuffer )
 									end if
-
+									
 									react.reactives = react.products
 									
 									call GOptions_info( &
