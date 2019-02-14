@@ -1027,8 +1027,6 @@ module Reactor_
 				! Se actualiza la composición
 				call this.changeComposition( this.dNFrag )
 				
-				if( this.replaceTS ) this.products = this.productsTS
-				
 				! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
 				call this.products.setReactorEnergy( this.reactives.reactorEnergy() )
 				
@@ -1134,8 +1132,6 @@ module Reactor_
 			this.products = this.reactives
 			this.state = .false.
 		end if
-		
-		if( this.replaceTS ) this.replaceTS = .false.
 		
 	end subroutine run
 	
