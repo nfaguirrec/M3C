@@ -96,7 +96,8 @@ function runLATTE()
 		export OMP_NUM_THREADS=$nProcShared
 	fi
 	
-	$M3C_LATTE_HOME/LATTE_DOUBLE &> rawOutput
+# 	$M3C_LATTE_HOME/LATTE_DOUBLE.optg &> rawOutput
+	$M3C_LATTE_HOME/LATTE_DOUBLE.freqs &> rawOutput
 	formatLATTEoutput rawOutput
 	
 	rm -rf $M3C_LATTE_SCRATCH/${iFile%.*}/
@@ -268,8 +269,49 @@ function freqsLATTETemplate()
 	local charge=$4
 	local mult=$5
 	
-	echo "### Error ### freqsLATTETemplate is not implemented yet"
-	exit
+	local SID="-$xyzFile$RANDOM"
+	
+	local nAtoms=""
+	local energy=""
+	local fv="" # Vibrational degrees of freedom
+	
+	nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}END{print i}' $xyzFile`
+	
+	if [ "$nAtoms" -gt 0  ]
+	then
+		rm -rf input$SID.dat
+		fillTemplate $template $xyzFile $charge $mult > input$SID.latte
+		
+		runLATTE input$SID.latte $nProcShared &> input$SID.out
+		cp input$SID.out ${xyzFile%.*}.out 2> /dev/null
+		cp input$SID.latte ${xyzFile%.*}.latte 2> /dev/null
+		
+		energy=`grep "FREE ENERGY" input$SID.out | awk '{print $NF*0.0367493088244753}'`
+		fv=`molecule.fv $xyzFile`
+		
+		echo $nAtoms
+		echo "Energy = $energy"
+		cat $xyzFile | gawk '(NR>2){print $0}'
+		echo ""
+		gawk '
+			BEGIN{
+				loc=0
+				fv='`echo $fv`'
+				n=1
+			}
+			{
+				if($0~/^[[:blank:]]*$/) loc=0
+				if(loc==1&&$1~/^[[:digit:]]/){ val[$1]=$2; n++ }
+				if($0~/Vib. Freqs \(cm-1\)/) loc=1
+			}
+			END{
+				print "FREQUENCIES   ", fv
+				for(i = sqrt( (fv-n)**2 ); i<=n-1; i++) print val[i]
+			}
+		' input$SID.out
+	fi
+	
+	rm -rf input$SID.dat input$SID.latte input$SID.out input$SID.rst
 }
 
 ##
