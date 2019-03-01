@@ -1,4 +1,4 @@
-#p b3lyp/6-311++G(3df,2p) freq
+#p b3lyp/6-311++G(3df,2p) freq IOp(2/17=3) IOp(2/18=3)
 
  b3lyp opt
 
