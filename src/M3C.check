@@ -165,20 +165,22 @@ function checkConsistence()
 			
 		fi
 		
-		if [[ ! "$multID" =~ ^m[1-9]+$ ]]
+		if [[ "$multID" =~ ^m[1-9]+$ ]]
 		then
-		
-			if [ "$REMOVE_WRONGFORMAT" = "TRUE" ]
+			minMult=`molecule.minMult $ifile ${chargeID#q}`
+			
+			if [ ! "$multID" = "m$(($minMult+0))" -a  ! "$multID" = "m$(($minMult+2))" \
+					-a  ! "$multID" = "m$(($minMult+4))" -a  ! "$multID" = "m$(($minMult+6))" ]
 			then
-				echo "--> Removed ($ifile) Inconsistency in multID ( $multID --> m[1-9]+ )"
-				rm $ifile
-				continue
-			else
 				echo ""
-				echo "### ERROR ### Inconsistency in multID ( $multID --> m[1-9]+ )"
+				echo -n "### ERROR ### Inconsistency in multiplicity ( $multID --> "
+				echo "m$(($minMult+0)), m$(($minMult+2)), m$(($minMult+4)), or m$(($minMult+6)) ) )"
 				kill $$
 			fi
-			
+		else
+			echo ""
+			echo "### ERROR ### Inconsistency in multID ( $multID --> m[1-9]+ )"
+			kill $$
 		fi
 		
 		if [[ ! "$isomerID" =~ ^[0-9]+$ ]]
