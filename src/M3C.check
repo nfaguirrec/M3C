@@ -50,6 +50,7 @@
 
 FILTER="xyz"
 REMOVE_DUPLICATES="FALSE"
+REMOVE_WRONGFORMAT="FALSE"
 
 BONDING_TOL_SCALE=1.2  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
 # SIMILARITY_THR=0.92 # coarse
@@ -134,30 +135,66 @@ function checkConsistence()
 		
 		if [ "$formulaFromFileName" != "`molecule.chemicalFormula $ifile`" ]
 		then
-			echo ""
-			echo "### ERROR ### Inconsistency in filename ( $formulaFromFileName --> `molecule.chemicalFormula $ifile` )"
-			kill $$
+			
+			if [ "$REMOVE_WRONGFORMAT" = "TRUE" ]
+			then
+				echo "--> Removed ($ifile) Inconsistency in formula ( $formulaFromFileName --> `molecule.chemicalFormula $ifile` )"
+				rm $ifile
+				continue
+			else
+				echo ""
+				echo "### ERROR ### Inconsistency in formula ( $formulaFromFileName --> `molecule.chemicalFormula $ifile` )"
+				kill $$
+			fi
+			
 		fi
 		
 		if [[ ! "$chargeID" =~ ^q[0-9]+$ ]]
 		then
-			echo ""
-			echo "### ERROR ### Inconsistency in chargeID ( $chargeID --> q[0-9]+ )"
-			kill $$
+		
+			if [ "$REMOVE_WRONGFORMAT" = "TRUE" ]
+			then
+				echo "--> Removed ($ifile) Inconsistency in chargeID ( $chargeID --> q[0-9]+ )"
+				rm $ifile
+				continue
+			else
+				echo ""
+				echo "### ERROR ### Inconsistency in chargeID ( $chargeID --> q[0-9]+ )"
+				kill $$
+			fi
+			
 		fi
 		
 		if [[ ! "$multID" =~ ^m[1-9]+$ ]]
 		then
-			echo ""
-			echo "### ERROR ### Inconsistency in multID ( $multID --> m[1-9]+ )"
-			kill $$
+		
+			if [ "$REMOVE_WRONGFORMAT" = "TRUE" ]
+			then
+				echo "--> Removed ($ifile) Inconsistency in multID ( $multID --> m[1-9]+ )"
+				rm $ifile
+				continue
+			else
+				echo ""
+				echo "### ERROR ### Inconsistency in multID ( $multID --> m[1-9]+ )"
+				kill $$
+			fi
+			
 		fi
 		
 		if [[ ! "$isomerID" =~ ^[0-9]+$ ]]
 		then
-			echo ""
-			echo "### ERROR ### Inconsistency in isomerID ( $isomerID --> [0-9]+ )"
-			kill $$
+		
+			if [ "$REMOVE_WRONGFORMAT" = "TRUE" ]
+			then
+				echo "--> Removed ($ifile) Inconsistency in isomerID ( $isomerID --> [0-9]+ )"
+				rm $ifile
+				continue
+			else
+				echo ""
+				echo "### ERROR ### Inconsistency in isomerID ( $isomerID --> [0-9]+ )"
+				kill $$
+			fi
+			
 		fi
 		
 		if [ "$FILTER" = "rxyz" -o "$FILTER" = "rxyz0" ]
@@ -167,18 +204,36 @@ function checkConsistence()
 			
 			if [ "$nFreqFromFile" -ne "$nFreqExpected" ]
 			then
-				echo ""
-				echo "### ERROR ### Inconsistency in number of frequencies ( $nFreqFromFile --> $nFreqExpected )"
-				kill $$
+			
+				if [ "$REMOVE_WRONGFORMAT" = "TRUE" ]
+				then
+					echo "--> Removed ($ifile) Inconsistency in number of frequencies ( $nFreqFromFile --> $nFreqExpected )"
+					rm $ifile
+					continue
+				else
+					echo ""
+					echo "### ERROR ### Inconsistency in number of frequencies ( $nFreqFromFile --> $nFreqExpected )"
+					kill $$
+				fi
+				
 			fi
 			
 			energyFromFile=`grep Energy $ifile | awk '{print $3}'`
 			
 			if [[ ! "$energyFromFile" =~ ^[-]*[0-9]+.[0-9]+$ ]]
 			then
-				echo ""
-				echo "### ERROR ### Inconsistency in value of energy ( $energyFromFile )"
-				kill $$
+			
+				if [ "$REMOVE_WRONGFORMAT" = "TRUE" ]
+				then
+					echo "--> Removed ($ifile) Inconsistency in value of energy ( $energyFromFile )"
+					rm $ifile
+					continue
+				else
+					echo ""
+					echo "### ERROR ### Inconsistency in value of energy ( $energyFromFile )"
+					kill $$
+				fi
+				
 			fi
 		fi
 		
@@ -196,12 +251,13 @@ function main()
 		FILTER=$1
 	else
 		echo "usage:"
-		echo "    M3C.check [xyz|rxyz|rxyz0] [removeDuplicates]"
-		echo "                    xyz              FALSE"
+		echo "    M3C.check [xyz|rxyz|rxyz0] [removeDuplicates] [removeWrongFormat]"
+		echo "                    xyz              FALSE               FALSE       "
 		exit
 	fi
 	
 	REMOVE_DUPLICATES=$2
+	REMOVE_WRONGFORMAT=$3
 	
 	echo "-------------------------------"
 	echo " Checking format consistence   "
