@@ -735,9 +735,10 @@ module FragmentsListBase_
 	!! @param[in]  maxIter
 	!!             Maximum allowed number of iterations (default = 1000000)
 	!!
-	subroutine randomCenters( this, maxIter )
+	subroutine randomCenters( this, maxIter, frozenIds )
 		class(FragmentsListBase) :: this
 		integer, optional, intent(in) ::  maxIter
+		integer, optional, allocatable, intent(in) ::  frozenIds(:)
 		
 		integer :: effMaxIter
 		
@@ -745,7 +746,7 @@ module FragmentsListBase_
 		type(RandomSampler) :: rs
 		real(8), allocatable :: sample(:,:)
 		real(8) :: rVec1(3), rVec2(3), cm(3)
-		integer :: i, j, n
+		integer :: i, j, n, nf
 		logical :: overlap
 		
 		this.state = .true.
@@ -797,6 +798,16 @@ module FragmentsListBase_
 				do n=1,effMaxIter
 					call rs.uniform( sample )
 					
+					if( present(frozenIds) ) then
+! 						write(*,*) "Fijando coordenadas"
+						do nf=1,size(frozenIds)
+							if( frozenIds(nf) /= 0 ) then ! 0 means free coordinates
+! 								write(*,*) nf, frozenIds(nf)
+								sample(:,frozenIds(nf)) = this.clusters(frozenIds(nf)).center()
+							end if
+						end do
+					end if
+					
 					rVec1 = RVEC_X(1)
 					rVec2 = RVEC_X(2)
 					
@@ -825,7 +836,13 @@ module FragmentsListBase_
 				end do
 				
 				do i=1,this.nMolecules()
-					call this.clusters(i).setCenter( RVEC_X(i) )
+					if( present(frozenIds) ) then
+						if( .not. any( frozenIds==i ) ) then
+							call this.clusters(i).setCenter( RVEC_X(i) )
+						end if
+					else
+						call this.clusters(i).setCenter( RVEC_X(i) )
+					end if
 				end do
 				
 			case( 3 )
@@ -833,6 +850,16 @@ module FragmentsListBase_
 				nTrials_ = 0
 				do n=1,effMaxIter
 					call rs.uniform( sample )
+					
+					if( present(frozenIds) ) then
+! 						write(*,*) "Fijando coordenadas3"
+						do nf=1,size(frozenIds)
+							if( frozenIds(nf) /= 0 ) then ! 0 means free coordinates
+! 								write(*,*) nf, frozenIds(nf)
+								sample(:,frozenIds(nf)) = this.clusters(frozenIds(nf)).center()
+							end if
+						end do
+					end if
 					
 					overlap = .false.
 					
@@ -873,7 +900,13 @@ module FragmentsListBase_
 				end do
 				
 				do i=1,this.nMolecules()
-					call this.clusters(i).setCenter( RVEC_XY(i) )
+					if( present(frozenIds) ) then
+						if( .not. any( frozenIds==i ) ) then
+							call this.clusters(i).setCenter( RVEC_XY(i) )
+						end if
+					else
+						call this.clusters(i).setCenter( RVEC_XY(i) )
+					end if
 				end do
 				
 			case default
@@ -881,6 +914,16 @@ module FragmentsListBase_
 				nTrials_ = 0
 				do n=1,effMaxIter
 					call rs.uniform( sample )
+					
+					if( present(frozenIds) ) then
+! 						write(*,*) "Fijando coordenadasdef"
+						do nf=1,size(frozenIds)
+							if( frozenIds(nf) /= 0 ) then ! 0 means free coordinates
+! 								write(*,*) nf, frozenIds(nf)
+								sample(:,frozenIds(nf)) = this.clusters(frozenIds(nf)).center()
+							end if
+						end do
+					end if
 					
 					overlap = .false.
 					
@@ -905,6 +948,8 @@ module FragmentsListBase_
 						if( overlap ) exit
 					end do
 					
+! 					if( overlap ) write(*,*) "Overlap Located 1"
+					
 					!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 					! Se verifica que a ajustar el centro de masas el sistema
 					! no se salga del volumen de simulación
@@ -920,12 +965,20 @@ module FragmentsListBase_
 						end if
 					end do
 					
+! 					if( overlap ) write(*,*) "Overlap Located 2"
+					
 					nTrials_ = nTrials_ + 1
 					if( .not. overlap ) exit
 				end do
 				
 				do i=1,this.nMolecules()
-					call this.clusters(i).setCenter( RVEC_XYZ(i) )
+					if( present(frozenIds) ) then
+						if( .not. any( frozenIds==i ) ) then
+							call this.clusters(i).setCenter( RVEC_XYZ(i) )
+						end if
+					else
+						call this.clusters(i).setCenter( RVEC_XYZ(i) )
+					end if
 				end do
 				
 		end select
@@ -939,6 +992,7 @@ module FragmentsListBase_
 			
 		if( overlap ) then
 			this.state = .false.
+! 			write(*,*) "No encontro conf aleatoria"
 ! 			call GOptions_error( &
 ! 				"Maximum number of iterations reached"//" (n = "//trim(FString_fromInteger(n))//")", &
 ! 				"FragmentsListBase.randomCenters()", &
@@ -953,9 +1007,10 @@ module FragmentsListBase_
 	!! @param[in]  maxIter
 	!!             Maximum allowed number of iterations (default = 100000)
 	!!
-	subroutine randomCentersByRandomWalkStep( this, maxIter )
+	subroutine randomCentersByRandomWalkStep( this, maxIter, frozenIds )
 		class(FragmentsListBase) :: this
 		integer, optional, intent(in) ::  maxIter
+		integer, optional, allocatable, intent(in) ::  frozenIds(:)
 		
 		integer :: effMaxIter
 		
@@ -965,6 +1020,13 @@ module FragmentsListBase_
 		real(8) :: rVec1(3), rVec2(3), dR(3)
 		integer :: i, j, n, lastCase
 		logical :: overlap
+		
+		if( present(frozenIds) ) then
+			call GOptions_error( &
+				"frozenIds is not implemented yet", &
+				"FragmentsListBase.randomCentersByRandomWalkStep()" &
+				)
+		end if
 		
 		this.state = .true.
 		
@@ -1300,8 +1362,11 @@ module FragmentsListBase_
 		class(FragmentsListBase) :: other
 		
 		logical :: check
-		integer :: i, n
+		integer :: i, j, n
 		real(8) :: centerOfMass(3)
+		integer, allocatable :: frozenIds(:)
+		integer, allocatable :: fixed(:)
+		real(8) :: similarity
 		
 		! @todo No tengo claro que esto deba ir aqui
 ! 		if( this.forceInitializing ) then
@@ -1327,21 +1392,73 @@ module FragmentsListBase_
 ! 				"Consider to change the initial geometry" &
 ! 				)
 ! 			end if
-		
+			
 		else if( this.nFragments() > other.nFragments() ) then
 			
-			call GOptions_error( &
-				"Case this.nFragments() > other.nFragments() is not implemented yet", &
-				"FragmentsListBase.geometryFrom()" &
-				)
+			! No estoy seguro de este bloque. Si esto funciona hay que mezclar este bloque con el caso <
+			
+			allocate( frozenIds(this.nMolecules()) )
+			allocate( fixed(other.nMolecules()) )
+			frozenIds = 0
+			fixed = 0
+			
+			n = 1
+			do i=1,this.nMolecules()
+				do j=1,other.nMolecules()
+! 					write(*,*) "Hola <", i, j, n, this.nMolecules()
+					if( .not. any(fixed==j) .and. this.clusters(i).compareGeometry( other.clusters(j), thr=0.9_8, similarity=similarity )  ) then
+! 						write(*,*) ">>>>>>>>>>>>>>>", i, j, similarity
+						call this.clusters(i).setCenter( other.clusters(j).center() )
+						
+						frozenIds(n) = i
+						fixed( n ) = j
+						
+						n = n+1
+						exit
+					end if
+				end do
 				
+				if( n == this.nFragments() ) exit
+			end do
+			
+			call this.randomCenters( 10000, frozenIds )
+			
+			deallocate( fixed )
+			deallocate( frozenIds )
+			
 		else if( this.nFragments() < other.nFragments() ) then
-		
-			call GOptions_error( &
-				"Case this.nFragments() < other.nFragments() is not implemented yet", &
-				"FragmentsListBase.geometryFrom()" &
-				)
+			
+			allocate( frozenIds(this.nMolecules()) )
+			allocate( fixed(other.nMolecules()) )
+			frozenIds = 0
+			fixed = 0
+			
+			n = 1
+			do i=1,this.nMolecules()
+				do j=1,other.nMolecules()
+! 					write(*,*) "Hola <", i, j
+					if( .not. any(fixed==j) .and. this.clusters(i).compareGeometry( other.clusters(j), thr=0.9_8, similarity=similarity )  ) then
+! 						write(*,*) ">>>>>>>>>>>>>>>", i, j, similarity
+						call this.clusters(i).setCenter( other.clusters(j).center() )
+						
+						frozenIds(n) = i
+						fixed( n ) = j
+						
+						n = n+1
+						exit
+					end if
+				end do
 				
+				if( n == this.nFragments() ) exit
+			end do
+			
+			call this.randomCenters( 10000, frozenIds )
+			
+			deallocate( fixed )
+			deallocate( frozenIds )
+			
+			if( GOptions_printLevel >= 2 ) write(*,*) "Geometry interpolated ... OK"
+			
 		end if
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1439,6 +1556,7 @@ module FragmentsListBase_
 		end if
 		
 		call this.updateLogVtheta()
+		
 	end subroutine changeOrientationsFragmentsListBase
 	
 	!>

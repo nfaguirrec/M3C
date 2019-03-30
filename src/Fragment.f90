@@ -625,6 +625,7 @@ module Fragment_
 		end if
 		
 		call this.updateLogVtheta( effForce1D, effForce2D )
+		
 	end subroutine changeOrientation
 	
 ! 	!>

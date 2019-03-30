@@ -649,7 +649,7 @@ module FragmentsList_
 			write(*,"(10X,5X,20X,A20)") "---------------"
 			write(*,"(5X,A10,20X,F20.5)") "Total", this.LnDiagI_
 			write(*,*) ""
-			stop
+! 			stop
 		end if
 		
 	end subroutine updateDiagInertiaTensorJJ
@@ -1139,10 +1139,22 @@ module FragmentsList_
 			call GOptions_valueReport( "vibrationalEnergy", this.vibrationalEnergy_/eV, "eV", indent=2 )
 			call GOptions_valueReport( "rotationalEnergy", this.rotationalEnergy_/eV, "eV", indent=2 )
 			call GOptions_valueReport( "used Et", Et/eV, "eV", indent=2 )
+			call GOptions_valueReport( "this.ft", this.ft(), indent=2 )
+			call GOptions_valueReport( "this.fr", this.fr(), indent=2 )
+			call GOptions_valueReport( "fr(n)", this.clusters( this.idSorted(n) ).fr(), indent=2 )
+			call GOptions_valueReport( "s", s, indent=2 )
+			
+			if ( n == 1 ) then
+				call GOptions_valueReport( "logGamma(fr/2)", log( Gamma(0.5_8*this.clusters(1).fr()) ), indent=2 )
+			else
+				call GOptions_valueReport( "logGamma(s/2)", log( Gamma(0.5_8*s) ), indent=2 )
+			end if
+			
 			call GOptions_valueReport( "logVfree", this.logVfree_, indent=2 )
 			call GOptions_valueReport( "logVtheta", this.logVtheta_, indent=2 )
 			call GOptions_valueReport( "logVJ", this.logVJ_, indent=2 )
 			call GOptions_valueReport( "0.5*logMu", 0.5*logMu, indent=2 )
+			call GOptions_valueReport( "LnDiagI_", this.LnDiagI_, indent=2 )
 			call GOptions_valueReport( "LnLambda_", this.LnLambda_, indent=2 )
 		end if
 	end subroutine updateLambda
