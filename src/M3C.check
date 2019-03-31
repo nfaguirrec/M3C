@@ -184,7 +184,7 @@ function checkRepeated()
 	pushd . &> /dev/null
 	cd $resultsDir
 	
-	ls *.$format > .list$$
+	find . -maxdepth 1 -name  "*.$format" | sed -r 's/^\.\///g' > .list$$
 	
 	# molecule.duplicate file [remove] [ debug ] [ thr ] [alpha] [useMassWeight] [useIm] [useNodeWeights] [useEdgeWeights]
 	#                           false     false     0.92    1.1        true        true        true              true     
@@ -204,7 +204,7 @@ function checkConsistence()
 	local format=$1
 	local forceRemove=$2
 	
-	for ifile in `ls *.$format`
+	for ifile in `find . -maxdepth 1 -name  "*.$format" | sed -r 's/^\.\///g'`
 	do
 		echo -n "   Checking $ifile ... "
 		
@@ -318,7 +318,7 @@ function checkDisconnected()
 	local format=$1
 	local forceRemove=$2
 	
-	for ifile in `ls *.$format`
+	for ifile in `find . -maxdepth 1 -name  "*.$format" | sed -r 's/^\.\///g'`
 	do
 		echo -n "   Checking $ifile ... "
 		
