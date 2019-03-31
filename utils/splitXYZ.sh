@@ -94,7 +94,7 @@ echo ""
 # Removes repeated molecules which were generated sequentially
 # ### WARNING ### it is only for actinide project
 echo "### WARNING ### Removing sequential repeated molecules. It is only for actinide project"
-files=( `ls mol-*.xyz` )
+files=( `find . -maxdepth 1 -name "mol-*.xyz" | sed -r 's/^\.\///g'` )
 for (( i=1; i<${#files[@]}; i++ ))
 do
 	test=`molecule.compare ${files[$i]} ${files[$(($i-1))]} false 0.90 1.2 | grep OK | wc -l`
@@ -107,7 +107,7 @@ done
 
 declare -A labelsMap
 
-for f in `ls mol-*.xyz`
+for f in `find . -maxdepth 1 -name "mol-*.xyz" | sed -r 's/^\.\///g'`
 do
 	formula=`molecule.chemicalFormula $f`
 	mult=`molecule.minMult $f | awk '{print $1}'`
