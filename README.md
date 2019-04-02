@@ -1,11 +1,9 @@
 # M3C
-M3C (Microcanonical Metropolis Monte-Carlo) is a software package designed for ...
 
-Most of the code is written in fortran and has been tested only with intel compilers on linux platforms.
-
-More information: http://XXX
+The Microcanonical Metropolis Monte Carlo method is based on a random sampling of the density-of-states for the study of molecular fragmentation in the gas phase (isolated molecules, atomic and molecular clusters, complex biomolecules, etc). A uniform random sampling in the configurational space (atomic positions) and a uniform random sampling of the relative orientation, vibrational energy and chemical composition of the fragments is used to estimate the density of states of the system, which is continuously updated as the random sampling populates individual states.
 
 # Authors
+
 * Néstor F. Aguirre (2013-2016)
   nestor.aguirre@uam.es
 * Sergio Díaz-Tendero (2013-2016)
