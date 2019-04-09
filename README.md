@@ -6,6 +6,10 @@ In essence, the M3C consists in partitioning the mass, charge, energy, and momen
 
 The simplest calculation requires quantities such as geometries, electronic energies, and harmonic frequencies of all molecules included in the fragmentation model. This approach has already successfully been applied to the fragmentation of neutral and singly-charged carbon clusters, hydrogenated and nitrogenated carbon clusters, and small and medium-sized molecules in different physical scenarios or ionizing radiation.
 
+<p align="center">
+<img src="https://lh3.googleusercontent.com/1ixhD27CF22LvT67of6t08wtl_EDYkO3W5tNiYESIaEN1b-e9i-u0sUKDzMJY4GHHWl7d8Lvx38Enm24twtKfMq-mwUNsLEBnEDuwf_6p7ct0mfpqHkDglp5AtV8w6v7_X389aabTg8c2TlALqcVm2KJafsOfZ-K35T77g4XgWDDBhJPuFZ6g6I7LJ1dJJlghBqsFjz7LfW1axte_XjjT-pOOl3QYDn1VSIyAhOJk7R-7tbQqKNJZjpp_5bxX-M9sfmQIWcQ62o9XFgeToTxxIZhGm9E_pDrHassLt-DjmbMwsjH9n5BAiP9blJejvLF9k0Q53CxPvek6tnYBX17WRhNVCrs4Jq5a2SxikdobOzXh_a9rpSWFO2rK9phOHfm14ceqU7ZVhYlr02VOJC_ZaXaUS9-YCqdDSotoU3JbdwVzF7ADZFx-mI3wrT17pB9hrZ_1Nqy_cTIzn1vbsz4ZVtYDR970Up9ZCzkDmChtqKAuROcxbLrvQl1S1mi_ObPZvU5QQGNYDgGhNXCNqW3MtlS7dfZy4N3X2SYewF7_BZ7TXzQ5k2MJESjafJbnXcofF2RoofUQFBWUlk6Gey7M9Di-mO5vZlRp7kYUNWK8T2ae9HglHegI0Z6nawKg8_g4kwhWqcx--3N_areV_cyQcNFPFtLyDQ=w876-h534-no" width="70%" height="70%">
+</p>
+
 ## Requirements:
 
 Required:
