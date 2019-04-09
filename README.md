@@ -24,6 +24,12 @@ Optional:
 - **[libmsym](https://github.com/mcodev31/libmsym)**<br>
   libmsym is a C library dealing with point group symmetry in molecules.
 
+- **[GAUSSIAN](http://gaussian.com/)**<br> (version >= g09)
+  Gaussian is a general purpose computational chemistry software package.
+
+- **[GAMESS](https://www.msg.chem.iastate.edu/gamess/)**<br>
+  General Atomic and Molecular Electronic Structure System GAMESS(US) is a software for computational chemistry.
+
 ## Compiling M3C
 
 Download the .zip file from this page and extract the files,
