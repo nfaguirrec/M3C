@@ -92,7 +92,7 @@ export M3C_GAUSSIAN_HOME=<PATH_TO_GAUSSIAN_INSTALLATION>
 export M3C_GAUSSIAN_SCRATCH=/scratch/$USER/gaussian
 ```
 
-# Authors
+## Authors
 
 * Nestor F. Aguirre ( nfaguirrec@gmail.com )
 * Sergio Díaz-Tendero ( sergio.diaztendero@uam.es )
