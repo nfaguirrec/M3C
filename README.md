@@ -59,7 +59,7 @@ or clone the repository using git
 ```
 $ git clone https://github.com/nfaguirrec/M3C.git
 ```
-The following should be the content of the M3C-store directory if previous steps were successful:
+The following should be the content of the M3C directory if previous steps were successful:
 ```
 $ cd M3C
 $ ls
@@ -67,7 +67,7 @@ doc   doxyfile  LICENSE.jmol     LICENSE.scift  Makefile   src        utils
 docs  LICENSE   LICENSE.libmsym  M3Cvars.sh     README.md  templates  VERSION
 ```
 
-Enter in the M3C directory (cd M3C) and modify the Makefile file (src/Makefile). In particular, choose the right path to the scift library (-I${HOME}/Software/scift/src and -L${HOME}/Software/scift/src).
+Enter in the M3C directory (`cd M3C`) and modify the Makefile file (`src/Makefile`). In particular, choose the right path to the scift library (`-I<PATH_TO_SCIFT>/src` and `-L<PATH_TO_SCIFT>/src`).
 
 To build the code just type make inside the main directory as follows:
 ```
