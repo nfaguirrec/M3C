@@ -24,9 +24,11 @@ M3C is known to work on GNU/Linux. However, it should work on any POSIX-complian
 
 - **[Intel® Fortran Compiler](https://software.intel.com/en-us/fortran-compilers)** (version >= 14.0.3)<br>
   M3C has not been tested with any other compiler.
+  
+- **[Intel® Math Kernel Library (Intel® MKL)](https://software.intel.com/en-us/mkl)**<br>
+  M3C has not been tested with any other math library.
 
 - **[SciFT (Scientific Fortran Tools)](https://github.com/nfaguirrec/scift)**<br>
-  The Scientific Fortran Tools (SciFT) is a numerical library for fortran programmers.
 
 **Recommended Dependencies:**
 
