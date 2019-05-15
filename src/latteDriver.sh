@@ -97,7 +97,7 @@ function runLATTE()
 	fi
 	
 # 	$M3C_LATTE_HOME/LATTE_DOUBLE.optg &> rawOutput
-	$M3C_LATTE_HOME/LATTE_DOUBLE.freqs &> rawOutput
+	$M3C_LATTE_HOME/LATTE_DOUBLE.freqs2 &> rawOutput
 	formatLATTEoutput rawOutput
 	
 	rm -rf $M3C_LATTE_SCRATCH/${iFile%.*}/
@@ -287,7 +287,7 @@ function freqsLATTETemplate()
 		cp input$SID.latte ${xyzFile%.*}.latte 2> /dev/null
 		
 		energy=`grep "FREE ENERGY" input$SID.out | awk '{print $NF*0.0367493088244753}'`
-		fv=`molecule.fv $xyzFile`
+# 		fv=`molecule.fv $xyzFile`
 		
 		echo $nAtoms
 		echo "Energy = $energy"
@@ -296,17 +296,18 @@ function freqsLATTETemplate()
 		gawk '
 			BEGIN{
 				loc=0
-				fv='`echo $fv`'
+# 				fv='`echo $fv`'
 				n=1
 			}
 			{
 				if($0~/^[[:blank:]]*$/) loc=0
-				if(loc==1&&$1~/^[[:digit:]]/){ val[$1]=$2; n++ }
-				if($0~/Vib. Freqs \(cm-1\)/) loc=1
+				if(loc==1&&$1~/^[[:digit:]]/){ val[n]=$2; n++ }
+				if($0~/^[[:blank:]]+Vib. Freqs \(cm-1\)/) loc=1
 			}
 			END{
-				print "FREQUENCIES   ", fv
-				for(i = sqrt( (fv-n)**2 ); i<=n-1; i++) print val[i]
+				print "FREQUENCIES   ", n-1
+# 				for(i = sqrt( (fv-n)**2 ); i<=n-1; i++) print val[i]
+				for(i = 1; i<=n-1; i++) print val[i]
 			}
 		' input$SID.out
 	fi

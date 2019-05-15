@@ -86,8 +86,6 @@ function SCHEDULER.buildHead()
 	
 	export M3C_NTHREADS=$nTask
 	
-	[ ! -d log ] && mkdir log
-	
 	cat << EOF
 #!/bin/bash
 #MSUB -A $account

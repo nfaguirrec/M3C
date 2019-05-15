@@ -2,6 +2,13 @@
 #####################################################################################
 #                                                                                   #
 # This file is part of M3C project                                                  #
+#                                                                                   #
+# Copyright (C) by authors (2017-2018)                                              #
+#                                                                                   #
+#    Authors:                                                                       #
+#       * Néstor F. Aguirre (2017-2018)                                             #
+#         nfaguirrec@gmail.com                                                      #
+#                                                                                   #
 # Copyright (c) 2013-2016 Departamento de Química                                   #
 #                         Universidad Autónoma de Madrid                            #
 #                         All rights reserved.                                      #
@@ -49,19 +56,31 @@
 #####################################################################################
 
 #############################
-# M3C_GAUSSIAN_HOME
-# M3C_GAUSSIAN_SCRATCH
 # M3C_GAMESS_HOME
 # M3C_GAMESS_SCRATCH
+# M3C_GAUSSIAN_HOME
+# M3C_GAUSSIAN_SCRATCH
+# M3C_ADF_HOME
+# M3C_ADF_SCRATCH
+# M3C_NWCHEM_HOME
+# M3C_NWCHEM_SCRATCH
+# M3C_LATTE_HOME
+# M3C_LATTE_SCRATCH
+# M3C_LAMMPS_HOME
+# M3C_LAMMPS_SCRATCH
 #############################
+
+export M3C_SCHEDULER_NAME="SLURM"
+export M3C_SCHEDULER_SUBMIT="sbatch"
+export M3C_SCHEDULER_JOBID="\$SLURM_JOBID"
+export M3C_NTHREADS="" # See SCHEDULER.buildHead()
 
 ##
 # BASIC CONFIGURATION
 #
-function SLURM.buildHead()
+function SCHEDULER.buildHead()
 {
 	local queueParams=$1
-	local name=$2
 	
 	local partition=""
 	local nTask=""
@@ -82,14 +101,14 @@ function SLURM.buildHead()
 		return 1
 	fi
 	
-	if [ -f "$HOME/.SLURM.properties" ]
+	if [ -f "$HOME/.${M3C_SCHEDULER_NAME}.properties" ]
 	then
-		values=`awk '( $1!~/^#/ ){ if( $1 == "'$partition'" ){ print $0; exit } }' $HOME/.SLURM.properties`
-	elif [ -f "$M3C_HOME/utils/SLURM.properties" ]
+		values=`awk '( $1!~/^#/ ){ if( $1 == "'$partition'" ){ print $0; exit } }' $HOME/.${M3C_SCHEDULER_NAME}.properties`
+	elif [ -f "$M3C_HOME/utils/${M3C_SCHEDULER_NAME}.properties" ]
 	then
-		values=`awk '( $1!~/^#/ ){ if( $1 == "'$partition'" ){ print $0; exit } }' $M3C_HOME/utils/SLURM.properties`
+		values=`awk '( $1!~/^#/ ){ if( $1 == "'$partition'" ){ print $0; exit } }' $M3C_HOME/utils/${M3C_SCHEDULER_NAME}.properties`
 	else
-		echo "### ERROR ### SLURM default parameters file not found" > /dev/stderr
+		echo "### ERROR ### ${M3C_SCHEDULER_NAME} default parameters file not found" > /dev/stderr
 		return 1
 	fi
 	
@@ -103,298 +122,65 @@ function SLURM.buildHead()
 	
 	local jobdir=`echo $PWD | sed s/.*$USER/~/`
 	
-	[ ! -d log ] && mkdir log
+	export M3C_NTHREADS=$nTask
 	
 	cat << EOF
 #!/bin/bash
-#SBATCH --partition=$partition
-#SBATCH --ntasks=$nTask
-#SBATCH --account=$account
-#SBATCH --time=$ttime
-#SBATCH --qos=$qos
+##SBATCH --partition=$partition
+##SBATCH --account=$account
+##SBATCH --time=$ttime
+##SBATCH --qos=$qos
 #SBATCH --job-name=$jobdir/$name
-#SBATCH -o log/$name.slurm.log
-#SBATCH -e log/$name.slurm.err
+#SBATCH -o ${M3C_SCHEDULER_NAME}.log
+#SBATCH -e ${M3C_SCHEDULER_NAME}.err
 #SBATCH --nodes=1-1
+#SBATCH --ntasks-per-node=$nTask
+
+export SLURM_NTASKS=\$(( \$SLURM_NNODES*\$SLURM_CPUS_ON_NODE/\$SLURM_CPUS_PER_TASK ))
 
 EOF
 	
 	return 0
 }
 
-##
-# M3C-gamess.geniso CONFIGURATION
-#
-function SLURM.M3C-gamess.geniso()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C-gamess.geniso $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
+source $M3C_HOME/utils/M3C-SCHEDULER.utils.sh
 
-##
-# M3C-gamess.optg CONFIGURATION
-#
-function SLURM.M3C-gamess.optg()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C-gamess.optg $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
+alias SLURM.M3C-gamess.geniso="SCHEDULER.M3C-gamess.geniso"
+alias SLURM.M3C-gamess.optg="SCHEDULER.M3C-gamess.optg"
+alias SLURM.M3C-gamess.freqs="SCHEDULER.M3C-gamess.freqs"
+alias SLURM.M3C-gamess.iener="SCHEDULER.M3C-gamess.iener"
 
-##
-# M3C-gamess.freqs CONFIGURATION
-#
-function SLURM.M3C-gamess.freqs()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C-gamess.freqs $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
+alias SLURM.M3C-gaussian.geniso="SCHEDULER.M3C-gaussian.geniso"
+alias SLURM.M3C-gaussian.optg="SCHEDULER.M3C-gaussian.optg"
+alias SLURM.M3C-gaussian.freqs="SCHEDULER.M3C-gaussian.freqs"
+alias SLURM.M3C-gaussian.symmetrize="SCHEDULER.M3C-gaussian.symmetrize"
+alias SLURM.M3C-gaussian.iener="SCHEDULER.M3C-gaussian.iener"
+alias SLURM.M3C-gaussian.genpot="SCHEDULER.M3C-gaussian.genpot"
 
-##
-# M3C-gamess.iener CONFIGURATION
-#
-function SLURM.M3C-gamess.iener()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C-gamess.iener $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
+# alias SLURM.M3C-adf.geniso="SCHEDULER.M3C-adf.geniso"
+alias SLURM.M3C-adf.optg="SCHEDULER.M3C-adf.optg"
+alias SLURM.M3C-adf.freqs="SCHEDULER.M3C-adf.freqs"
+# alias SLURM.M3C-adf.symmetrize ="SCHEDULER.M3C-adf.symmetrize"
+# alias SLURM.M3C-adf.iener="SCHEDULER.M3C-adf.iener"
 
-##
-# M3C-gaussian.geniso CONFIGURATION
-#
-function SLURM.M3C-gaussian.geniso()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C-gaussian.geniso $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
+# alias SLURM.M3C-nwchem.geniso="SCHEDULER.M3C-nwchem.geniso"
+alias SLURM.M3C-nwchem.optg="SCHEDULER.M3C-nwchem.optg"
+alias SLURM.M3C-nwchem.freqs="SCHEDULER.M3C-nwchem.freqs"
+# alias SLURM.M3C-nwchem.symmetrize="SCHEDULER.M3C-nwchem.symmetrize"
+# alias SLURM.M3C-nwchem.iener="SCHEDULER.M3C-nwchem.iener"
 
-##
-# M3C-gaussian.optg CONFIGURATION
-#
-function SLURM.M3C-gaussian.optg()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C-gaussian.optg $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
+# alias SLURM.M3C-latte.geniso="SCHEDULER.M3C-latte.geniso"
+alias SLURM.M3C-latte.optg="SCHEDULER.M3C-latte.optg"
+alias SLURM.M3C-latte.freqs="SCHEDULER.M3C-latte.freqs"
+# alias SLURM.M3C-latte.symmetrize="SCHEDULER.M3C-latte.symmetrize"
+# alias SLURM.M3C-latte.iener="SCHEDULER.M3C-latte.iener"
 
-##
-# M3C-gaussian.freqs CONFIGURATION
-#
-function SLURM.M3C-gaussian.freqs()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C-gaussian.freqs $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
+# alias SLURM.M3C-lammps.geniso="SCHEDULER.M3C-lammps.geniso"
+alias SLURM.M3C-lammps.optg="SCHEDULER.M3C-lammps.optg"
+# alias SLURM.M3C-lammps.freqs="SCHEDULER.M3C-lammps.freqs"
+# alias SLURM.M3C-lammps.symmetrize="SCHEDULER.M3C-lammps.symmetrize"
+# alias SLURM.M3C-lammps.iener="SCHEDULER.M3C-lammps.iener"
 
-##
-# M3C-gaussian.symmetrize CONFIGURATION
-#
-function SLURM.M3C-gaussian.symmetrize()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C-gaussian.symmetrize $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
-
-##
-# M3C-gaussian.iener CONFIGURATION
-#
-function SLURM.M3C-gaussian.iener()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C-gaussian.iener $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
-
-##
-# M3C-gaussian.genpot CONFIGURATION
-#
-function SLURM.M3C-gaussian.genpot()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C-gaussian.genpot $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
-
-##
-# M3C CONFIGURATION
-#
-function SLURM.M3C()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
-
-##
-# M3C.p CONFIGURATION
-#
-function SLURM.M3C.p()
-{
-	local queueParams=$1
-	local name=""
-	
-	SLURM.buildHead $queueParams $name > run$$.slurm
-	[ "$?" -eq 1 ] && return 0
-	
-	shift # $1 will be discarded
-	
-	cat >> run$$.slurm << EOF
-M3C.p $* > SLURM-\$SLURM_JOB_ID.log 2> SLURM-\$SLURM_JOB_ID.err
-EOF
-	
-	sbatch run$$.slurm
-	
-	cp run$$.slurm log/
-	rm run$$.slurm
-}
-
+alias SLURM.M3C.check="SCHEDULER.M3C.check"
+alias SLURM.M3C="SCHEDULER.M3C"
+alias SLURM.M3C.p="SCHEDULER.M3C.p"

@@ -23,12 +23,18 @@
 ##################################################################
 
 #############################
-# M3C_GAUSSIAN_HOME
-# M3C_GAUSSIAN_SCRATCH
 # M3C_GAMESS_HOME
 # M3C_GAMESS_SCRATCH
+# M3C_GAUSSIAN_HOME
+# M3C_GAUSSIAN_SCRATCH
+# M3C_ADF_HOME
+# M3C_ADF_SCRATCH
 # M3C_NWCHEM_HOME
 # M3C_NWCHEM_SCRATCH
+# M3C_LATTE_HOME
+# M3C_LATTE_SCRATCH
+# M3C_LAMMPS_HOME
+# M3C_LAMMPS_SCRATCH
 #############################
 
 export M3C_SCHEDULER_NAME="PBS"
@@ -84,8 +90,6 @@ function SCHEDULER.buildHead()
 	local jobdir=`echo $PWD | sed s/.*$USER/~/`
 	
 	export M3C_NTHREADS=$nTask
-	
-	[ ! -d log ] && mkdir log
 	
 	cat << EOF
 #!/bin/bash

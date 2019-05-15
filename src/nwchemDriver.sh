@@ -128,7 +128,8 @@ function runNWCHEM()
 	
 	if [ "$nProcShared" -eq 1 ]
 	then
-		$M3C_NWCHEM_HOME/bin/LINUX64/nwchem $iFile
+		#$M3C_NWCHEM_HOME/bin/LINUX64/nwchem $iFile
+		nwchem $iFile
 	else
 		# Using MPI
 #		mpirun -n $nProcShared $M3C_NWCHEM_HOME/bin/LINUX64/nwchem $iFile

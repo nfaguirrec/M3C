@@ -77,7 +77,7 @@ frequencies()
 	
 	freqsLATTETemplate $LATTE_TEMPLATE $NPROCSHARED $iFileXYZ $charge $mult $DEBUG > ${iFileXYZ%.*}.rxyz
 	mv ${iFileXYZ%.*}.out history.freqs/ 2> /dev/null
-	mv ${iFileXYZ%.*}.com history.freqs/ 2> /dev/null
+	mv ${iFileXYZ%.*}.latte history.freqs/ 2> /dev/null
 }
 
 main()

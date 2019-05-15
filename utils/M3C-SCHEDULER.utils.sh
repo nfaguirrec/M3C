@@ -6,7 +6,7 @@
 #  
 #  Authors:
 #    * Dr. Néstor F. Aguirre (2017-2017)
-#          nfaguirrec@lanl.gov
+#          nfaguirrec@gmail.com
 #  
 #  Redistribution and use in source and binary forms, with or
 #  without modification, are permitted provided that the
@@ -397,6 +397,291 @@ EOF
 # 	
 # 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
 # M3C-nwchem.iener $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# }
+
+# ##
+# # M3C-adf.geniso CONFIGURATION
+# #
+# function SCHEDULER.M3C-adf.geniso()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-adf.geniso $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# }
+
+##
+# M3C-adf.optg CONFIGURATION
+#
+function SCHEDULER.M3C-adf.optg()
+{
+	local queueParams=$1
+	
+	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+M3C-adf.optg $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+EOF
+	
+	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+}
+
+##
+# M3C-adf.freqs CONFIGURATION
+#
+function SCHEDULER.M3C-adf.freqs()
+{
+	local queueParams=$1
+	
+	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+M3C-adf.freqs $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+EOF
+	
+	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+}
+
+# ##
+# # M3C-adf.symmetrize CONFIGURATION
+# #
+# function SCHEDULER.M3C-adf.symmetrize()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-adf.symmetrize $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# }
+
+# ##
+# # M3C-adf.iener CONFIGURATION
+# #
+# function SCHEDULER.M3C-adf.iener()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-adf.iener $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# }
+
+# ##
+# # M3C-latte.geniso CONFIGURATION
+# #
+# function SCHEDULER.M3C-latte.geniso()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-latte.geniso $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# }
+
+##
+# M3C-latte.optg CONFIGURATION
+#
+function SCHEDULER.M3C-latte.optg()
+{
+	local queueParams=$1
+	
+	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+M3C-latte.optg $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+EOF
+	
+	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+}
+
+##
+# M3C-latte.freqs CONFIGURATION
+#
+function SCHEDULER.M3C-latte.freqs()
+{
+	local queueParams=$1
+	
+	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+M3C-latte.freqs $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+EOF
+	
+	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+}
+
+# ##
+# # M3C-latte.symmetrize CONFIGURATION
+# #
+# function SCHEDULER.M3C-latte.symmetrize()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-latte.symmetrize $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# }
+
+# ##
+# # M3C-latte.iener CONFIGURATION
+# #
+# function SCHEDULER.M3C-latte.iener()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-latte.iener $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# }
+
+# ##
+# # M3C-lammps.geniso CONFIGURATION
+# #
+# function SCHEDULER.M3C-lammps.geniso()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-lammps.geniso $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# }
+
+##
+# M3C-lammps.optg CONFIGURATION
+#
+function SCHEDULER.M3C-lammps.optg()
+{
+	local queueParams=$1
+	
+	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+	[ "$?" -eq 1 ] && return 0
+	
+	shift # $1 will be discarded
+	
+	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+M3C-lammps.optg $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+EOF
+	
+	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+}
+
+# ##
+# # M3C-lammps.freqs CONFIGURATION
+# #
+# function SCHEDULER.M3C-lammps.freqs()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-lammps.freqs $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# }
+
+# ##
+# # M3C-lammps.symmetrize CONFIGURATION
+# #
+# function SCHEDULER.M3C-lammps.symmetrize()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-lammps.symmetrize $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
+# EOF
+# 	
+# 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
+# }
+
+# ##
+# # M3C-lammps.iener CONFIGURATION
+# #
+# function SCHEDULER.M3C-lammps.iener()
+# {
+# 	local queueParams=$1
+# 	
+# 	SCHEDULER.buildHead $queueParams > run$$.${M3C_SCHEDULER_NAME}
+# 	[ "$?" -eq 1 ] && return 0
+# 	
+# 	shift # $1 will be discarded
+# 	
+# 	cat >> run$$.${M3C_SCHEDULER_NAME} << EOF
+# M3C-lammps.iener $* > ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.log 2> ${M3C_SCHEDULER_NAME}-${M3C_SCHEDULER_JOBID}.err
 # EOF
 # 	
 # 	$M3C_SCHEDULER_SUBMIT run$$.${M3C_SCHEDULER_NAME}
