@@ -525,7 +525,7 @@ module Reactor_
 ! 			products = reactives
 ! 			return
 ! 		end if
-		
+
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Se calcula la masa y carga total las cuales se utilizarán
 		! en las retricciones de conservación
@@ -579,12 +579,14 @@ module Reactor_
 		do i=1,nProducts
 			call products.set( i, FragmentsDB_instance.clusters( channelInfo(i) ) )
 		
-			if( dNfrag == 0 ) then
-				call products.clusters(i).setCenter( reactives.clusters(i).center() )
-			end if
+! 			if( dNfrag == 0 ) then
+! 				call products.clusters(i).setCenter( reactives.clusters(i).center() )
+! 			end if
 			
 			! @todo Hace falta hacer algo en caso que dNfrag>0. Esto es fundamental para que la parte estadistica funcione
 		end do
+		
+		call products.interpolateGeometryFragmentsListBase( reactives )
 		
 		if( products.atomicOverlapping() ) then
 			products.state = .false.
@@ -946,8 +948,9 @@ module Reactor_
 		if( this.products.kineticEnergy() < 0.0_8 .or. this.products.state == .false. ) then
 			if( GOptions_printLevel >= 2 ) then
 				write(*,*) ""
-				write(*,*) "### Warning ### The kinetic energy is negative"
+				write(*,*) "### Warning ### The kinetic energy is negative or state == .false."
 				write(*,"(3X,A,F15.5,A)") "Kinetic Energy = ", this.products.kineticEnergy()/eV, "  eV"
+				write(*,"(3X,A,L)") "         State = ", this.products.state
 				write(*,*) "products <= reactives"
 				write(*,*) ""
 			end if

@@ -318,6 +318,9 @@ function formatLAMMPSoutput()
 	local iFile=$2
 	
 	cat $oFileRaw
+	echo "----------------------------------"
+	cat log.latte
+	echo "----------------------------------"
 	
 	dumpFile=`gawk '($0~/^[[:blank:]]*dump /){ print $NF; exit }' $iFile`
 	
