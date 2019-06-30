@@ -1,0 +1,241 @@
+Convert xyz from GDB9 to xyz to calculate them
+for f in `ls *.xyz`; do baseName=`echo ${f%.*} | sed 's/-/_/g'`; mult=`molecule.minMult $f | awk '{print $1}'`; mv $f $baseName.q0.m$mult.xyz; echo "$f --> $baseName.q0.m$mult.xyz" ; done
+
+Convert a set of rxyz in xyz
+for f in `ls *.rxyz`; do echo "$f --> ${f%.*}.xyz"; rxyz2xyz.sh $f > ${f%.*}.xyz; done
+
+Convert a set of xyz0 in xyz
+for f in `ls *.xyz0`; do echo "$f --> ${f%.*}.xyz"; mv $f ${f%.*}.xyz; done
+
+Using a set of geometries for other systems (warning change the last set command)
+for f in `ls *.xyz`; do label=`echo ${f%%.*} | sed 's/C/S/g'`; rest=`echo ${f#*.}`; final=$label"."$rest; echo "$f --> $final"; mv $
+f $final; sed -i 's/C/S/g' $final; done
+
+Using the ThO2 structures in rxyz as initial guess for TiO2
+for f in `ls *.rxyz`; do echo $f; rxyz2xyz.sh $f > ${f%.*}.xyz; done; rm *.rxyz
+for f in `ls *.xyz`; do echo $f; name2=`echo $f | sed 's/Th/Ti/g'`; mv $f $name2; done
+for f in `ls *.xyz`; do echo $f; sed -i 's/Th/Ti/g' $f; done
+mkdir hola; mv *-00.xyz hola/; rm *; mv hola/* .; rm -rf hola/
+for f in `ls *.xyz`; do echo $f; name2=`echo $f | sed 's/-00.xyz/.xyz/g'`; mv $f $name2; done
+for f in `ls *.xyz`; do echo $f; molecule.orient -i $f > salida; mv salida $f; done
+for f in `ls *.xyz`; do echo $f; awk '{if($1=="Ti" || $1=="O") print $1,$2*0.8,$3*0.8,$4*0.8; else print $0}' $f > salida; mv salida $f; done
+
+Getting energy domains by kind ob bond
+>>> O-O bonds including single and double
+E0=`grep Energy *.xyz | sort -k3 -n | awk '{print $NF;exit}'`; ( for f in `ls *.xyz`; do nPairs=`molecule.distances $f 1.1 | grep "O--O" | wc -l`; if [ $nPairs -gt 0 ]; then grep -H Energy $f | sed 's/:Energy =//g'; fi ; done ) | sort -k2 -n | awk '{print $0,($NF-('$E0'))/0.0367493088244753}'
+
+>>> Th-O bonds including single and double
+E0=`grep Energy *.xyz | sort -k3 -n | awk '{print $NF;exit}'`; ( for f in `ls *.xyz`; do nPairs=`molecule.distances $f 1.1 | grep "O--Th" | wc -l`; if [ $nPairs -gt 0 ]; then grep -H Energy $f | sed 's/:Energy =//g'; fi ; done ) | sort -k2 -n | awk '{print $0,($NF-('$E0'))/0.0367493088244753}'
+
+>>> Th-O bonds including only double
+E0=`grep Energy *.xyz | sort -k3 -n | awk '{print $NF;exit}'`; ( for f in `ls *.xyz`; do nPairs=`molecule.distances $f 0.8 | grep "O--Th" | wc -l`; if [ $nPairs -gt 0 ]; then grep -H Energy $f | sed 's/:Energy =//g'; fi ; done ) | sort -k2 -n | awk '{print $0,($NF-('$E0'))/0.0367493088244753}'
+
+Includes Mulliken charges in the rxyz geometry
+for f in `ls C*N.q*.rxyz`; do nAtoms=`head -n1 $f`; grep -A$(($nAtoms+1)) "Mulliken charges" ../history.freqs/${f%.*}.out | tail -n $nAtoms > charges; awk 'BEGIN{ id=0; while( getline < "charges" > 0 ){ charge[id]=$3; id++ }; n=0 }{ if( $1~/^[CN]$/ ){ print $0"  "charge[n]; n++ }else{ print $0 } }' $f > ${f}q; done
+
+Plotting energy levels comparing two methods
+
+formatRef="xyz"; format="rxyz"; Emax=5.0
+E0=`grep Energy *.$formatRef | sort -k3 -n | head -n1 | awk '{print $3}'`
+grep Energy *.$formatRef | sort -k3 -n | awk '{dE=($NF-('$E0'))/0.0367493088244753; if(dE<'$Emax') print $0,dE}' | sed 's/:.*=//g' | sort -k1 | sed 's/.'$formatRef'//g' > hola1
+E0=`grep Energy *.$format | sort -k3 -n | head -n1 | awk '{print $3}'`
+grep Energy *.$format | sort -k3 -n | awk '{dE=($NF-('$E0'))/0.0367493088244753; if(dE<'$Emax') print $0,dE}' | sed 's/:.*=//g' | sort -k1 | sed 's/'.$format'//g' > hola2
+join -j1 hola1 hola2 | awk 'BEGIN{i=0}{dE1[i]=$3;dE2[i]=$5; print $0; i+=1}END{n=i; print "\n\n"; for(i=0;i<n;i++){ print 1, dE1[i]; print 3, dE2[i]; print "" }}' > DFTB-DFT.dat; rm hola1 hola2
+
+formatRef="bexyz0"; format="bexyz"; Emax=100.0
+E0=`grep Energy *.$formatRef | sort -k3 -n | head -n1 | awk '{print $3}'`
+grep Energy *.$formatRef | sort -k3 -n | awk '{dE=($NF-('$E0'))/0.0367493088244753; if(dE<'$Emax') print $0,dE}' | sed 's/:.*=//g' | sort -k1 | sed 's/.'$formatRef'//g' > hola1
+E0=`grep Energy *.$format | sort -k3 -n | head -n1 | awk '{print $3}'`
+grep Energy *.$format | sort -k3 -n | awk '{dE=($NF-('$E0'))/0.0367493088244753; if(dE<'$Emax') print $0,dE}' | sed 's/:.*=//g' | sort -k1 | sed 's/'.$format'//g' > hola2
+join -j1 hola1 hola2 | awk 'BEGIN{i=0}{dE1[i]=$3;dE2[i]=$5; print $0; i+=1}END{n=i; print "\n\n"; for(i=0;i<n;i++){ print 1, dE1[i]; print 3, dE2[i]; print "" }}' > DFTB-DFT.dat; rm hola1 hola2
+
+formatRef="xyz0"; format="xyz"; filter=O6Ti3; Emax=10.0
+E0=`grep Energy ${filter}*.$formatRef | sort -k3 -n | head -n1 | awk '{print $3}'`
+grep Energy ${filter}*.$formatRef | sort -k3 -n | awk '{dE=($NF-('$E0'))/0.0367493088244753; if(dE<'$Emax') print $0,dE}' | sed 's/:.*=//g' | sort -k1 | sed 's/.'$formatRef'//g' > hola1
+E0=`grep Energy ${filter}*.$format | sort -k3 -n | head -n1 | awk '{print $3}'`
+grep Energy ${filter}*.$format | sort -k3 -n | awk '{dE=($NF-('$E0'))/0.0367493088244753; if(dE<'$Emax') print $0,dE}' | sed 's/:.*=//g' | sort -k1 | sed 's/'.$format'//g' > hola2
+join -j1 hola1 hola2 | awk 'BEGIN{i=0}{dE1[i]=$3;dE2[i]=$5; print $0; i+=1}END{n=i; print "\n\n"; for(i=0;i<n;i++){ print 1, dE1[i]; print 3, dE2[i]; print "" }}' > DFTB-DFT.dat; rm hola1 hola2
+
+formatRef="xyz"; format="rxyz"; Emax=10.0
+E0=`grep "^ENERGY " *.$formatRef | sort -k2 -n | head -n1 | awk '{print $2}'`
+grep "^ENERGY " *.$formatRef | sort -k2 -n | awk '{dE=($NF-('$E0'))/0.0367493088244753; if(dE<'$Emax') print $0,dE}' | sed 's/:.*=//g' | sort -k1 | sed 's/.'$formatRef'//g' > hola1
+E0=`grep "^ENERGY " *.$format | sort -k2 -n | head -n1 | awk '{print $2}'`
+grep "^ENERGY " *.$format | sort -k2 -n | awk '{dE=($NF-('$E0'))/0.0367493088244753; if(dE<'$Emax') print $0,dE}' | sed 's/:.*=//g' | sort -k1 | sed 's/'.$format'//g' > hola2
+join -j1 hola1 hola2 | awk 'BEGIN{i=0}{dE1[i]=$3;dE2[i]=$5; print $0; i+=1}END{n=i; print "\n\n"; for(i=0;i<n;i++){ print 1, dE1[i]; print 3, dE2[i]; print "" }}' > DFTB-DFT.dat; rm hola1 hola2
+
+If data is from EPO's relative energy analysis
+head energyValues.dat
+               0    H20C9-123246      0.000      0.000                0     0    H20C9-123246      0.000      0.000
+               1    H20C9-123139      0.017      0.000                1     1    H20C9-123139      0.027      0.000
+               2    H20C9-060445      0.034      0.032                6     2    H20C9-122958      0.035      0.017    *
+               3    H20C9-122877      0.045      0.037                7     3    H20C9-122006      0.040      0.012    *
+               4    H20C9-122958      0.062      0.027                2     4    H20C9-122135      0.046      0.010    *
+               5    H20C9-122006      0.064      0.019                3     5    H20C9-118570      0.049      0.009    *
+
+iFile=H8C6-re.dat
+awk '{print $2,"--",$3}' $iFile | sort -k1 > hola1
+awk '{print $7,"--",$8}' $iFile | sort -k1 > hola2
+join -j1 hola1 hola2 | awk 'BEGIN{i=0}{dE1[i]=$3;dE2[i]=$5; print $0; i+=1}END{n=i; print "\n\n"; for(i=0;i<n;i++){ print 1, dE1[i]; print 3, dE2[i]; print "" }}' > DFTB-DFT.dat; rm hola1 hola2
+
+gnuplot>
+set format y "%.1f"; set size 0.4,0.8; set origin 0.0,0.1; unset key; set border 2; set bars 0; unset xtics; set ytics nomirror; plot [0:5] [:] "DFTB-DFT.dat" i 0 u (1.0):3:(0.5) w xerrorbars ps 0 lw 3 lc rgb "red", "" i 0 u (4.0):5:(0.5) w xerrorbars ps 0 lw 3 lc rgb "red", "" i 1 u ($1+0.5):2 w lines lc rgb "blue" lt 1 lw 0.3
+
+Check optimization failures
+$ grep -H "FAILURE" *.xyz
+H4.q2.m1-1.xyz:***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****
+H4.q2.m1-2.xyz:***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****
+
+Grouping optimization failures
+$ mkdir -p noConv/history.optg; for f in `grep -H "FAILURE" *.xyz | sed 's/:.*$//g'`; do echo $f; mv history.optg/${f%.*}.* noConv/history.optg; mv ${f%.*}.* noConv/; done
+
+Extracting last geometry from gaussian output optimization failures
+$ for f in `ls *.out`; do echo ${f%.*}; oGaussian2rxyz.sh $f xyz > ${f%.*}.xyz; done
+
+After unexpected stop. 1) Save the finished molecules to OK 2) restores files were running
+[ ! -d OK ] && mkdir -p OK/history.optg/; for f in `ls *.xyz0`; do echo -n "$f ... "; if [ -z "`head ${f%.*}.xyz`" ]; then mv ${f%.*}.xyz0 ${f%.*}.xyz; echo "BROKEN"; else mv ${f%.*}.* OK/; mv history.optg/${f%.*}.* OK/history.optg/; echo "OK"; fi; done; rm -rf input-* history.optg/ SLURM-* log/ SLURM.*
+
+[ ! -d OK ] && mkdir -p OK/history.optg/; for f in `ls *.xyz0`; do echo -n "$f ... "; if [ -z "`head ${f%.*}.xyz`" ]; then rxyz2xyz.sh ../../merge/${f%.*}.rxyz > ${f%.*}.xyz; echo "BROKEN"; else mv ${f%.*}.* OK/; mv history.optg*/${f%.*}.* OK/history.optg/; echo "OK"; fi; done; rm -rf input-* history.optg/ SLURM-* log/ SLURM.*
+
+for f in `ls *.xyz`; do echo $f; rxyz2xyz.sh ../../merge/${f%.*}.rxyz > $f; done
+
+Check integrity of ADF output files (how many are OK?):
+for f in `ls *.out`; do n=`grep -E "^NORMAL TERMINATION" $f | wc -l`; [ $n -eq 5 ] &
+& echo "OK"; done | wc -w
+
+Remove optimization failures
+$ for f in `grep -H "FAILURE" *.xyz | sed 's/:.*$//g'`; do echo ${f%.*}; rm ${f%.*}.*; rm history.optg/${f%.*}.*; done
+H4.q2.m1-1
+H4.q2.m1-2
+
+Spliting xyz files in groups of 117 elements
+$ nElem=117; ext="*.xyz"; n=`ls $ext | wc -w`; ngrp=`echo "$n $nElem" | awk '{v=$1/$2; if(v==int(v)) print int(v); else print int(v+1)}'`; i=0; grp=0; for f in `ls $ext`; do if (( $i%$nElem==0 )); then grp=$(($grp+1)); mkdir group${grp}; fi; echo "$f --> $grp"; mv $f group${grp}/ ; i=$(($i+1)); done
+
+Running all groups
+for d in `ls | grep group`; do echo $d; cd $d; PBS.M3C-adf.optg default,16 ../../PBE.optg-ADF.inp 4; cd ..; done
+SLURM.M3C-adf.optg default,40 ../../inputFiles/PBE-SC.optg-ADF.inp 8
+
+Check the groups that for some reason could not start
+for d in `ls | grep group`; do if [ ! -d "$d/history.optg" ]; then echo $d; fi; done
+
+Running the groups that for some reason could not start
+for d in `ls | grep group`; do if [ ! -d "$d/history.optg" ]; then echo $d; cd $d; PBS.M3C-gaussian.optg default ../../../PBE-ECP-OTh.optg-GAUSSIAN.inp 4 ; cd ..; fi; done
+
+Remove optimization failures in all groups
+$ for d in `ls | grep group`; do echo $d; cd $d; for f in `grep -H "FAILURE" *.xyz | sed 's/:.*$//g'`; do echo "      ${f%.*}"; rm ${f%.*}.*; rm history.optg/${f%.*}.*; done; cd ..; done
+
+Remove repeated and inconsistent files in all groups
+$ for d in `ls`; do echo $d; cd $d; M3C.check xyz TRUE TRUE; cd ..; done
+
+Union of all groups
+$ mkdir history.optg; for d in `ls | grep group`; do echo $d; mv $d/history.optg/* history.optg/; mv $d/*.xyz .; mv $d/*.xyz0 .; done
+
+Search for fragmented molecules
+$ for f in `ls *.xyz`; do v=`molecule.isConnected $f 1.2`; echo "$f --> $v" ; done > connected
+
+Remove fragmented molecules
+$ for f in `ls *.xyz`; do v=`molecule.isConnected $f 1.2 | awk '{print $1}'`; if [ "$v" = "F" ]; then echo "$f --> $v"; rm $f; fi ; done
+
+1) Grouping optg failures files, 2) Recovering geometry from ADF last optimization step optimization, 3) Remove optimization failures, and 4) mvoving success files to the previous directory
+
+$ mkdir -p noConv/history.optg; for f in `grep -H "FAILURE" *.xyz | sed 's/:.*$//g'`; do echo $f; mv history.optg/${f%.*}.* noConv/history.optg; mv ${f%.*}.* noConv/; done
+
+$ cd noConv
+
+$ for iFile in `ls *.xyz`; do if [ -z "`grep "ERROR: STOP GEOMETRY ITERATIONS" history.optg/${iFile%.*}.out`" -a -z "`grep "WARNING: SCF NOT COMPLETELY CONVERGED" history.optg/${iFile%.*}.out`" ]; then echo $iFile; nAtoms=`head -n1 ${iFile%.*}.xyz0`; grep -A$(($nAtoms+1)) "Coordinates in Geometry Cycle" history.optg/${iFile%.*}.out | tail -n$nAtoms | awk 'BEGIN{print '$nAtoms'; print "Recovered"}{split($1,arr,"."); print arr[2],$2,$3,$4}' > $iFile; else echo "***** FAILURE TO LOCATE STATIONARY POINT, TOO MANY STEPS TAKEN *****" > $iFile; fi; done
+
+$ for f in `grep -H "FAILURE" *.xyz | sed 's/:.*$//g'`; do echo ${f%.*}; rm ${f%.*}.*; rm history.optg/${f%.*}.*; done
+
+$ for f in `ls *.xyz`; do echo $f; mv history.optg/${f%.*}.* ../history.optg/; mv ${f%.*}.* ../; done
+
+Spliting xyz files in groups of 117 elements
+$ nElem=117; ext="*.xyz"; n=`ls $ext | wc -w`; ngrp=`echo "$n $nElem" | awk '{v=$1/$2; if(v==int(v)) print int(v); else print int(v+1)}'`; i=0; grp=0; for f in `ls $ext`; do if (( $i%$nElem==0 )); then grp=$(($grp+1)); mkdir group${grp}; fi; echo "$f --> $grp"; mv $f group${grp}/ ; i=$(($i+1)); done
+
+Spliting rxyz files in groups for very large datasets
+$ nElem=10000; ext="*.rxyz"; n=`find . -maxdepth 1 -name "$ext" | wc -w`; ngrp=`echo "$n $nElem" | awk '{v=$1/$2; if(v==int(v)) print int(v); else print int(v+1)}'`; i=0; grp=0; for f in `find . -maxdepth 1 -name "$ext"`; do if (( $i%$nElem==0 )); then grp=$(($grp+1)); mkdir group${grp}; fi; echo "$f --> $grp"; mv $f group${grp}/ ; i=$(($i+1)); done
+
+Running all groups
+for d in `ls | grep group`; do echo $d; cd $d; PBS.M3C-adf.freqs default,32 ../../PBE.freqs-ADF.inp 4; cd ..; done
+SLURM.M3C-adf.freqs default,40 ../../../inputFiles/PBE-SC.freqs-ADF.inp 8
+After unexpected stop. 1) Save the finished molecules to OK 2) no restores of the files were running is needed empty .rxyz files will be overwrited in the next execution
+[ ! -d OK ] && mkdir -p OK/history.freqs; for f in `ls *.rxyz`; do if [ -n "`head ${f%.*}.rxyz`" ]; then echo -n "$f ... "; mv ${f%.*}.* OK/; mv history.freqs/${f%.*}.* OK/history.freqs/; echo "OK"; fi; done; rm -rf input-* history.freqs/ SLURM-* log/ SLURM.*
+
+Union of all groups
+mkdir history.freqs; for d in `ls | grep group`; do echo $d; mv $d/history.freqs/* history.freqs/; mv $d/*.rxyz .; mv $d/*.xyz .; done
+
+Grouping frequencies failures files
+mkdir -p nofConv/history.freqs; for f in `grep -H "FAILURE" *.rxyz | sed 's/:.*$//g'`; do echo $f; mv history.freqs/${f%.*}.* nofConv/history.freqs; mv ${f%.*}.* nofConv/; done
+
+Check for imaginary frequencies
+$ grep "^-" *.rxyz
+C2S2.q0.m3-1.rxyz:-313.0902
+C2S2.q1.m4-3.rxyz:-197.0263
+C2S2.q2.m1-2.rxyz:-155.5726
+
+Grouping files with imaginary frequencies
+$ mkdir -p imagFreqs/history.freqs/; for f in `grep "^-" *.rxyz | awk 'BEGIN{FS=":"}{map[$1]=1}END{for(key in map) print key}'`; do echo ${f%.*}; mv ${f%.*}.* imagFreqs; mv history.freqs/${f%.*}.* imagFreqs/history.freqs/ ; done
+
+Removing empty files
+$ for f in `du -sh *.rxyz | awk '($1==0){print $NF}'`; do echo $f; rm ${f%.*}.*; rm history.optg/${f%.*}.*; rm history.freqs/${f%.*}.*; done
+
+Calculating ZPE
+$ for f in `ls *.rxyz`; do echo -n $f; molecule.ZPE $f; done > ZPE.dat
+
+Synchronizing files respect to the history.freqs directory @@@ WARNING @@@ several files will be removed
+$ for f in `ls *.t21`; do nFiles=`find ../ -name "${f%.*}.*" | wc -l`; if [ "$nFiles" -ne 5 ]; then echo $f; find ../ -name "${f%.*}.*" -exec rm {} \;; fi; done
+
+Fixing geometries from imaginary frequency calculations
+for f in `ls *.out`; do base=${f%.*}; echo $f; oADF2xyz-noImagFreqs.sh $f +1 > ${base%%.*}a.${base#*.}.xyz; oADF2xyz-noImagFreqs.sh $f -1 > ${base%%.*}b.${base#*.}.xyz; done
+
+Check iener failures
+$ grep -H "FAILURE" *.rxyz
+C5N.q0.m4-17.rxyz:***** FAILURE CONVERGE *****
+
+Grouping files with with failures
+$ mkdir noConvergence.iener; for f in `grep -H "FAILURE" *.rxyz | awk 'BEGIN{FS=":"}{print $1}'`; do echo $f; mv ${f%.*}.* noConvergence.iener; done
+
+move all .rxyz0 to .rxyz
+for f in `ls *.rxyz0`; do echo ${f%.*}; mv $f ${f%.*}.rxyz; done
+
+Spliting rxyz files in groups of 32 elements
+$ nElem=32; ext="*.rxyz"; n=`ls $ext | wc -w`; ngrp=`echo "$n $nElem" | awk '{v=$1/$2; if(v==int(v)) print int(v); else print int(v+1)}'`; i=0; grp=0; for f in `ls $ext`; do if (( $i%$nElem==0 )); then grp=$(($grp+1)); mkdir group${grp}; fi; echo "$f --> $grp"; mv $f group${grp}/ ; i=$(($i+1)); done
+
+Only actinides project: create initial guesses
+$ sjobq.push M3C -i reactorT.m3c \&\> reactorT.out; mkdir split; cd split; sjobq.push splitXYZ.sh ../products-1.xyz \> split.log; sjobq.push ls \> counts.split; sjobq.push M3C.check -f xyz -c DISCONNECTED -r -b 1.0; sjobq.push ls \> counts.disconnected
+
+Create distortions
+$ makeDistortions.sh 0.2 5
+
+Only TiO2 project
+$ sjobq.push M3C -i reactorT.m3c \&\> reactorT.out; mkdir split; cd split; sjobq.push splitXYZ.sh ../products-1.xyz \> split.log; sjobq.push ls \| grep \"\\.xyz\$\" \> counts.split; sjobq.push M3C.check -f xyz -c DISCONNECTED -r -s 0.90 -b 1.1 -N \> disconnected.log; sjobq.push ls \| grep \"\\.xyz\$\" \> counts.disconnected; sjobq.push M3C-adf.optg ../../dftb.optg-ADF.inp 1 \> optg.log; sjobq.push M3C.optg.removeFAILURES \> optgfail.log; sjobq.push ls \| grep \"\\.xyz\$\" \> counts.optg; sjobq.push M3C.check -f xyz -c ALL -r -b 1.2 -s 0.92 -N \> optgcheck.log; sjobq.push ls \| grep \"\\.xyz\$\" \> counts.optgcheck; sjobq.push M3C-adf.freqs ../../dftb.freqs-ADF.inp 1 \> freqs.log; sjobq.push M3C.freqs.removeFAILURES \> freqsfail.log; sjobq.push ls \| grep .rxyz \> counts.rawfreqs; sjobq.push M3C.freqs.removeIMAGFREQS \> imagfreqs.log; sjobq.push ls \| grep .rxyz \> counts.freqs
+
+M3C.viewXYZ but using molden
+
+$ mkdir orient; for f in `ls *.rxyz`; do echo $f; molecule.orient -i $f > tmp.xyz; molecule.rotate -i tmp.xyz -alpha 1.5707963267949 -beta 0.4 -gamma 0.0 > orient/${f%.*}.xyz; done; rm tmp.xyz; cd orient/
+$ cat `grep Energy *.xyz | awk 'BEGIN{FS="[:[:blank:]]+"}{print $1,$NF}' | sort -k2 -n | awk '{print $1}'` > salida
+$ molden -l -j 1000 salida # <<<< Save figures, remove repited at the begining and click on the mol window to save the last one
+$ rm mol001.gif
+$ ls *.gif | wc -w; ls *.xyz | wc -w # <<<< To verify there is the same number of gif than xyz files
+$ for f in `ls *.gif`; do echo -n "Convert $f --> ${f%.*}.eps ... "; convert -fuzz 1% -trim +repage -border 20% -bordercolor white -resize 12100@ $f ${f%.*}.eps; echo "OK"; done
+$ rm mol*.gif
+$ files=( `ls mol*.eps` ); i=1; for f in `grep Energy *.xyz | awk 'BEGIN{FS="[:[:blank:]]+"}{print $1,$NF}' | sort -k2 -n | awk '{print $1}'`; do echo "${files[$(($i-1))]} --> ${f%.*}.eps"; mv ${files[$(($i-1))]} ${f%.*}.eps; i=$(($i+1)); done
+$ mv *.eps ../; cd ..
+$ M3C.viewXYZ s-pdf rxyz
+
+M3C.viewXYZ but using chemical graphs
+$ mkdir orient; for f in `ls *.xyz`; do echo $f; molecule.orient -i $f > tmp.xyz; molecule.rotate -i tmp.xyz -alpha 1.5707963267949 -beta 0.4 -gamma 0.0 > orient/${f%.*}.xyz; done; rm tmp.xyz; cd orient/
+$ for f in `ls *.xyz`; do echo -n "Convert $f --> ${f%.*}.eps ... "; obabel -ixyz $f -xs -xp 500 -d -opng -O salida.png --title "" &> /dev/null; convert -fuzz 1% +repage -border 0% -bordercolor white salida.png ${f%.*}.eps; echo "OK"; done; rm salida.png
+$ ls *.eps | wc -w; ls *.xyz | wc -w # <<<< To verify there is the same number of gif than xyz files
+$ mv *.eps ../; cd ..
+$ M3C.viewXYZ u-pdf xyz 5 7 120 120
+
+-- 
+Néstor F. Aguirre
+Postdoctoral Researcher
+Universidad Autónoma de Madrid
+Departamento de Química
+Module 13, Office 302, Facultad de Ciencias
+Cantoblanco Madrid 28049
+Spain
+Telephone: (+34) 914973079
+Fax: (+34) 914975238
+
