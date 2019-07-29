@@ -1739,6 +1739,16 @@ function reactionsDiagram()
 	if [ -n "$DISPLAY" ]
 	then
 		gwenview reactions.png > /dev/null 2>&1 &
+		
+		echo "Lowest Energies"
+		echo "==============="
+		awk '($0~/^[[:blank:]]*reference = /){print $3, 0.0}' ${iFile%.*}.inp | sed -E 's/\([[:alnum:]]+\)//g' > .eLevels.dat
+		sed -E 's/\([[:alnum:]]+\)//g' ${iFile%.*}.ehistory \
+			| awk '($3~/[[:digit:].]+/){if($NF in map){ if($3<map[$NF])map[$NF]=$3 }else{ map[$NF]=$3 } }END{for(k in map) print k,map[k]}' \
+			| sort -k2 -n >> .eLevels.dat
+		cat .eLevels.dat
+		energyLevels.sh .eLevels.dat 1,2
+		rm .eLevels.dat
 	fi
 }
 
@@ -1977,7 +1987,9 @@ EOF
 		smoothThr="1e-4"
 		errFact=0.4 # << SSeq
 # 		errFact=1.0 # << Srand
-		
+
+# 		if [ "`echo "${keys[$(($i-1))]}" | sed 's/\// /g' | wc -w`" -eq 3 ]
+# 		then
 		if [ "$smooth" = "TRUE" ]
 		then
 			if (( $i != $nChannels ))
@@ -2024,9 +2036,13 @@ EOF
 # 				echo "'matrix.data' u 1:$yCol:$errCol t '${keys[$(($i-1))]}' w yerrorbars ls $i pt $i ps $M3C_PLOT_LW/3.0 lw $M3C_PLOT_LW/6.0" >> .plotMtj-$iFile$$
 # 			fi
 		fi
+# 		fi
 	done
 	
+	echo "" >> .plotMtj-$iFile$$
 	echo "pause -1" >> .plotMtj-$iFile$$
+	
+	cat .plotMtj-$iFile$$
 	
 	cp matrix.data $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
 	$M3C_GNUPLOT_EXEC .plotMtj-$iFile$$

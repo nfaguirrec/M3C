@@ -291,10 +291,10 @@ function showDataBase()
 		
 			energy=`echo $line | gawk '{printf "%20.6f", $3/'$eV'}'`
 
-			label=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $1}'`
-			charge=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'`
-			mult=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'`
-			isomerID=`echo $fileName | gawk 'BEGIN{FS="[.-]+"}{print $4}'`
+			label=`echo $fileName | gawk 'BEGIN{FS="[.]+"}{print $1}'`
+			charge=`echo $fileName | gawk 'BEGIN{FS="[.]+"}{print $2}' | sed 's/q//g'`
+			mult=`echo $fileName | gawk 'BEGIN{FS="[.]+"}{print $3}' | sed -r 's/-[[:digit:]]+$//g' | sed 's/m//g'`
+			isomerID=`echo $fileName | gawk 'BEGIN{FS="[.]+"}{print $3}' | sed 's/^m.*-//g'`
 			nAtoms=`gawk 'BEGIN{i=0}(NR>2 && $0!~/^[[:blank:]]*$/){i++}(NR>3 && $0~/^[[:blank:]]*$/){exit}END{print i}' $fileName`
 			
 			groupSym=`grep "SYMMETRY" $fileName | awk '{print $2}'`
