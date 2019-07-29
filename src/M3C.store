@@ -117,6 +117,10 @@ SMULT["3"]="t"
 SMULT["4"]="q"
 
 declare -A SCHARGE
+SCHARGE["-4"]="nnnn"
+SCHARGE["-3"]="nnn"
+SCHARGE["-2"]="nn"
+SCHARGE["-1"]="n"
 SCHARGE["0"]=""
 SCHARGE["1"]="p"
 SCHARGE["2"]="pp"
