@@ -56,13 +56,18 @@ function main()
 	mkdir backup-`date +%Y%m%d-%H.%M.%S` 2> /dev/null
 	cp *.xyz backup-`date +%Y%m%d-%H.%M.%S`/
 	
-	categories=`ls *.xyz | sed 's/.*\///g;s/\..*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
+	charges=`ls *.xyz | awk 'BEGIN{FS="[.-]"}{map[$2]=1}END{ for( key in map ) printf key" " }' | sed 's/q//g'`
+	multiplicities=`ls *.xyz | awk 'BEGIN{FS="[.-]"}{map[$3]=1}END{ for( key in map ) printf key" " }' | sed 's/m//g'`
+	categories=`ls *.xyz | sed 's/.*\///g;s/\..*//g' | gawk '{map[$1]=1}END{for(key in map) printf key" " }'`
+	
+	echo ""
+	echo "charges = $charges"
+	echo "multiplicities = $multiplicities"
+	echo "categories = $categories"
+	echo ""
 	
 	for category in $categories
 	do
-		charges=`ls $category.* | awk 'BEGIN{FS="[.-]"}{map[$2]=1}END{ for( key in map ) print key }' | sed 's/q//g'`
-		multiplicities=`ls $category.* | awk 'BEGIN{FS="[.-]"}{map[$3]=1}END{ for( key in map ) print key }' | sed 's/m//g'`
-		
 		echo ""
 		echo "---------------------"
 		echo $category
@@ -84,7 +89,7 @@ function main()
 		
 		for i in `seq 1 $n`
 		do
-			echo -n "Replicating geom-$i.xyz ... "
+			echo "Replicating geom-$i.xyz"
 			
 			for charge in $charges
 			do
@@ -95,11 +100,10 @@ function main()
 					if (( "$multiplicity" == "$minMult" || "$multiplicity" == "$minMult"+2 ))
 					then
 						cp geom-$i.xyz $category.q$charge.m$multiplicity-$i.xyz
+						echo "   geom-$i.xyz --> $category.q$charge.m$multiplicity-$i.xyz"
 					fi
 				done
 			done
-			
-			echo "OK"
 			
 			rm geom-$i.xyz
 		done
