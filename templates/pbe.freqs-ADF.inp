@@ -1,0 +1,28 @@
+Charge @CHARGE @NSPIN
+SYMMETRY
+
+Atoms
+@GEOMETRY
+End
+
+Basis
+  type TZP
+  Core large
+End
+RELATIVISTIC Scalar ZORA
+
+XC
+ GGA PBE
+END
+
+Scf
+  iterations 400
+  converge 1e-5
+  ADIIS
+end
+
+NewDIIS
+
+ANALYTICALFREQ
+END
+

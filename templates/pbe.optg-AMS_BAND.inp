@@ -1,0 +1,37 @@
+Task GeometryOptimization
+
+System
+  Charge @CHARGE
+  Atoms
+@GEOMETRY
+  End
+End
+
+Engine BAND
+  EnforcedSpinPolarization @NSPIN
+  Unrestricted Yes
+  
+  Basis
+    Type TZP
+    Core Large
+  End
+  
+  XC
+    GGA PBE
+  End
+  
+!  HubbardU
+!    Enabled true
+!    Uvalue 0.6  0.1  0.1
+!    Lvalue   2    1    1
+!  End
+EndEngine
+
+GeometryOptimization
+  Convergence
+    Energy 1e-05
+    Gradients 0.001
+    Step 0.001
+  End
+  MaxIterations 400
+End

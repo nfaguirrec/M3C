@@ -1,0 +1,32 @@
+Task SinglePoint
+
+System
+  Charge @CHARGE
+  Atoms
+@GEOMETRY
+  End
+End
+
+Engine BAND
+  EnforcedSpinPolarization @NSPIN
+  Unrestricted Yes
+  
+  Basis
+    Type TZP
+    Core Large
+  End
+  
+  XC
+    GGA PBE
+  End
+  
+!  HubbardU
+!    Enabled true
+!    Uvalue 0.6  0.1  0.1
+!    Lvalue   2    1    1
+!  End
+EndEngine
+
+Properties
+   NormalModes True
+End

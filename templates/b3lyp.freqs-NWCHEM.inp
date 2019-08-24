@@ -1,0 +1,30 @@
+memory heap 1000 Mb
+set lindep:tol 1d-7
+
+charge @CHARGE
+
+geometry noautoz
+@GEOMETRY
+end
+
+basis
+  * library cc-pVTZ
+end
+
+dft
+   xc B3LYP
+   mult @MULT
+end
+
+property
+   dipole
+end
+
+gradients
+   print forces
+end
+
+task dft property
+task dft gradient
+task dft frequencies
+
