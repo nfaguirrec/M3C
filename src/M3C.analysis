@@ -1673,6 +1673,82 @@ EOF
 ####################################
 #
 ####################################
+function averReactionsDiagram()
+{
+	local iFile=$1
+	local maxP=$2
+	
+	if [ -z "$maxP" ]
+	then
+		maxP=0.00001
+	fi
+	
+	local eDistfile=`getValueFromIFIle ${iFile%.*}.m3c FIT_BRANCHING_RATIOS:eDistfile`
+	
+	echo "strict digraph G {" > .dataReac-$$.dot
+	echo "	rankdir=LR" >> .dataReac-$$.dot
+	echo "	node [shape=box,style=filled,fillcolor=yellow,color=black]" >> .dataReac-$$.dot
+	
+	( for f in `ls ${iFile%.*}.data/*.histogram`
+	do
+		E=${f#*_}; E=${E%.*}
+		weight=`n1df.evaluate $eDistfile $E`
+		
+		grep ".*(.*\-\->" $f \
+			| awk '{$1=$1*$weight; print $0}' \
+			| sed -E 's/\([[:alnum:]]+\)//g' \
+			| awk '{r=$2;split($2,arr,"-->"); if( arr[1]!=arr[2] ) print $0}'
+	done ) | \
+	awk '{
+		map[$2]+=$1
+		sum+=$1
+	}
+	END{
+		for(k in map)
+			if( map[k]/sum > '$maxP' )
+				printf "%10.5f  %s\n", map[k]/sum, k
+	}' | sed 's/-->/"->"/g' \
+	| gawk '
+		{
+			print "\""$2"\"", "[label="$1",fontcolor=blue]"
+		}
+	' >> .dataReac-$$.dot
+	
+	echo "}" >> .dataReac-$$.dot
+	
+	if [ -n "`which dot`" ]
+	then
+		dot -Tpng -Nstyle=filled -Nfillcolor=skyblue .dataReac-$$.dot > reactions.png
+	else
+		echo "### ERROR ### dot command is not available. Please install graphviz"
+		echo "              sudo apt-get install graphviz"
+		exit
+	fi
+	
+	rm .dataReac-$$.dot
+	
+	if [ -n "$DISPLAY" ]
+	then
+		gwenview reactions.png > /dev/null 2>&1 &
+		
+# 		tFile=`ls ${iFile%.*}.data/*.ehistory | tail -n1`
+		
+		echo "Lowest Energies"
+		echo "==============="
+# 		awk '($0~/^[[:blank:]]*reference = /){print $3, 0.0}' ${iFile%.*}.m3c | sed -E 's/\([[:alnum:]]+\)//g' > .eLevels.dat
+		touch .eLevels.dat
+		sed -E 's/\([[:alnum:]]+\)//g' ${iFile%.*}.data/*.ehistory \
+			| awk '($3~/[[:digit:].]+/){if($NF in map){ if($3<map[$NF])map[$NF]=$3 }else{ map[$NF]=$3 } }END{for(k in map) print k,map[k]}' \
+			| sort -k2 -n >> .eLevels.dat
+		cat .eLevels.dat
+		energyLevels.sh .eLevels.dat 1,2
+		rm .eLevels.dat
+	fi
+}
+
+####################################
+#
+####################################
 function reactionsDiagram()
 {
 	local iFile=$1
@@ -1961,6 +2037,7 @@ EOF
 	then
 #                 xMax=15  # <<< Para el CH4+
 		echo "plot [$xMin-($xMax-$xMin)*0.03:$xMax+($xMax-$xMin)*0.03] [-3:103] \\" >> .plotMtj-$iFile$$
+# 		echo "plot [$xMin-($xMax-$xMin)*0.03:$xMax+($xMax-$xMin)*0.03] [-3:33] \\" >> .plotMtj-$iFile$$
 	else
 		echo "plot $M3C_PLOT_XRANGE [-3:103] \\" >> .plotMtj-$iFile$$
 	fi
@@ -1985,7 +2062,7 @@ EOF
 		smoothStrength=4e3
 # 		smoothThr="1e-9"
 		smoothThr="1e-4"
-		errFact=0.4 # << SSeq
+		errFact=0.1 # << SSeq
 # 		errFact=1.0 # << Srand
 
 # 		if [ "`echo "${keys[$(($i-1))]}" | sed 's/\// /g' | wc -w`" -eq 3 ]
@@ -3625,6 +3702,11 @@ function main()
 					reactionsDiagram $dataFile TRUE $maxP
 				fi
 			fi
+			;;
+			
+		areactions)
+			maxP=$3
+			averReactionsDiagram ${iFile%.*}.m3c $maxP
 			;;
 			
 		J)
