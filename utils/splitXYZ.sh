@@ -55,14 +55,27 @@ BEGIN{
 	id=1
 }
 {
-	if($0==$1){
+	if( NF==1 && $1~/[[:digit:]]+/ ){
 		n=$1
-		fname=sprintf("mol-%05d.xyz",id)
+		getline
+		if( "'$keepLabels'" == "True" ){
+			title=$0
+			gsub("[[:blank:]]+","_",title)
+		}else{
+			title=""
+		}
+		
+		if( "'$keepLabels'" == "True" )
+# 			fname=title".q0.m1.xyz"
+			fname=title".xyz"
+		else
+			fname=sprintf("mol-%05d.xyz",id)
 		
 		printf( "Generating ... %s ", fname )
 		
 		print n >> fname
-		for(i=1;i<=n+1;i++){
+		print title >> fname
+		for(i=1;i<=n;i++){
 			getline
 			print $0 >> fname
 		}
