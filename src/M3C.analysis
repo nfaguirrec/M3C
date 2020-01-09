@@ -2233,22 +2233,23 @@ stdDiv(a,da,b,db) = abs(a/b)*sqrt( (da/a)**2 + (db/b)**2 )
 plot $M3C_PLOT_XRANGE [0:100] \
 "$energyDir/ecompTable$$.dat" \
    u 1:(100*(abs(\$2))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))) t "trans" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
-"" u 1:(100*(abs(\$2))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))):(100*stdDiv(abs(\$2),\$3,abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8),stdSum(abs(\$3),abs(\$5),abs(\$7),abs(\$9)))) notitle w yerrorbars lt 1 lw 0.3 ps 0, \
+"" u 1:(100*(abs(\$2))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))):(100*stdDiv(\$2,\$3,abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8),stdSum(\$3,\$5,\$7,\$9))) notitle w yerrorbars lt 1 lw 0.3 ps 0, \
 "" u 1:(100*(abs(\$2))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
 "" u 1:(100*(abs(\$4))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))) t "inter" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 2, \
-"" u 1:(100*(abs(\$4))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))):(100*stdDiv(abs(\$4),\$5,abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8),stdSum(abs(\$3),abs(\$5),abs(\$7),abs(\$9)))) notitle w yerrorbars lt 2 lw 0.3 ps 0, \
+"" u 1:(100*(abs(\$4))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))):(100*stdDiv(\$4,\$5,abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8),stdSum(\$3,\$5,\$7,\$9))) notitle w yerrorbars lt 2 lw 0.3 ps 0, \
 "" u 1:(100*(abs(\$4))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
 "" u 1:(100*(abs(\$6))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))) t "vib" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 3, \
-"" u 1:(100*(abs(\$6))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))):(100*stdDiv(abs(\$6),\$7,abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8),stdSum(abs(\$3),abs(\$5),abs(\$7),abs(\$9)))) notitle w yerrorbars lt 3 lw 0.3 ps 0, \
+"" u 1:(100*(abs(\$6))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))):(100*stdDiv(\$6,\$7,abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8),stdSum(\$3,\$5,\$7,\$9))) notitle w yerrorbars lt 3 lw 0.3 ps 0, \
 "" u 1:(100*(abs(\$6))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white", \
 "" u 1:(100*(abs(\$8))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))) t "rot" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 4, \
-"" u 1:(100*(abs(\$8))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))):(100*stdDiv(abs(\$8),\$9,abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8),stdSum(abs(\$3),abs(\$5),abs(\$7),abs(\$9)))) notitle w yerrorbars lt 4 lw 0.3 ps 0, \
+"" u 1:(100*(abs(\$8))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))):(100*stdDiv(\$8,\$9,abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8),stdSum(\$3,\$5,\$7,\$9))) notitle w yerrorbars lt 4 lw 0.3 ps 0, \
 "" u 1:(100*(abs(\$8))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))) notitle w p pt 7 ps $M3C_PLOT_LW/20.0 lc rgb "white"
 
 pause -1
 EOF
 	
 	cp $energyDir/ecompTable$$.dat $LOCAL_DIR/figure.dat # @todo Esto tiene que eliminarse en el futuro y ser habilitado por el usuario a través de un opción como -s
+	cat .plotEComp-$iFile$$
 	$M3C_GNUPLOT_EXEC .plotEComp-$iFile$$ #2> /dev/null
 	
 	rm $energyDir/ecompTable$$.dat
