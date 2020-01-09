@@ -115,6 +115,8 @@ export M3C_GAUSSIAN_SCRATCH=/scratch/$USER/gaussian
 
 ## Citing
 
+[![DOI](https://zenodo.org/badge/78819076.svg)](https://zenodo.org/badge/latestdoi/78819076)
+
 1. Fully versus Constrained Statistical Fragmentation of Carbon Clusters and their Heteronuclear Derivatives.<br/>
    N. F. Aguirre, S. Díaz-Tendero, T. IdBarkach, M. Chabot, K. Béroff, M. Alcamí, and F. Martín.<br/>
    [*J. Chem. Phys.* **150**, 144301 (2019)](https://aip.scitation.org/doi/10.1063/1.5083864)
