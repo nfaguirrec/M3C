@@ -49,21 +49,17 @@
 #####################################################################################
 
 iFile=$1
+keepLabels=$2
+
+[ -z "$keepLabels" ] && keepLabels="False"
 
 awk '
 BEGIN{
 	id=1
 }
 {
-	if( NF==1 && $1~/[[:digit:]]+/ ){
+	if($0==$1){
 		n=$1
-		getline
-		if( "'$keepLabels'" == "True" ){
-			title=$0
-			gsub("[[:blank:]]+","_",title)
-		}else{
-			title=""
-		}
 		
 		if( "'$keepLabels'" == "True" )
 # 			fname=title".q0.m1.xyz"
@@ -74,9 +70,12 @@ BEGIN{
 		printf( "Generating ... %s ", fname )
 		
 		print n >> fname
-		print title >> fname
-		for(i=1;i<=n;i++){
+		for(i=1;i<=n+1;i++){
 			getline
+			if( "'$keepLabels'" == "True" && i==1 ){
+				title=$0
+				gsub("[[:blank:]]+","_",title)
+			}
 			print $0 >> fname
 		}
 		
@@ -87,12 +86,28 @@ BEGIN{
 }
 ' $iFile
 
+[ "$keepLabels" = "True" ] && exit
+
 echo ""
 echo ""
+
+# Removes repeated molecules which were generated sequentially
+# ### WARNING ### it is only for actinide project
+echo "### WARNING ### Removing sequential repeated molecules. It is only for actinide project"
+files=( `find . -maxdepth 1 -name "mol-*.xyz" | sed -r 's/^\.\///g'` )
+for (( i=1; i<${#files[@]}; i++ ))
+do
+	test=`molecule.compare ${files[$i]} ${files[$(($i-1))]} false 0.90 1.2 | grep OK | wc -l`
+	if [ "$test" -eq 3 ]
+	then
+		echo "Removed ${files[$(($i-1))]} ( Accepted ${files[$i]} )"
+		rm ${files[$(($i-1))]}
+	fi
+done
 
 declare -A labelsMap
 
-for f in `ls mol-*.xyz`
+for f in `find . -maxdepth 1 -name "mol-*.xyz" | sed -r 's/^\.\///g'`
 do
 	formula=`molecule.chemicalFormula $f`
 	mult=`molecule.minMult $f | awk '{print $1}'`

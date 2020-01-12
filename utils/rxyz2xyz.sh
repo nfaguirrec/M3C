@@ -50,6 +50,8 @@
 
 iFile=$1
 
+title2=`grep "^ENERGY " $iFile`
+
 gawk '
 	BEGIN{
 		n=1
@@ -62,7 +64,13 @@ gawk '
 	(NR==2){
 		title=$0
 		print nAtoms
-		print title
+		
+		if( length(title) != 0 )
+			print title
+		else if ( length("'"$title2"'") != 0 )
+			print "'"$title2"'"
+		else
+			print ""
 	}
 	
 	( NR>2 && n<=nAtoms ){
