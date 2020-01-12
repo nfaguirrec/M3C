@@ -1,0 +1,246 @@
+#!/bin/bash
+#####################################################################################
+#                                                                                   #
+# This file is part of M3C project                                                  #
+# Copyright (c) by authors                                                          #
+#                                                                                   #
+#  Authors:                                                                         #
+#                         * Néstor F. Aguirre (2017-2018)                           #
+#                           nfaguirrec@gmail.com                                    #
+#                                                                                   #
+#  Redistribution and use in source and binary forms, with or without               #
+#  modification, are permitted provided that the following conditions are met:      #
+#                                                                                   #
+#  1. Redistributions of source code must retain the above copyright notice, this   #
+#     list of conditions and the following disclaimer.                              #
+#  2. Redistributions in binary form must reproduce the above copyright notice,     #
+#     this list of conditions and the following disclaimer in the documentation     #
+#     and/or other materials provided with the distribution.                        #
+#  3. Neither the name of the copyright holders nor the names of its contributors   #
+#     may be used to endorse or promote products derived from this software         #
+#     without specific prior written permission.                                    #
+#                                                                                   #
+#  The copyright holders provide no reassurances that the source code provided      #
+#  does not infringe any patent, copyright, or any other intellectual property      #
+#  rights of third parties.  The copyright holders disclaim any liability to any    #
+#  recipient for claims brought against recipient by any third party for            #
+#  infringement of that parties intellectual property rights.                       #
+#                                                                                   #
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND  #
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED    #
+#  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE           #
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR  #
+#  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES   #
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;     #
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND      #
+#  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT       #
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS    #
+#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                     #
+#                                                                                   #
+#####################################################################################
+
+FILTER="xyz"
+
+BONDING_TOL_SCALE=1.2  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
+# SIMILARITY_THR=0.90 # coarse2
+SIMILARITY_THR=0.92 # coarse
+#SIMILARITY_THR=0.97 # fine
+USEMASSWEIGHT="FALSE"
+USEIM="FALSE"
+USENODEWEIGHTS="TRUE"
+USEEDGEWEIGHTS="FALSE"
+
+
+##
+# @brief
+##
+function checkRepeated()
+{
+	local format=$1
+	local resultsDir=$2
+	local forceRemove=$3
+	
+	pushd . &> /dev/null
+	cd $resultsDir
+	
+	ls *.$format > .list$$
+	
+	# molecule.duplicate file [remove] [ debug ] [ thr ] [alpha] [useMassWeight] [useIm] [useNodeWeights] [useEdgeWeights]
+	#                           false     false     0.92    1.1        true        true        true              true     
+
+	molecule.duplicate .list$$ $forceRemove false $SIMILARITY_THR $BONDING_TOL_SCALE $USEMASSWEIGHT $USEIM $USENODEWEIGHTS $USEEDGEWEIGHTS
+	
+	rm .list$$
+	
+	popd &> /dev/null
+}
+
+##
+# @brief
+##
+function main()
+{
+	if [ "$1" = "xyz" -o "$1" = "rxyz" -o "$1" = "rxyz0" ]
+	then
+		FILTER=$1
+		local dEMax=$2
+		local prefix=$3
+		shift 3
+		local listDir=$*
+	fi
+	
+	if [ -z "$FILTER" -o -z "$dEMax" ]
+	then
+		echo "usage:"
+		echo "    M3C.intersection (xyz|rxyz|rxyz0)   Emax dir1 dir2 dir3 ..."
+		echo "                    xyz        inf_eV "
+		exit
+	fi
+	
+	rm -rf intersection.$prefix &> /dev/null
+	
+	dirId=1
+	allDirs=""
+	for dir in $listDir
+	do
+		rm .dir-$$-$dirId &> /dev/null
+		ln -s $dir .dir-$$-$dirId
+		allDirs="$allDirs .dir-$$-$dirId"
+		dirId=$(( $dirId+1 ))
+	done
+	
+	mkdir intersection.$prefix
+	
+	categories=`ls $allDirs | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
+	
+# 	echo ""
+# 	echo "-------------------"
+# 	echo " Combining isomers "
+# 	echo "-------------------"
+# 	echo ""
+	
+	sumFilesInMerge=0
+	for category in $categories
+	do
+		E0="None"
+		for dir in $allDirs
+		do
+			E0_1=`grep "Energy" $dir/$category*.$FILTER 2> /dev/null | sort -k3 -n | awk '{print $NF;exit}'`
+			
+			if [ $E0 != "None" ]
+			then
+				if [ -n "$E0_1" ]
+				then
+					[ `echo "$E0_1<$E0" | bc -l` -eq 1  ] && E0=$E0_1
+				fi
+			else
+				E0=$E0_1
+			fi
+		done
+		
+		dirId=1
+		for dir in $allDirs
+		do
+			targetFiles=`ls $dir/$category*.$FILTER 2> /dev/null | sed 's/'$dir'\///g'`
+			
+			if [ -n "$targetFiles" ]
+			then
+				for target in $targetFiles
+				do
+					dE=`grep "Energy" $dir/$target | awk '{printf "%10.8f",($NF-('$E0'))/0.0367493088244753;exit}'`
+					test1=`echo "$dE < $dEMax" | bc -l`
+# 					echo "dE = $dE < $dEMax    $test1"
+					
+					[ -z "$test1" ] && test1=1
+					
+					if [ "$FILTER" != "rxyz0" ]
+					then
+# 						echo "   $dir/$target"  " ----> "  "intersection.$prefix/${dirId}__${target}"
+						[ "$test1" -eq 1 ] && cp $dir/$target intersection.$prefix/${dirId}__${target}
+					else
+# 						echo "   $dir/$target"  " ----> "  "intersection.$prefix/${dirId}__${target}"
+						[ "$test1" -eq 1 ] && cp $dir/$target intersection.$prefix/${dirId}__${target}
+					fi
+					
+					sumFilesInMerge=$(( $sumFilesInMerge + $test1 ))
+				done
+			fi
+			
+			dirId=$(( $dirId+1 ))
+		done
+# 		echo ""
+	done
+	
+	if [ "$sumFilesInMerge" -eq 0 -a "$dEMax" != "10000000" ]
+	then
+		echo "### ERROR ### There are no molecules in the chosen energy range dE=$dEMax eV"
+		exit -1
+	fi
+	
+	if [ "$FILTER" = "rxyz0" ]
+	then
+		FILTER="rxyz"
+	fi
+	
+	echo "----------------------------------------"
+	echo " Checking for common isomers "
+	dirId=1
+	for dir in $listDir
+	do
+		echo " ${dirId}__ for directory $dir      "
+		dirId=$(( $dirId+1 ))
+	done
+	echo "@@WARNING@@ This version is incomplete. It only supports 2 directories"
+	echo "----------------------------------------"
+	echo ""
+	
+	checkRepeated $FILTER intersection.$prefix FALSE > .output$$
+# 	grep -v "\-\->" .output$$
+# 	cat .output$$ | grep "\-\->" \
+# 	| awk '
+# 		function checkLine( line )
+# 		{
+# 			print "checking", line
+# 			split( line, arr, "[[:blank:]_]+" )
+# 			
+# 			j=1
+# 			for( i=1; i<length(arr)-1; i+=2 ){
+# 				print "  prev", j, arr[i]
+# 				prev[j]=arr[i]
+# 				j++
+# 			}
+# 			
+# 			for( i=2; i<=length(prev); i++ ){
+# 				print "i, i-1", prev[i], prev[i-1]
+# 				if( prev[i]==prev[i-1] )
+# 					return -1
+# 			}
+# 			
+# 			return 0
+# 		}
+# 		{
+# 			map[$1]=map[$1]" "$2$3
+# 		}
+# 		END{
+# 			for( k in map ){
+# 				split( map[k], arr )
+# 				
+# 				if( checkLine(map[k]) == 0 && '`echo $allDirs | wc -w`' == length(arr)+1 )
+# # 				if( '`echo $allDirs | wc -w`' == length(arr)+1 )
+# 					print k, map[k], "--> Equal"
+# 			}
+# 		}'
+	
+	cat .output$$ | grep -E "^[[:blank:]]*1__.*[[:blank:]]*2__.*Equal" | gawk '{map[$1]=$0}END{for(k in map) print map[k]}'
+	
+	rm -rf intersection.$prefix
+	rm .output$$
+	
+	for dir in $allDirs
+	do
+		rm $dir &> /dev/null
+	done
+}
+
+main $*
+

@@ -2,20 +2,11 @@
 #####################################################################################
 #                                                                                   #
 # This file is part of M3C project                                                  #
-# Copyright (c) 2013-2016 Departamento de Química                                   #
-#                         Universidad Autónoma de Madrid                            #
-#                         All rights reserved.                                      #
+# Copyright (c) by authors                                                          #
 #                                                                                   #
-#                         * Néstor F. Aguirre (2013-2016)                           #
-#                           nestor.aguirre@uam.es                                   #
-#                         * Sergio Díaz-Tendero (2013-2016)                         #
-#                           sergio.diaztendero@uam.es                               #
-#                         * M. Paul-Antoine Hervieux (2013-2015)                    #
-#                           Paul-Antoine.Hervieux@ipcms.unistra.fr                  #
-#                         * Manuel Alcamí (2013-2016)                               #
-#                           manuel.alcami@uam.es                                    #
-#                         * Fernando Martín (2013-2016)                             #
-#                           fernando.martin@uam.es                                  #
+#  Authors:                                                                         #
+#                         * Néstor F. Aguirre (2017-2017)                           #
+#                           nfaguirrec@gmail.com                                    #
 #                                                                                   #
 #  Redistribution and use in source and binary forms, with or without               #
 #  modification, are permitted provided that the following conditions are met:      #
@@ -48,88 +39,155 @@
 #                                                                                   #
 #####################################################################################
 
-FILTER="xyz"
+REFRESH_TIME="2s"
 
-BONDING_TOL_SCALE=1.1  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
-SIMILARITY_THR=0.92 # coarse
-# SIMILARITY_THR=0.97 # fine
+if [ -f "$M3C_HOME/bin/stack.sh" ]
+then
+        source $M3C_HOME/bin/stack.sh
+elif [ -f "$M3C_HOME/src/stack.sh" ]
+then
+        source $M3C_HOME/src/stack.sh
+else
+        echo "### ERROR ### stack.sh: No such file"
+        echo "              Check \$M3C_HOME variable"
+        exit
+fi
 
-##
-# @brief
-##
-function main()
+function parallel()
 {
-	if [ "$1" = "xyz" -o "$1" = "rxyz" -o "$1" = "rxyz0" ]
-	then
-		FILTER=$1
-	fi
+	iFile=$1
+	nThreads=$2
 	
-	local dir1=$2
-	local dir2=$3
+	nCommands=`cat $iFile | wc -l`
 	
-	if [ -z "$dir1" -o -z "$dir2" ]
+	if [ "$nCommands" -lt 1 ]
 	then
-		echo "usage:"
-		echo "    M3C.difference [xyz|rxyz] dir1 dir2"
-		echo "                      xyz              "
+		echo "### ERROR ### parallel()"
+		echo "              There is no any command to execute in '$iFile' file"
 		exit
 	fi
 	
-	categories1=`ls $dir1 | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
+	startTime=`date "+%s"`
 	
-	if [ -d "difference" ]
-	then
-		echo "@@@ WARNING @@@ There is already a difference directory (difference). Backup copy will be generated"
-		mv difference difference.backup-`date +%Y%m%d`
-	fi
-	mkdir difference
+	stack_new jobs
+	commands=()
+	pidJobs=()
+	iStartTime=()
 	
-	echo ""
-	echo -n "Copying files from $dir1 to difference ... "
-	cp $dir1/*.$FILTER difference/
-	echo "OK"
-	
-	echo ""
-	echo "----------------------"
-	echo " Checking differences "
-	echo "----------------------"
-	echo ""
-	
-	for category in $categories1
+	for (( i=1; i<=$nCommands; i++ ))
 	do
-		pointerFiles=`ls $dir2/$category*.$FILTER 2> /dev/null`
-		targetFiles=`ls difference/$category*.$FILTER 2> /dev/null`
+		command=`sed ''$i'q;d' $iFile`
+		stack_push jobs "$command"
+	done
+	
+	firstTime=1
+	while true
+	do
+		stack_size jobs sizeJobs
 		
-		if [ -n "$pointerFiles" -a -n "$targetFiles" ]
+		if [ "$sizeJobs" -eq 0 ]
 		then
-			for pointer in $pointerFiles
+			wait
+			break
+		fi
+		
+		if [ "${#pidJobs[@]}" -le "$nThreads" -a "$sizeJobs" -ne 0 ]
+		then
+			while [ "${#pidJobs[@]}" -lt "$nThreads" -a "$sizeJobs" -ne 0 ]
 			do
-				for target in $targetFiles
-				do
+				stack_pop jobs command
+				
+				if [ -n "$command" ]
+				then
+					`echo "$command"` &
+					pid="$!"
 					
-					if [ ! -f $pointer -o ! -f $target ]
-					then
-						continue
-					fi
-					
-# 					echo -n "      Comparing $pointer --> $target ... "
-					
-					test=`molecule.compare $pointer $target false $SIMILARITY_THR $BONDING_TOL_SCALE | grep OK | wc -l`
-					
-					if [ "$test" -eq 3 ]
-					then
-						echo "Equal"
-						rm $target
-						break
-# 					else
-# 						echo "Different"
-					fi
-				done
+					pidJobs[$pid]=$pid
+					commands[$pid]=$command
+					echo "Running: $command ($pid)"
+					iStartTime[$pid]=`date "+%s"`
+				fi
+				
+				stack_size jobs sizeJobs
 			done
 		fi
-		echo ""
+		
+		if [ "$firstTime" -eq 1 ]
+		then
+			if [ "${#pidJobs[@]}" -eq "$nThreads" ]
+			then
+				firstTime=0
+			else
+				continue
+			fi
+		fi
+		
+		if [ "${#pidJobs[@]}" -le "$nThreads" ]
+		then
+			while true
+			do
+				delete=()
+				for pid in ${pidJobs[@]}
+				do
+					loc=0
+					for cpid in `ps -U $USER | gawk '($1~/^[[:digit:]]+$/){print $1}'`
+					do
+						if [ "$pid" -eq "$cpid" ]
+						then
+							loc=1
+							break
+						fi
+					done
+					
+					if [ $loc -eq 0 ]
+					then
+						delete[$pid]=$pid
+					fi
+				done
+				
+				if [ "${#delete[@]}" -ne 0 ]
+				then
+					break
+				fi
+				
+				sleep $REFRESH_TIME
+			done
+		fi
+		
+		if [ "${#delete[@]}" -ne 0 ]
+		then
+			for pid in ${delete[@]}
+			do
+				echo -n "   Finished: ${commands[$pid]} ($pid)  "
+				unset pidJobs[$pid]
+				
+				iEndTime=`date "+%s"`
+				elapsedTime=$(( $iEndTime-${iStartTime[$pid]} ))
+				echo "      `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+				unset iStartTime[$pid]
+			done
+		fi
 	done
+	
+	endTime=`date "+%s"`
+	elapsedTime=$(( $endTime-$startTime ))
+	
+	echo ""
+	echo "` echo -n  "Total"`: $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
 }
 
-main $*
-
+# cat > commands << EOF
+# sleep 1s
+# sleep 2s
+# sleep 3s
+# sleep 4s
+# sleep 5s
+# sleep 4s
+# sleep 3s
+# sleep 2s
+# sleep 1s
+# EOF
+# 
+# parallel commands 3
+# rm commands
+# 

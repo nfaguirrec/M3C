@@ -2,20 +2,11 @@
 #####################################################################################
 #                                                                                   #
 # This file is part of M3C project                                                  #
-# Copyright (c) 2013-2016 Departamento de Química                                   #
-#                         Universidad Autónoma de Madrid                            #
-#                         All rights reserved.                                      #
+# Copyright (c) by authors                                                          #
 #                                                                                   #
-#                         * Néstor F. Aguirre (2013-2016)                           #
-#                           nestor.aguirre@uam.es                                   #
-#                         * Sergio Díaz-Tendero (2013-2016)                         #
-#                           sergio.diaztendero@uam.es                               #
-#                         * M. Paul-Antoine Hervieux (2013-2015)                    #
-#                           Paul-Antoine.Hervieux@ipcms.unistra.fr                  #
-#                         * Manuel Alcamí (2013-2016)                               #
-#                           manuel.alcami@uam.es                                    #
-#                         * Fernando Martín (2013-2016)                             #
-#                           fernando.martin@uam.es                                  #
+#  Authors:                                                                         #
+#                         * Néstor F. Aguirre (2017-2017)                           #
+#                           nfaguirrec@gmail.com                                    #
 #                                                                                   #
 #  Redistribution and use in source and binary forms, with or without               #
 #  modification, are permitted provided that the following conditions are met:      #
@@ -48,87 +39,89 @@
 #                                                                                   #
 #####################################################################################
 
-FILTER="xyz"
+LATTE_TEMPLATE=$1
+NPROCSHARED=$2
 
-BONDING_TOL_SCALE=1.1  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
-SIMILARITY_THR=0.92 # coarse
-# SIMILARITY_THR=0.97 # fine
+##############################
+# Default options
+##############################
+if [ -z "$LATTE_TEMPLATE" ]
+then
+	echo "usage: M3C-latte.optg latteTemplate [ nProcShared ]"
+	echo "                                           1       "
+	exit
+fi
 
-##
-# @brief
-##
+# if [ -z "`grep -i "^\s*TOTALENERGY\s*$" $LATTE_TEMPLATE`" ]
+# then
+# 	echo "### Error ### TOTALENERGY keyword shoul be present in the LATTE template ($LATTE_TEMPLATE)"
+# 	exit
+# fi
+
+[ -z "$NPROCSHARED" ] && NPROCSHARED=1
+##############################
+
+if [ -f "$M3C_HOME/bin/latteDriver.sh" ]
+then
+	source $M3C_HOME/bin/latteDriver.sh
+else
+	source $M3C_HOME/src/latteDriver.sh
+fi
+
+if [ -f "$M3C_HOME/bin/parallel.sh" ]
+then
+	source $M3C_HOME/bin/parallel.sh
+else
+	source $M3C_HOME/src/parallel.sh
+fi
+
+function optgeom()
+{
+	local iFileXYZ=$1
+	local charge=$2
+	local mult=$3
+	
+	cp $iFileXYZ ${iFileXYZ%.*}.xyz0
+	optgLATTETemplate $LATTE_TEMPLATE $NPROCSHARED ${iFileXYZ%.*}.xyz0 $charge $mult > ${iFileXYZ%.*}.xyz
+	mv ${iFileXYZ%.*}.out history.optg/ 2> /dev/null
+	mv ${iFileXYZ%.*}.latte history.optg/ 2> /dev/null
+}
+
 function main()
 {
-	if [ "$1" = "xyz" -o "$1" = "rxyz" -o "$1" = "rxyz0" ]
+	local xyzFile=""
+	local charge=""
+	local mult=""
+	
+	local i=0
+	local j=0
+	local ij=0
+	
+	if [ -z "$M3C_NTHREADS" ]
 	then
-		FILTER=$1
+		M3C_NTHREADS=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
+	nThreads=$(( $M3C_NTHREADS/$NPROCSHARED ))
 	
-	local dir1=$2
-	local dir2=$3
-	
-	if [ -z "$dir1" -o -z "$dir2" ]
+	if [ -d "history.optg" ]
 	then
-		echo "usage:"
-		echo "    M3C.difference [xyz|rxyz] dir1 dir2"
-		echo "                      xyz              "
-		exit
+		echo "@@@ WARNING @@@ There is already a history directory (history.optg). Backup copy will be generated"
+		mv history.optg history.optg.backup-`date +%Y%m%d`
 	fi
+	mkdir history.optg
 	
-	categories1=`ls $dir1 | grep "$FILTER$" | gawk '($1!~/^[[:blank:]]*$/ && $1!~/:/)' | sed 's/.*\///g;s/-.*//g' | gawk '{map[$1]=1}END{for(key in map) print key}'`
+	xyzFile=( `ls *.xyz` )
+	charge=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'` )
+	mult=( `ls *.xyz | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'` )
 	
-	if [ -d "difference" ]
-	then
-		echo "@@@ WARNING @@@ There is already a difference directory (difference). Backup copy will be generated"
-		mv difference difference.backup-`date +%Y%m%d`
-	fi
-	mkdir difference
-	
-	echo ""
-	echo -n "Copying files from $dir1 to difference ... "
-	cp $dir1/*.$FILTER difference/
-	echo "OK"
-	
-	echo ""
-	echo "----------------------"
-	echo " Checking differences "
-	echo "----------------------"
-	echo ""
-	
-	for category in $categories1
+	cat /dev/null > .commands$$
+	for (( i=0; i<${#xyzFile[@]}; i++ ))
 	do
-		pointerFiles=`ls $dir2/$category*.$FILTER 2> /dev/null`
-		targetFiles=`ls difference/$category*.$FILTER 2> /dev/null`
-		
-		if [ -n "$pointerFiles" -a -n "$targetFiles" ]
-		then
-			for pointer in $pointerFiles
-			do
-				for target in $targetFiles
-				do
-					
-					if [ ! -f $pointer -o ! -f $target ]
-					then
-						continue
-					fi
-					
-# 					echo -n "      Comparing $pointer --> $target ... "
-					
-					test=`molecule.compare $pointer $target false $SIMILARITY_THR $BONDING_TOL_SCALE | grep OK | wc -l`
-					
-					if [ "$test" -eq 3 ]
-					then
-						echo "Equal"
-						rm $target
-						break
-# 					else
-# 						echo "Different"
-					fi
-				done
-			done
-		fi
-		echo ""
+		echo "optgeom ${xyzFile[$i]} ${charge[$i]} ${mult[$i]}" >> .commands$$
 	done
+	
+	parallel .commands$$ $nThreads
+	rm .commands$$
 }
 
 main $*

@@ -1,0 +1,1 @@
+mkdir -p imagFreqs/history.freqs/; for f in `grep "^-" *.rxyz | awk 'BEGIN{FS=":"}{map[$1]=1}END{for(key in map) print key}'`; do echo ${f%.*}; mv ${f%.*}.* imagFreqs; mv history.freqs/${f%.*}.* imagFreqs/history.freqs/ ; done

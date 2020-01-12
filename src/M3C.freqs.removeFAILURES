@@ -1,0 +1,1 @@
+mkdir -p FAILURE/history.freqs; for f in `grep -H "FAILURE" *.rxyz | sed 's/:.*$//g'`; do echo $f; mv history.freqs/${f%.*}.* FAILURE/history.freqs; mv ${f%.*}.* FAILURE/; done

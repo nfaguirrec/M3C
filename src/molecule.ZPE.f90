@@ -1,20 +1,11 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                                   !!
 !! This file is part of M3C project                                                  !!
-!! Copyright (c) 2013-2016 Departamento de Química                                   !!
-!!                         Universidad Autónoma de Madrid                            !!
-!!                         All rights reserved.                                      !!
 !!                                                                                   !!
-!!                         * Néstor F. Aguirre (2013-2016)                           !!
-!!                           nestor.aguirre@uam.es                                   !!
-!!                         * Sergio Díaz-Tendero (2013-2016)                         !!
-!!                           sergio.diaztendero@uam.es                               !!
-!!                         * M. Paul-Antoine Hervieux (2013-2015)                    !!
-!!                           Paul-Antoine.Hervieux@ipcms.unistra.fr                  !!
-!!                         * Manuel Alcamí (2013-2016)                               !!
-!!                           manuel.alcami@uam.es                                    !!
-!!                         * Fernando Martín (2013-2016)                             !!
-!!                           fernando.martin@uam.es                                  !!
+!! Copyright (c) 2017-2017 by authors                                                !!
+!! Authors:                                                                          !!
+!!                         * Néstor F. Aguirre (2017-2017)                           !!
+!!                           nfaguirrec@gmail.com                                    !!
 !!                                                                                   !!
 !!  Redistribution and use in source and binary forms, with or without               !!
 !!  modification, are permitted provided that the following conditions are met:      !!
@@ -48,30 +39,28 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !>
-!! @brief
+!! @brief Test program for ZPE
 !!
-module GOptionsM3C_
-	use GOptions_
-	use UnitsConverter_
-	use IOStream_
-	use Timer_
+program main
 	use String_
-	
+	use Fragment_
+	use UnitsConverter_
 	implicit none
-	public
 	
-	real(8) :: GOptionsM3C_systemRadius = 10.0_8*angs
-	real(8) :: GOptionsM3C_randomWalkStepRadius = 2.0_8*angs
-	real(8) :: GOptionsM3C_overlappingRadius = 0.0_8*angs
-	integer :: GOptionsM3C_radiusType = AtomicElementsDB_COVALENT_RADIUS
-	logical :: GOptionsM3C_useWeightedWalkStep = .false.
-	logical :: GOptionsM3C_useRandomWalkers = .false.
-	logical :: GOptionsM3C_useZPECorrection = .false.
-	logical :: GOptionsM3C_useSpinConservationRules = .false.
-	type(String) :: GOptionsM3C_angularMomentumCouplingScheme ! = "JJ"
-	real(8) :: GOptionsM3C_totalJ(3) = 0.0_8
-	type(String) :: GOptionsM3C_structureSamplingMethod ! = "RANDOM"
-	integer :: GOptionsM3C_fixMultiplicity = -1
-	logical :: GOptionsM3C_checkAtomicOverlapping = .false.
-	real(8) :: GOptionsM3C_atomicOverlappingRadius = 0.0_8*angs
-end module GOptionsM3C_
+	character(1000) :: sBuffer
+	type(String) :: iFileName
+	type(Fragment) :: mol
+	
+	if( command_argument_count() < 1 ) then
+		write(*,*) "## ERROR ## Number of Parameter == 1"
+		stop
+	end if
+	
+	call get_command_argument( 1, sBuffer )
+	iFileName = sBuffer
+	
+	call mol.init()
+	call mol.loadRXYZ( iFileName.fstr )
+	
+	write(*,"(F20.5,A)") mol.ZPE/eV, " eV"
+end program main

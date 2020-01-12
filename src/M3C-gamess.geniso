@@ -55,6 +55,13 @@ else
 	source $M3C_HOME/src/gamessDriver.sh
 fi
 
+if [ -f "$M3C_HOME/bin/parallel.sh" ]
+then
+	source $M3C_HOME/bin/parallel.sh
+else
+	source $M3C_HOME/src/parallel.sh
+fi
+
 BONDING_TOL_SCALE=1.2  # Se consideran unidos aquellos atomos que satisfacen dij < (Rci+Rcj)*alpha
 # SIMILARITY_THR=0.92 # coarse
 SIMILARITY_THR=0.97 # fine
@@ -268,21 +275,11 @@ function main()
 	[ -z "$NPROCSHARED" ] && NPROCSHARED=1
 	##############################
 	
-	if [ -n "$SLURM_NTASKS" ]
+	if [ -z "$M3C_NTHREADS" ]
 	then
-		nThreads=$SLURM_NTASKS
-	else
-		nThreads=`cat /proc/cpuinfo | grep processor | wc -l`
+		M3C_NTHREADS=`cat /proc/cpuinfo | grep processor | wc -l`
 	fi
-	nThreads=$(( $nThreads/$NPROCSHARED ))
-	
-	xyzFile=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $1 }' $DATABASE` )
-	charge=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $2 }' $DATABASE` )
-	mult=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $3 }' $DATABASE` )
-	
-	#-----------------------------------------------------------------------
-	
-	startTime=`date "+%s"`
+	nThreads=$(( $M3C_NTHREADS/$NPROCSHARED ))
 	
 	if [ -d "$FINAL_GEOM_DIR" ]
 	then
@@ -290,86 +287,19 @@ function main()
 		mv $FINAL_GEOM_DIR $FINAL_GEOM_DIR.backup-`date +%Y%m%d`
 	fi
 	mkdir $FINAL_GEOM_DIR
-
-	ij=-1
-	for (( i=0; i<=$(( ${#xyzFile[@]}/$nThreads-1 )); i++ ))
+	
+	xyzFile=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $1 }' $DATABASE` )
+	charge=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $2 }' $DATABASE` )
+	mult=( `gawk '($1!~/^[[:blank:]]*$/ && $1!~/^[[:blank:]]*#/){ print $3 }' $DATABASE` )
+	
+	cat /dev/null > .commands$$
+	for (( i=0; i<${#xyzFile[@]}; i++ ))
 	do
-		iStartTime=`date "+%s"`
-		
-		echo -n "Running: "
-		
-		for (( j=1; j<=$nThreads; j++ ))
-		do
-			ij=$(( $j-1+$nThreads*$i ))
-			
-			if (( j != $nThreads ))
-			then
-				printf "%10s," "${xyzFile[$ij]%.*}"
-			else
-				printf "%10s" "${xyzFile[$ij]%.*}"
-			fi
-			
-			generateIsomers ${xyzFile[$ij]} ${charge[$ij]} ${mult[$ij]} &
-		done
-		
-		echo -n " ... "
-		
-		wait
-		
-		iEndTime=`date "+%s"`
-		elapsedTime=$(( $iEndTime-$iStartTime ))
-		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+		echo "generateIsomers ${xyzFile[$i]} ${charge[$i]} ${mult[$i]}" >> .commands$$
 	done
-
-	if (( $ij < ${#xyzFile[@]} ))
-	then
-		iStartTime=`date "+%s"`
-		
-		echo -n "Running: "
-		
-		k=1
-		for (( i=$(( $ij+1 )); i<${#xyzFile[@]}; i++ ))
-		do
-			if (( $i != $(( ${#xyzFile[@]} - 1 )) ))
-			then
-				printf "%10s," "${xyzFile[$i]%.*}"
-			else
-				printf "%10s " "${xyzFile[$i]%.*}"
-			fi
-			
-			generateIsomers ${xyzFile[$i]} ${charge[$i]} ${mult[$i]} &
-
-			k=$(( $k+1 ))
-		done
-		
-		for (( i=$k; i<=$nThreads; i++ ))
-		do
-			if (( i != $nThreads ))
-			then
-				printf "%10s " ""
-			else
-				printf "%10s" ""
-			fi
-		done
-		
-		echo -n " ... "
-		
-		wait
-		
-		iEndTime=`date "+%s"`
-		elapsedTime=$(( $iEndTime-$iStartTime ))
-		echo "OK     `echo -n  "Time elapsed:"` $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
-	fi
 	
-	endTime=`date "+%s"`
-	elapsedTime=$(( $endTime-$startTime ))
-	
-	echo -n "         "
-	printf "%$(( 10*(${nThreads} + 2) ))s" ""
-	echo "      ` echo -n  "Total"`: $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
-	
-	#-----------------------------------------------------------------------
-
+	parallel .commands$$ $nThreads
+	rm .commands$$
 }
 
 main $*
