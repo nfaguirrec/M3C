@@ -364,6 +364,8 @@ module FragmentsDB_
 		! Only for transition states. They are neccessary to calculate the right label (mass sorted)
 		type(FragmentsList) :: reactives
 		type(FragmentsList) :: products
+! 		type(Fragment), allocatable :: reactives(:)
+! 		type(Fragment), allocatable :: products(:)
 		
 		if( allocated(this.transitionState) ) deallocate( this.transitionState )
 		allocate( this.transitionState(size(transitionStatesTable)) )
@@ -405,11 +407,13 @@ module FragmentsDB_
 				
 				call FString_split( trim(adjustl(tokens2(1))), tokens3, "+" )
 				call reactives.init( size(tokens3) )
+! 				allocate( reactives(size(tokens3)) )
 				
 				do j=1,size(tokens3)
 					do k=1,size(this.clusters)
 						if( trim(tokens3(j)) == this.clusters(k).label() ) then
 							reactives.clusters(j) = this.clusters(k)
+! 							reactives(j) = this.clusters(k)
 							this.involvedInTS(k) = .true.
 						end if
 					end do
@@ -418,11 +422,13 @@ module FragmentsDB_
 				
 				call FString_split( trim(adjustl(tokens2(2))), tokens3, "+" )
 				call products.init( size(tokens3) )
+! 				allocate( products(size(tokens3)) )
 				
 				do j=1,size(tokens3)
 					do k=1,size(this.clusters)
 						if( trim(tokens3(j)) == this.clusters(k).label() ) then
 							products.clusters(j) = this.clusters(k)
+! 							products(j) = this.clusters(k)
 							this.involvedInTS(k) = .true.
 						end if
 					end do
@@ -449,6 +455,9 @@ module FragmentsDB_
 		write(IO_STDOUT,*) ""
 		
 		call GOptions_section( "END TRANSITION_STATES DATABASE INITIALIZATION", indent=1 )
+		
+! 		deallocate(reactives)
+! 		deallocate(products)
 		
 	end subroutine setTransitionStatesTable
 	
