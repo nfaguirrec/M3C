@@ -1686,6 +1686,8 @@ function averReactionsDiagram()
 	local eDistfile=`getValueFromIFIle ${iFile%.*}.m3c FIT_BRANCHING_RATIOS:eDistfile`
 	
 	echo "strict digraph G {" > .dataReac-$$.dot
+# 	echo "overlap=scalexy; //false, compress, ..." >> .dataReac-$$.dot
+# 	echo "sep=\"+1\"; // 0.1, +1" >> .dataReac-$$.dot
 	echo "	rankdir=LR" >> .dataReac-$$.dot
 	echo "	node [shape=box,style=filled,fillcolor=yellow,color=black]" >> .dataReac-$$.dot
 	
@@ -1695,7 +1697,7 @@ function averReactionsDiagram()
 		weight=`n1df.evaluate $eDistfile $E`
 		
 		grep ".*(.*\-\->" $f \
-			| awk '{$1=$1*$weight; print $0}' \
+			| awk '{$1=$1*'"$weight"'; print $0}' \
 			| sed -E 's/\([[:alnum:]]+\)//g' \
 			| awk '{r=$2;split($2,arr,"-->"); if( arr[1]!=arr[2] ) print $0}'
 	done ) | \
@@ -1707,7 +1709,29 @@ function averReactionsDiagram()
 		for(k in map)
 			if( map[k]/sum > '$maxP' )
 				printf "%10.5f  %s\n", map[k]/sum, k
-	}' | sed 's/-->/"->"/g' \
+	}' \
+	| gawk '
+	{
+		r=$2
+		split($2,arr,"-->")
+		line[arr[1]"-->"arr[2]]=$1
+		
+		if( arr[2]"-->"arr[1] in line ){
+			if( $1 > line[arr[2]"-->"arr[1]] ){
+				delete line[arr[2]"-->"arr[1]]
+			}else{
+				delete line[arr[1]"-->"arr[2]]
+			}
+		}
+	}
+	END{
+		for( k in line ){
+			print line[k], k
+			print line[k], k > "/dev/stderr"
+		}
+	}
+	' \
+	| sed 's/-->/"->"/g' \
 	| gawk '
 		{
 			print "\""$2"\"", "[label="$1",fontcolor=blue]"
@@ -2062,8 +2086,8 @@ EOF
 		smoothStrength=4e3
 # 		smoothThr="1e-9"
 		smoothThr="1e-4"
-		errFact=0.1 # << SSeq
-# 		errFact=1.0 # << Srand
+# 		errFact=0.1 # << SSeq
+		errFact=1.0 # << Srand
 
 # 		if [ "`echo "${keys[$(($i-1))]}" | sed 's/\// /g' | wc -w`" -eq 3 ]
 # 		then
@@ -2590,6 +2614,7 @@ function channelBRDiagram()
 	'"`cat $M3C_HOME/utils/M3CUtils.gawk`"'   # Debería ser la anterior linea, pero solo está disponible para gawk >= 2011
 	($1!~/^#/){
 		print reduceM3CLabel($1), $2, $3, $4
+# 		print reduceM3CLabel($1), $2, 0.0, 0.0
 	}' tmp-$$ > $BRFile
 	rm tmp-$$
 	
@@ -2600,6 +2625,7 @@ function channelBRDiagram()
 	sed -i -r '{s/([[:alpha:]]+)p/\1^{+}/g}' $BRFile  # Escribir bien los superindices, caso Cp(??)
 	sed -i -r '{s/([[:alpha:]]+)([[:digit:]]+)/\1_{\2}/g}' $BRFile  # Escribir bien los superindices, caso C_2(??)
 	
+	cat $BRFile
 	yMax=`gawk '($0!~/#/){printf "%s\n%s\n",$2,$3}' $BRFile | sort -k 1 -n | tail -n1`
 	yErrorMax=`gawk '($0!~/#/){printf "%s\n",$4}' $BRFile | sort -k 1 -n | tail -n1`
 	yMax=`echo "$yMax+$yErrorMax" | bc -l` 

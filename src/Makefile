@@ -4,7 +4,7 @@ FCFLAGS = -static -static-intel -static-libgcc -traceback -w -I. -g -fpp -mkl -I
 LDFLAGS = -L${HOME}/Develop/scift/src -lscift
 TLIB = 
 
-all: AzizSlamanPotential.o Fragment.o FragmentsDB.o FragmentsListBase.o FragmentsList.o GOptionsM3C.o MarkovChain.o ModelPotential.o NNLS.o Reactor.o  $(TLIB) M3CBR M3C M3CfitBR 
+all: AzizSlamanPotential.o Fragment.o FragmentsDB.o FragmentsListBase.o FragmentsList.o GOptionsM3C.o MarkovChain.o ModelPotential.o NNLS.o Reactor.o  $(TLIB) M3CBR M3C M3CfitBR molecule.ZPE 
 
 AzizSlamanPotential.o azizslamanpotential_.mod: AzizSlamanPotential.f90 
 	fmake
@@ -61,6 +61,11 @@ ModelPotential.o modelpotential_.mod: ModelPotential.f90 goptionsm3c_.mod azizsl
 	echo -n 'Building ModelPotential.f90 '
 	time -f "(%E)" $(FC) $(FCFLAGS) -c ModelPotential.f90
 
+molecule.ZPE: molecule.ZPE.f90 Fragment.o GOptionsM3C.o fragment_.mod goptionsm3c_.mod
+	fmake
+	echo -n 'Building molecule.ZPE.f90 '
+	time -f "(%E)" $(FC) $(FCFLAGS) molecule.ZPE.f90 Fragment.o GOptionsM3C.o -o molecule.ZPE $(LDFLAGS)
+
 NNLS.o nnls_.mod: NNLS.f90 
 	fmake
 	echo -n 'Building NNLS.f90 '
@@ -72,10 +77,10 @@ Reactor.o reactor_.mod: Reactor.f90 fragment_.mod azizslamanpotential_.mod gopti
 	time -f "(%E)" $(FC) $(FCFLAGS) -c Reactor.f90
 
 clean:
-	rm -f *.o *.mod *~ .deps M3CBR M3C M3CfitBR  2> /dev/null
+	rm -f *.o *.mod *~ .deps M3CBR M3C M3CfitBR molecule.ZPE  2> /dev/null
 
 distclean:
-	rm -f *.o *.mod *~ .deps Makefile M3CBR M3C M3CfitBR  2> /dev/null
+	rm -f *.o *.mod *~ .deps Makefile M3CBR M3C M3CfitBR molecule.ZPE  2> /dev/null
 
 Makefile: .deps
 	fmake

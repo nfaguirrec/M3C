@@ -78,13 +78,13 @@ function convertImage()
   local iFile=$1
   local oFile=$2
   
-  if [ "$CONVERTER" = "convert" ]
-  then
+#  if [ "$CONVERTER" = "convert" ]
+#  then
     convert $iFile $oFile > /dev/null 2>&1
-  elif [ "$CONVERTER" = "inkscape" ]
-  then
-    inkscape -z -f $iFile -E $oFile > /dev/null 2>&1
-  fi
+#  elif [ "$CONVERTER" = "inkscape" ]
+#  then
+#    inkscape -z -f $iFile -E $oFile > /dev/null 2>&1
+#  fi
 }
 
 ##

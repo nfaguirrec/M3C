@@ -50,6 +50,7 @@ program main
 	character(1000) :: sBuffer
 	type(String) :: iFileName
 	type(Fragment) :: mol
+	real(8) :: ZPE
 	
 	if( command_argument_count() < 1 ) then
 		write(*,*) "## ERROR ## Number of Parameter == 1"
@@ -62,5 +63,11 @@ program main
 	call mol.init()
 	call mol.loadRXYZ( iFileName.fstr )
 	
-	write(*,"(F20.5,A)") mol.ZPE/eV, " eV"
+	ZPE = 0.0_8
+	if( mol.nAtoms() > 1 ) then
+		ZPE = sum( merge(mol.vibFrequencies, 0.0_8,mol.vibFrequencies>0.0_8) )/2.0_8
+	end if
+	
+! 	write(*,"(F20.5,A)") mol.ZPE/eV, " eV"
+	write(*,"(F20.5,A)") ZPE/eV, " eV"
 end program main
