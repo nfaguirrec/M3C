@@ -13,7 +13,7 @@ BEGIN GOPTIONS
         useSpinConservationRules = FALSE
         
         angularMomentumCouplingScheme = JJL
-	debugLevel = 2
+# 	debugLevel = 2
 END GOPTIONS
 
 BEGIN MARKOV_CHAIN
@@ -43,7 +43,7 @@ END MARKOV_CHAIN
 
 BEGIN FRAGMENTS_DATABASE
 
-	store = /home/nestor/Develop/M3C-store/master/6-311++G.3df.2p/ccsdt
+	store = .
 	reference = C3(s1)
 
 	#--------------------------------------------------------------------------------------
