@@ -77,7 +77,7 @@ module FragmentsListBase_
 	
 	type, abstract, public :: FragmentsListBase
 		type(Fragment), allocatable :: clusters(:)    !< Fragment list
-		integer, allocatable :: idSorted(:)            !< Position of the molecule sorted by mass. It is calculated in updateFormula procedure
+		integer, allocatable :: idSorted(:)            !< Position of the molecule sorted by mass. It is calculated in updateLabel procedure
 													   !<            this.clusters(i) ----> this.clusters( this.idSorted(i) )
 		
 		real(8) :: diagInertiaTensor(3)    !< Main inertia tensor components [ Ixx, Iyy, Izz ]. It is calculated into updateInertiaTensor procedure
@@ -109,8 +109,6 @@ module FragmentsListBase_
 		logical :: forceRandomCenters    !< Fuerza a utilizar randomCenters en el siguiente llamado a changeGeometryFragmentsListBase
 		logical :: forceInitializing     !< Fuerza a utilizar initialGuessFragmentsListBase
 		
-		integer :: totalComposition( AtomicElementsDB_nElems ) !< [ n1, n2, ..., nN ] n=numberOfAtomsWithZ, pos = atomicNumber 
-		
 		real(8) :: L_(3)          ! Orbital angular momentum
 		
 		integer, allocatable :: currentProducts(:,:) !< This allows to get the current potential energy surface @see updateIntermolecularPotential
@@ -130,7 +128,7 @@ module FragmentsListBase_
 			procedure, NON_OVERRIDABLE :: nAtoms
 			procedure, NON_OVERRIDABLE :: charge
 			procedure, NON_OVERRIDABLE :: mass
-			procedure, private :: updateFormula
+			procedure, private :: updateLabel
 			procedure, NON_OVERRIDABLE :: label
 			generic :: set => setFromFragment
 			procedure, NON_OVERRIDABLE :: setFromFragment
@@ -238,8 +236,6 @@ module FragmentsListBase_
 		this.forceRandomCenters = .true.
 		this.forceInitializing = .true.
 		
-		this.totalComposition = -1
-		
 		this.L_ = 0.0_8
 		
 		if( allocated(this.currentProducts) ) deallocate(this.currentProducts)
@@ -294,8 +290,6 @@ module FragmentsListBase_
 		
 		this.forceRandomCenters = other.forceRandomCenters
 		this.forceInitializing = other.forceInitializing
-		
-		this.totalComposition = other.totalComposition
 		
 		this.L_ = other.L_
 		
@@ -451,7 +445,7 @@ module FragmentsListBase_
 			y = FString_toReal( tokens(3) )*angs
 			z = FString_toReal( tokens(4) )*angs
 			
-			idClus = FragmentsDB_instance.getIdFromName( name.fstr )
+			idClus = FragmentsDB_instance.getIdClusterFromLabel( name.fstr )
 			
 			call this.setFromFragment( i, FragmentsDB_instance.clusters( idClus ) )
 			call this.clusters(i).setCenter( [ x, y, z ] )
@@ -527,45 +521,12 @@ module FragmentsListBase_
 	!>
 	!! @brief
 	!!
-	subroutine updateFormula( this )
+	subroutine updateLabel( this )
 		class(FragmentsListBase) :: this
 		
-		integer :: i
-		real(8), allocatable :: massVec(:) ! @todo Hay que hacer el Math_sort para enteros
-		
-		allocate( massVec(size(this.clusters)) )
-		
-		this.totalComposition = 0
-		do i=1,size(this.clusters)
-		
-			massVec(i) = this.clusters(i).mass()/amu &
-					+ this.clusters(i).charge/10.0 &
-						+ this.clusters(i).multiplicity/100.0_8 
-
-! 			massVec(i) = 10000000*this.clusters(i).mass()/amu + 1000000*this.clusters(i).nAtoms() + 100*this.clusters(i).charge &
-! 					+ this.clusters(i).multiplicity
-
-			this.totalComposition = this.totalComposition + this.clusters( i ).composition
-		end do
-			
-		call Math_sort( massVec, this.idSorted )
-		
-		this.label_ = ""
-		this.dlabel_ = ""
-		do i=1,size(this.clusters)
-			if( i /= size(this.clusters) ) then
-				this.label_ = trim(this.label_)//trim(this.clusters( this.idSorted(i) ).label( details=.false. ))//"+"
-				this.dlabel_ = trim(this.dlabel_)//trim(this.clusters( this.idSorted(i) ).label( details=.true. ))//"+"
-			else
-				this.label_ = trim(this.label_)//trim(this.clusters( this.idSorted(i) ).label( details=.false. ))
-				this.dlabel_ = trim(this.dlabel_)//trim(this.clusters( this.idSorted(i) ).label( details=.true. ))
-			end if
-		end do
-		
+		call Fragment_getLabelFragments( this.clusters, this.label_, this.dlabel_, this.idSorted )
 		this.testLabel_ = .true.
-		
-		deallocate( massVec )
-	end subroutine updateFormula
+	end subroutine updateLabel
 	
 	!>
 	!! @brief
@@ -581,7 +542,7 @@ module FragmentsListBase_
 		if( present(details) ) effDetails = details
 		
 		if( .not. this.testLabel_ ) then
-			call this.updateFormula()
+			call this.updateLabel()
 		end if
 		
 		if( effDetails ) then
@@ -705,7 +666,7 @@ module FragmentsListBase_
 		
 		call this.orient()
 		
-		call this.updateFormula()
+		call this.updateLabel()
 		
 		call this.updateLogGFactor()
 		
@@ -2372,7 +2333,7 @@ module FragmentsListBase_
 			
 			call this.init( size(reactiveTokens) )
 			do i=1,size(reactiveTokens)
-				iBuffer = FragmentsDB_instance.getIdFromName( reactiveTokens(i) )
+				iBuffer = FragmentsDB_instance.getIdClusterFromLabel( reactiveTokens(i) )
 				call this.set( i, FragmentsDB_instance.clusters(iBuffer) )
 			end do
 		end if

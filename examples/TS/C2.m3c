@@ -13,7 +13,7 @@ BEGIN GOPTIONS
         useSpinConservationRules = FALSE
         
         angularMomentumCouplingScheme = JJL
-	#debugLevel = 3
+# 	debugLevel = 3
 END GOPTIONS
 
 BEGIN MARKOV_CHAIN
@@ -29,7 +29,7 @@ BEGIN MARKOV_CHAIN
 #         numberOfEvents = 100000
         numberOfExperiments = 3
 #         numberOfEvents = 50000
-        numberOfEvents = 20000
+        numberOfEvents = 2000
 #        historyFileFrequency = 100
         historyFileFrequency = 1
 
@@ -39,7 +39,6 @@ BEGIN MARKOV_CHAIN
 #        JHistoryFile = J.dat
 #        LHistoryFile = L.dat
         histogramFile = histogram.dat
-	debugLevel = 4
 END MARKOV_CHAIN
 
 BEGIN FRAGMENTS_DATABASE
@@ -50,11 +49,8 @@ BEGIN FRAGMENTS_DATABASE
 	#--------------------------------------------------------------------------------------
 	#  Label    Z  M WL  SYM          geomFile         Eelec     maxVib
 	#--------------------------------------------------------------------------------------
-           C(s1)    0  1  5    1    C.q0.m1-1.rxyz  -1026.574168                      #           ¹D (2s²2p²) 
-           C(t1)    0  3  3    1    C.q0.m3-1.rxyz  -1028.024016                      #           ³P (2s²2p²)
-           
-          C2(s1)    0  1  1    2   C2.q0.m1-1.rxyz  -2062.151541     C(t1)+C(t1)      # 6.10351   ^1\Sigma_g^+
-          #C2(t1)    0  3  2    2   C2.q0.m3-1.rxyz  -2062.058719     C(t1)+C(t1)      # 6.01069   ^3\Pi_u 
+           C(t1)    0  3  3    1    C.q0.m3-1.rxyz            3.0                      #       ³P (2s²2p²)
+          C2(s1)    0  1  1    2   C2.q0.m1-1.rxyz            0.0     C(t1)+C(t1)      # 6.0   ^1\Sigma_g^+
 	#--------------------------------------------------------------------------------------
 END FRAGMENTS_DATABASE
 
@@ -65,6 +61,6 @@ BEGIN TRANSITION_STATES_DATABASE
 	#--------------------------------------------------------------------------------------
 	#  Label    Z  M WL  SYM          geomFile         Eelec     maxVib     TS
 	#--------------------------------------------------------------------------------------
-          C2(ts1)   0  1  1    2 C2ts.q0.m1-1.rxyz  -2054.048032        4.0     C2(s1)<-->C(s1)+C(t1)
+          C2(ts1)   0  1  1    2 C2ts.q0.m1-1.rxyz           8.0        4.0     C2(s1)<-->C(t1)+C(t1)
 	#--------------------------------------------------------------------------------------
 END TRANSITION_STATES_DATABASE

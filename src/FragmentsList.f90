@@ -1324,7 +1324,7 @@ module FragmentsList_
 ! 			call FString_split( tokens(i), items, "," )
 ! 			
 ! 			do j=1,size(items)
-! 				write(*,*) i, trim(adjustl(items(j))), RigidMoleculeDatabase_instance.getIdFromName( items(j) )
+! 				write(*,*) i, trim(adjustl(items(j))), RigidMoleculeDatabase_instance.getIdClusterFromLabel( items(j) )
 ! 			end do
 ! 			write(*,*) ""
 ! 		end do

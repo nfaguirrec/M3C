@@ -69,6 +69,7 @@ module Fragment_
 	private
 	
 	public :: &
+		Fragment_getLabelFragments, &
 		Fragment_test
 	
 	type, public, extends( Molecule ):: Fragment
@@ -110,7 +111,7 @@ module Fragment_
 			procedure :: copyFragment
 			final :: destroyFragment
 			
-			procedure, private :: updateFormula
+			procedure, private :: updateLabel
 			procedure :: label
 			
 ! 			procedure, private :: loadRXYZ
@@ -291,6 +292,7 @@ module Fragment_
 		
 ! 		if( GOptions_printLevel >= 4 ) then
 			write(IO_STDOUT,"(A)") ""
+! 			write(IO_STDOUT,"(4X,A22,I15)") "id = ", this.id
 			write(IO_STDOUT,"(4X,A22,A)") "file name = ", this.fileName
 			write(IO_STDOUT,"(4X,A22,A)") "name = ", this.name
 			write(IO_STDOUT,"(4X,A22,A)") "formula = ", trim(this.chemicalFormula())
@@ -388,7 +390,7 @@ module Fragment_
 	!>
 	!! @brief
 	!!
-	subroutine updateFormula( this )
+	subroutine updateLabel( this )
 		class(Fragment) :: this 
 		
 		character(100), allocatable :: tokens(:)
@@ -400,7 +402,7 @@ module Fragment_
 		this.label_ = trim(tokens(1))
 		
 		deallocate( tokens )
-	end subroutine updateFormula
+	end subroutine updateLabel
 	
 	!>
 	!! @brief
@@ -416,7 +418,7 @@ module Fragment_
 		if( present(details) ) effDetails = details
 		
 		if( .not. this.testLabel_ ) then
-			call this.updateFormula()
+			call this.updateLabel()
 			this.testLabel_ = .true.
 		end if
 		
@@ -1297,6 +1299,61 @@ module Fragment_
 !       endIf
 !       Return
 !       End
+
+	!>
+	!! @brief
+	!!
+	subroutine Fragment_getLabelFragments( clusters, label, dlabel, idSorted )
+		type(Fragment), allocatable, intent(in) :: clusters(:)
+		character(200), intent(out) :: label
+		character(200), intent(out) :: dlabel
+		integer, allocatable, intent(out), optional :: idSorted(:)
+		
+		integer :: i
+		real(8), allocatable :: massVec(:) ! @todo Hay que hacer el Math_sort para enteros
+		integer, allocatable :: effIdSorted(:)
+		
+		allocate( massVec(size(clusters)) )
+		allocate( effIdSorted(size(clusters)) )
+		
+		do i=1,size(clusters)
+		
+			massVec(i) = clusters(i).mass()/amu &
+					+ clusters(i).charge/10.0 &
+						+ clusters(i).multiplicity/100.0_8 
+
+! 			massVec(i) = 10000000*clusters(i).mass()/amu + 1000000*clusters(i).nAtoms() + 100*clusters(i).charge &
+! 					+ clusters(i).multiplicity
+
+		end do
+			
+		call Math_sort( massVec, effIdSorted )
+		
+		label = ""
+		dlabel = ""
+		do i=1,size(clusters)
+			if( i /= size(clusters) ) then
+				label = trim(label)//trim(clusters( effIdSorted(i) ).label( details=.false. ))//"+"
+				dlabel = trim(dlabel)//trim(clusters( effIdSorted(i) ).label( details=.true. ))//"+"
+			else
+				label = trim(label)//trim(clusters( effIdSorted(i) ).label( details=.false. ))
+				dlabel = trim(dlabel)//trim(clusters( effIdSorted(i) ).label( details=.true. ))
+			end if
+		end do
+		
+		if( present(idSorted) ) then
+			if( allocated(idSorted) .and. size(idSorted) == size(effIdSorted) ) then
+				idSorted = effIdSorted
+			else
+				if( allocated(idSorted) ) deallocate(idSorted)
+				allocate( idSorted(size(clusters)) )
+				idSorted = effIdSorted
+			end if
+		end if
+		
+		deallocate( massVec )
+		deallocate( effIdSorted )
+	end subroutine Fragment_getLabelFragments
 	
 	!>
 	!! @brief Test method

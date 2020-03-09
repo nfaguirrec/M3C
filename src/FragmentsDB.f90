@@ -62,7 +62,6 @@ module FragmentsDB_
 	use StringIntegerMap_
 	
 	use Fragment_
-	use FragmentsList_
 	use ModelPotential_
 	use GOptionsM3C_
 	
@@ -102,7 +101,8 @@ module FragmentsDB_
 			procedure, private :: checkPotentials
 			final :: destroyFragmentsDB
 			procedure :: nMolecules
-			procedure :: getIdFromName
+			procedure :: getIdClusterFromLabel
+			procedure :: getIdTransitionStateFromLabel
 			procedure :: getEelecFromName
 			procedure :: extendFragmentsListName
 			procedure :: potential
@@ -359,13 +359,19 @@ module FragmentsDB_
 		
 		integer :: i, j, k, n
 		character(100), allocatable :: tokens(:), tokens2(:), tokens3(:)
+		type(String) :: path
 		real(8) :: rBuffer
 		
 		! Only for transition states. They are neccessary to calculate the right label (mass sorted)
-		type(FragmentsList) :: reactives
-		type(FragmentsList) :: products
-! 		type(Fragment), allocatable :: reactives(:)
-! 		type(Fragment), allocatable :: products(:)
+! 		type(FragmentsList) :: reactives
+! 		type(FragmentsList) :: products
+		logical :: useDetailsInLabel
+		type(Fragment), allocatable :: reactives(:)
+		type(Fragment), allocatable :: products(:)
+		character(200) :: reactivesLabel, reactivesdLabel
+		character(200) :: productsLabel, productsdLabel
+		
+		useDetailsInLabel = .true.
 		
 		if( allocated(this.transitionState) ) deallocate( this.transitionState )
 		allocate( this.transitionState(size(transitionStatesTable)) )
@@ -403,17 +409,18 @@ module FragmentsDB_
 			! Choosing the reactives and products
 			!------------------------------------------
 			if( size(tokens) >= 9 .and. this.transitionState(i).nAtoms() /= 1 ) then
-				call FString_split( trim(adjustl(tokens(9))), tokens2, "<-->" )
+				path = trim(adjustl(tokens(9)))
+				call path.split( tokens2, "<-->" )
 				
 				call FString_split( trim(adjustl(tokens2(1))), tokens3, "+" )
-				call reactives.init( size(tokens3) )
-! 				allocate( reactives(size(tokens3)) )
+! 				call reactives.init( size(tokens3) )
+				allocate( reactives(size(tokens3)) )
 				
 				do j=1,size(tokens3)
 					do k=1,size(this.clusters)
-						if( trim(tokens3(j)) == this.clusters(k).label() ) then
-							reactives.clusters(j) = this.clusters(k)
-! 							reactives(j) = this.clusters(k)
+						if( trim(tokens3(j)) == this.clusters(k).label( details=useDetailsInLabel ) ) then
+! 							reactives.clusters(j) = this.clusters(k)
+							reactives(j) = this.clusters(k)
 							this.involvedInTS(k) = .true.
 						end if
 					end do
@@ -421,14 +428,14 @@ module FragmentsDB_
 				deallocate( tokens3 )
 				
 				call FString_split( trim(adjustl(tokens2(2))), tokens3, "+" )
-				call products.init( size(tokens3) )
-! 				allocate( products(size(tokens3)) )
+! 				call products.init( size(tokens3) )
+				allocate( products(size(tokens3)) )
 				
 				do j=1,size(tokens3)
 					do k=1,size(this.clusters)
-						if( trim(tokens3(j)) == this.clusters(k).label() ) then
-							products.clusters(j) = this.clusters(k)
-! 							products(j) = this.clusters(k)
+						if( trim(tokens3(j)) == this.clusters(k).label( details=useDetailsInLabel ) ) then
+! 							products.clusters(j) = this.clusters(k)
+							products(j) = this.clusters(k)
 							this.involvedInTS(k) = .true.
 						end if
 					end do
@@ -437,9 +444,16 @@ module FragmentsDB_
 				
 				deallocate( tokens2 )
 				
-				write(*,"(4X,A22,A)")  "Path = ", trim(reactives.label())//"<-->"//trim(products.label())
-				call this.str2id_TS.insert( FString_toString(trim(reactives.label())//"<-->"//trim(products.label())), i )
-				call this.str2id_TS.insert( FString_toString(trim(products.label())//"<-->"//trim(reactives.label())), i )
+				call Fragment_getLabelFragments( reactives, reactivesLabel, reactivesdLabel )
+				call Fragment_getLabelFragments( products, productsLabel, productsdLabel )
+				
+				write(*,"(4X,A22,A)")  "Path = ", trim(path.fstr)
+! 				call this.str2id_TS.insert( FString_toString(trim(reactivesLabel)//"<-->"//trim(productsLabel)), i )
+! 				call this.str2id_TS.insert( FString_toString(trim(productsLabel)//"<-->"//trim(reactivesLabel)), i )
+! 				write(*,"(4X,A22,A)")  "Interpreted Path = ", trim(reactivesLabel)//"<-->"//trim(productsLabel)
+				call this.str2id_TS.insert( FString_toString(trim(reactivesdLabel)//"<-->"//trim(productsdLabel)), i )
+				call this.str2id_TS.insert( FString_toString(trim(productsdLabel)//"<-->"//trim(reactivesdLabel)), i )
+				write(*,"(4X,A22,A)")  "Interpreted Path = ", trim(reactivesdLabel)//"<-->"//trim(productsdLabel)
 				
 			else
 				call GOptions_error( &
@@ -679,8 +693,8 @@ module FragmentsDB_
 			if( size(cols) >= 2 ) then
 				call FString_split( cols(1), tokens, "+" )
 				
-				idR1 = this.getIdFromName( tokens(1) )
-				idR2 = this.getIdFromName( tokens(2) )
+				idR1 = this.getIdClusterFromLabel( tokens(1) )
+				idR2 = this.getIdClusterFromLabel( tokens(2) )
 				
 				write(*,"(<GOptions_indentLength*1>X,A10,A10,5X,2I3)", advance="no") &
 						this.clusters(idR1).name, this.clusters(idR2).name, idR1, idR2
@@ -908,7 +922,7 @@ module FragmentsDB_
 	!>
 	!! @brief
 	!!
-	function getIdFromName( this, name ) result( output )
+	function getIdClusterFromLabel( this, name ) result( output )
 		class(FragmentsDB), intent(in) :: this
 		character(*), intent(in) :: name
 		integer :: output
@@ -925,9 +939,28 @@ module FragmentsDB_
 		
 		call GOptions_error( &
 				"The cluster --"//trim(adjustl(name))//"-- doesn't exist in the database", &
-				"FragmentsDB.getIdFromName()" &
+				"FragmentsDB.getIdClusterFromLabel()" &
 			)
-	end function getIdFromName
+	end function getIdClusterFromLabel
+	
+	!>
+	!! @brief
+	!!
+	function getIdTransitionStateFromLabel( this, name ) result( output )
+		class(FragmentsDB), intent(in) :: this
+		character(*), intent(in) :: name
+		integer :: output
+		
+		if( this.str2id_TS.contains( FString_toString(name) ) ) then
+			output = this.str2id_TS.at( FString_toString(name) )
+		else
+! 			call GOptions_error( &
+! 					"The transition state --"//trim(adjustl(name))//"-- doesn't exist in the database", &
+! 					"FragmentsDB.getIdTransitionStateFromLabel()" &
+! 				)
+			output = -1
+		end if
+	end function getIdTransitionStateFromLabel
 	
 	!>
 	!! @brief
@@ -949,10 +982,10 @@ module FragmentsDB_
 			
 			
 			if( size(subTokens) < 2 ) then
-				id = this.getIdFromName( subTokens(1) )
+				id = this.getIdClusterFromLabel( subTokens(1) )
 				factor = 1
 			else
-				id = this.getIdFromName( subTokens(2) )
+				id = this.getIdClusterFromLabel( subTokens(2) )
 				factor = FString_toInteger( subTokens(1) )
 			end if
 			
@@ -1193,7 +1226,7 @@ module FragmentsDB_
 ! 			call FString_split( tokens(i), items, "," )
 ! 			
 ! 			do j=1,size(items)
-! 				write(*,*) i, trim(adjustl(items(j))), db.getIdFromName( items(j) )
+! 				write(*,*) i, trim(adjustl(items(j))), db.getIdClusterFromLabel( items(j) )
 ! 			end do
 ! 			write(*,*) ""
 ! 		end do
@@ -1219,7 +1252,7 @@ module FragmentsDB_
 
 ! 		r = 0.0_8
 ! 		do while( r <= 10.0_8 )
-! 			write(*,*) r, db.potential( db.getIdFromName( "tC1" ), db.getIdFromName( "tC1" ), r*angs )/eV
+! 			write(*,*) r, db.potential( db.getIdClusterFromLabel( "tC1" ), db.getIdClusterFromLabel( "tC1" ), r*angs )/eV
 ! 			r = r + 0.2
 ! 		end do
 		
