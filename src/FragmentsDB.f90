@@ -455,6 +455,9 @@ module FragmentsDB_
 				call this.str2id_TS.insert( FString_toString(trim(productsdLabel)//"<-->"//trim(reactivesdLabel)), i )
 				write(*,"(4X,A22,A)")  "Interpreted Path = ", trim(reactivesdLabel)//"<-->"//trim(productsdLabel)
 				
+				deallocate(reactives)
+				deallocate(products)
+				
 			else
 				call GOptions_error( &
 						"Bad number of atoms in transition state (N=0)", &
@@ -469,9 +472,6 @@ module FragmentsDB_
 		write(IO_STDOUT,*) ""
 		
 		call GOptions_section( "END TRANSITION_STATES DATABASE INITIALIZATION", indent=1 )
-		
-! 		deallocate(reactives)
-! 		deallocate(products)
 		
 	end subroutine setTransitionStatesTable
 	
