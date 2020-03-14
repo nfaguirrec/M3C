@@ -1,0 +1,60 @@
+BEGIN EXCITATION_ENERGY_SCAN
+	excitationEnergy  =  0:12:25  # dE = 0.5 eV
+END EXCITATION_ENERGY_SCAN
+
+BEGIN GOPTIONS
+        systemRadius = 10.0
+        overlappingRadius = 0.2
+        
+        useRandomWalkers = FALSE
+        randomWalkStepRadius = 1.0
+        
+        useZPECorrection = FALSE
+        useSpinConservationRules = FALSE
+        
+        angularMomentumCouplingScheme = JJL
+END GOPTIONS
+
+BEGIN MARKOV_CHAIN
+	task = 5*V,T,R,S:0,5*V,T,R,S:-1:1
+        burnInFraction = 0.1
+        
+	reactives = C2(s1)
+        excitationEnergy = 7.0
+        
+        tracking = energy
+        numberOfExperiments = 3
+        numberOfEvents = 10000
+        historyFileFrequency = 1
+
+        energyHistoryFile = energy.dat
+        weightHistoryFile = weight.dat
+        histogramFile = histogram.dat
+END MARKOV_CHAIN
+
+BEGIN FRAGMENTS_DATABASE
+
+	store = .
+	reference = C2(s1)
+
+	#---------------------------------------------------------------------------
+	#  Label    Z  M WL  SYM          geomFile         Eelec           maxVib
+	#---------------------------------------------------------------------------
+           C(s1)    0  1  5    0    C.q0.m1-1.rxyz  -1026.574168                     #          R3(1-D)
+           C(t1)    0  3  3    0    C.q0.m3-1.rxyz  -1028.024016                     #          R3(3-P)
+          C2(s1)    0  1  1    2   C2.q0.m1-1.rxyz  -2062.151541      C(t1)+C(t1)    #    6.10  D*H(1-SGG)
+          C2(t1)    0  3  2    2   C2.q0.m3-1.rxyz  -2062.058719      C(t1)+C(t1)    #    6.01  D*H(3-PIU)
+	#---------------------------------------------------------------------------
+END FRAGMENTS_DATABASE
+
+BEGIN TRANSITION_STATES_DATABASE
+
+ 	store = .
+	
+	#---------------------------------------------------------------------------------------------
+	#  Label    Z  M WL  SYM          geomFile         Eelec        maxVib     TS
+	#---------------------------------------------------------------------------------------------
+         C2ts(s1)   0  1  1    2 C2ts.q0.m1-1.rxyz  -2054.151541   C(s1)+C(s1)  C2(s1)<-->C(t1)+C(t1)  #    8.10  D*H(1-SGG)
+         C2ts(s2)   0  1  1    2 C2ts.q0.m1-1.rxyz  -2054.151541   C(s1)+C(s1)  C2(t1)<-->C(t1)+C(t1)  #    8.10  D*H(1-SGG)
+	#---------------------------------------------------------------------------------------------
+END TRANSITION_STATES_DATABASE
