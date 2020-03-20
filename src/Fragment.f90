@@ -61,7 +61,7 @@ module Fragment_
 	use RandomUtils_
 	use Molecule_
 	use StringList_
-	use RealList_
+	use RealVector_
 	
 	use GOptionsM3C_
 	
@@ -929,7 +929,7 @@ module Fragment_
 	!!
 	function spinAvailable( this ) result( output )
 		class(Fragment), intent(in) :: this
-		type(RealList) :: output
+		type(RealVector) :: output
 		
 		real(8) :: S, Si, Sj
 		integer :: i, j

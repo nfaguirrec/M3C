@@ -63,6 +63,7 @@ module Reactor_
 	use BlocksIFileParser_
 	use RealHistogram_
 	use RealList_
+	use RealVector_
 	use IntegerVector_
 	use StringIntegerMap_
 	use StringRealMap_
@@ -71,6 +72,7 @@ module Reactor_
 	
 	use GOptionsM3C_
 	use Fragment_
+	use FragmentsListBase_
 	use FragmentsList_
 	use FragmentsDB_
 	
@@ -127,7 +129,7 @@ module Reactor_
 	integer, private :: internalCharge = 0
 	integer, private :: internalNTrials = 0
 ! 	real(8), private :: internalReactivesSpinRange(2) = 0.0_8
-	type(RealList), private :: internalReactivesSpinAvail
+	type(RealVector), private :: internalReactivesSpinAvail
 	
 	contains
 	
@@ -348,33 +350,25 @@ module Reactor_
 		logical :: output
 		
 		real(8) :: S, Si, Sj
-		type(RealList) :: spinAvail
+		type(RealVector) :: spinAvail
 		integer :: i, j
 		class(RealListIterator), pointer :: it1, it2
 		
-		call spinAvail.init()
+		call spinAvail.init( current, 0.0_8 )
 		
 		if( current == 1 ) then
 			S = (FragmentsDB_instance.clusters( multisetPositions(1) ).multiplicity-1.0_8)/2.0_8
-			call spinAvail.append( S )
+			call spinAvail.set( 1, S )
 		else
-			do i=1,current-1
+			do i=1,current
 				Si = (FragmentsDB_instance.clusters( multisetPositions(i) ).multiplicity-1.0_8)/2.0_8
-				
 				if( Si < 0.0_8 ) Si=0.0_8
 				
-				do j=i+1,current
-					Sj = (FragmentsDB_instance.clusters( multisetPositions(j) ).multiplicity-1.0_8)/2.0_8
-					
-					if( Sj < 0.0_8 ) Sj=0.0_8
-					
-					S = abs(Si-Sj)
-					do while( int(2.0*S) <= int(2.0*(Si+Sj)) )
-						call spinAvail.append( S )
-						S = S + 1.0_8
-					end do
-				end do
+				call spinAvail.set( i, Si )
 			end do
+			
+			spinAvail = spinListCoupling( spinAvail )
+
 		end if
 		
 		if( spinAvail.size() == 0 ) then
@@ -382,22 +376,13 @@ module Reactor_
 		end if
 		
 		output = .true.
-		
-		it1 => spinAvail.begin
-		do while( associated(it1) )
-			
-			it2 => internalReactivesSpinAvail.begin
-			do while( associated(it2) )
-			
-				if( abs( it1.data - it2.data ) < 0.1 ) then
+		do i=1,spinAvail.size()
+			do j=1,internalReactivesSpinAvail.size()
+				if( abs( spinAvail.at(i) - internalReactivesSpinAvail.at(j) ) < 0.1 ) then
 					output = .false.
 					return
 				end if
-				
-				it2 => it2.next
 			end do
-			
-			it1 => it1.next
 		end do
 		
 		call spinAvail.clear()

@@ -1,6 +1,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                                   !!
 !! This file is part of M3C project                                                  !!
+!!                                                                                   !!
+!! Copyright (c) 2019-2020 by authors                                                !!
+!! Authors:                                                                          !!
+!!                         * Néstor F. Aguirre (2019-2020)                           !!
+!!                           nfaguirrec@gmail.com                                    !!
+!!                                                                                   !!
 !! Copyright (c) 2013-2016 Departamento de Química                                   !!
 !!                         Universidad Autónoma de Madrid                            !!
 !!                         All rights reserved.                                      !!
@@ -66,7 +72,7 @@ module FragmentsListBase_
 	use Atom_
 	use Molecule_
 	use BlocksIFileParser_
-	use RealList_
+	use RealVector_
 	
 	use GOptionsM3C_
 	use Fragment_
@@ -74,6 +80,9 @@ module FragmentsListBase_
 	
 	implicit none
 	private
+	
+	public :: &
+		spinListCoupling
 	
 	type, abstract, public :: FragmentsListBase
 		type(Fragment), allocatable :: clusters(:)    !< Fragment list
@@ -2257,43 +2266,97 @@ module FragmentsListBase_
 	end function spinRange
 	
 	!>
+	!! @brief Internal. Used only by spinAvailable function
+	!!
+	function spinSpinCoupling( s1, s2 ) result( st )
+		real(8), intent(in) :: s1, s2
+		type(RealVector) :: st
+		
+		real(8) :: s0
+		integer :: i
+		integer :: n
+		
+		n = s1+s2-abs(s1-s2)+1
+		s0 = abs(s1-s2)
+		
+		call st.init( n )
+		do i=1,n
+			call st.set( i, s0+i-1 )
+		end do
+				
+	end function spinSpinCoupling
+	
+	!>
+	!! @brief Internal. Used only by spinAvailable function
+	!!
+	function spinListSpinCoupling( sl1, s2 ) result( st )
+		type(RealVector), intent(in) :: sl1
+		real(8), intent(in) :: s2
+		type(RealVector) :: st
+		
+		real(8) :: s0
+		integer :: i
+		integer :: n
+
+		n = maxval(sl1.data(1:sl1.size())+s2)-minval(abs(sl1.data(1:sl1.size())-s2))+1
+		s0 = minval(abs(sl1.data(1:sl1.size())-s2))
+		
+		call st.init( n, 0.0_8 )
+		do i=1,n
+			call st.set( i, s0+i-1 )
+		end do
+				
+	end function spinListSpinCoupling
+	
+	!>
+	!! @brief Internal. Used only by spinAvailable function
+	!!
+	function spinListCoupling( sl ) result( st )
+		type(RealVector), intent(in) :: sl
+		type(RealVector) :: st
+		
+		integer :: i
+		type(RealVector) :: sij
+		
+		call st.init()
+		
+		if( sl.size() == 1 ) then
+			st = sl
+		else
+			sij = spinSpinCoupling( sl.at(1), sl.at(2) )
+			st = sij
+			
+			do i=3,sl.size()
+				sij = spinListSpinCoupling( sij, sl.at(i) )
+				st = sij
+			end do
+		end if
+
+	end function spinListCoupling
+	
+	!>
 	!! @brief
 	!!
 	function spinAvailable( this ) result( output )
 		class(FragmentsListBase), intent(in) :: this
-		type(RealList) :: output
+		type(RealVector) :: output
 		
-		real(8) :: S, Si, Sj
-		integer :: i, j
+		integer :: i
+		real(8) :: S
+		type(RealVector) :: sl
 		
-		call output.init()
+		call sl.init( this.nMolecules(), 0.0_8 )
+		do i=1,this.nMolecules()
+			S = (this.clusters(i).multiplicity-1.0_8)/2.0_8
+			if( S < 0.0_8 ) S=0.0_8
+			
+			call sl.append( S )
+		end do
 		
-		if( this.nMolecules() == 1 ) then
-			S = (this.clusters(1).multiplicity-1.0_8)/2.0_8
-			call output.append( S )
-		else
-			do i=1,this.nMolecules()-1
-				Si = (this.clusters(i).multiplicity-1.0_8)/2.0_8
-				
-				if( Si < 0.0_8 ) Si=0.0_8
-				
-				do j=i+1,this.nMolecules()
-					Sj = (this.clusters(j).multiplicity-1.0_8)/2.0_8
-					
-					if( Sj < 0.0_8 ) Sj=0.0_8
-					
-					S = abs(Si-Sj)
-					do while( int(2.0*S) <= int(2.0*(Si+Sj)) )
-						call output.append( S )
-						
-						S = S + 1.0_8
-					end do
-				end do
-			end do
-		end if
+		output = spinListCoupling( sl )
 		
 		if( output.size() == 0 ) then
-			write(*,*) "### ERROR ### FragmentsListBase.spinAvailable.size() == 0", this.nMolecules(), S, Si, Sj
+			write(*,*) "### ERROR ### FragmentsListBase.spinAvailable.size() == 0", this.nMolecules(), S
 		end if
 	end function spinAvailable
 	
