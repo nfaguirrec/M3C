@@ -358,6 +358,8 @@ module Reactor_
 		
 		if( current == 1 ) then
 			S = (FragmentsDB_instance.clusters( multisetPositions(1) ).multiplicity-1.0_8)/2.0_8
+			if( Si < 0.0_8 ) Si=0.0_8
+			
 			call spinAvail.set( 1, S )
 		else
 			do i=1,current
