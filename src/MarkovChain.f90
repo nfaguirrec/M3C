@@ -384,7 +384,7 @@ module MarkovChain_
 			write(6,"(A)") "#------------------------------------"
 			write(6,"(A)") "# ENERGY HISTORY"
 			write(6,"(A)") "#------------------------------------"
-			write(6,"(A1,3X,5A15,5X,A)") "#", "trans", "intermol", "vib", "rot", "tot", "formula"
+			write(6,"(A1,3X,5A15,5X,A)") "#", "trans", "intermol", "vib", "rot", "tot", "label"
 			write(6,"(A1,3X,5A15,5X,A)") "#", "eV", "eV", "eV", "eV", ""
 			write(6,"(A1,3X,5A15,5X,A)") "#", "-------", "--------", "-------", "-----", "-------"
 
@@ -393,7 +393,7 @@ module MarkovChain_
 			write(6,"(A)") "#------------------------------------"
 			write(6,"(A)") "# WEIGHT HISTORY"
 			write(6,"(A)") "#------------------------------------"
-			write(6,"(A1,3X,6A15,5X,A)") "#", "LnWe", "LnWv", "LnWn", "LnWr", "LnWt", "LnW", "formula"
+			write(6,"(A1,3X,6A15,5X,A)") "#", "LnWe", "LnWv", "LnWn", "LnWr", "LnWt", "LnW", "label"
 			write(6,"(A1,3X,6A15,5X,A)") "#", "arb.", "arb.", "arb.", "arb.", "arb.", "arb.", ""
 			write(6,"(A1,3X,6A15,5X,A)") "#", "-------", "-------", "--------", "--------", "--------", "-------", "-------"
 			
@@ -442,7 +442,7 @@ module MarkovChain_
 	! 							sBuffer = react.reactives.weightHistoryLine( origin )
 	! 						end if
 	! 					end if
-
+	
 						call react.run()
 						
 						! Si la energía cinetica es negativa
@@ -483,7 +483,12 @@ module MarkovChain_
 						
 							nTimesBlocked = 0  ! El bloqueo debe ser consecutivo, así que si no pasa por negative energy se cuenta nuevamente
 							
-							Pi = react.products.LnW()-react.reactives.LnW()
+							if( react.replaceTS ) then
+								react.replaceTS = .false.
+								Pi = react.productsTS.LnW()-react.reactives.LnW()
+							else
+								Pi = react.products.LnW()-react.reactives.LnW()
+							end if
 							
 							if( Pi > 0.0_8 ) then
 								if( trim(react.reactives.label( details=.false. )) /= trim(react.products.label( details=.false. )) ) then
@@ -518,7 +523,7 @@ module MarkovChain_
 										sBuffer = trim(react.reactives.label( details=.true. ))//"-->"//trim(react.products.label( details=.true. ))
 										call this.transitionDetHistogram.add( sBuffer )
 									end if
-
+									
 									react.reactives = react.products
 									
 									call GOptions_info( &
@@ -816,7 +821,7 @@ module MarkovChain_
 ! 		write(unit,"(A)") "#------------------------------------"
 ! 		write(unit,"(A)") "# ENERGY HISTORY"
 ! 		write(unit,"(A)") "#------------------------------------"
-! 		write(unit,"(A1,3X,5A15,5X,A)") "#", "trans", "intermol", "vib", "rot", "tot", "formula"
+! 		write(unit,"(A1,3X,5A15,5X,A)") "#", "trans", "intermol", "vib", "rot", "tot", "label"
 ! 		write(unit,"(A1,3X,5A15,5X,A)") "#", "eV", "eV", "eV", "eV", ""
 ! 		write(unit,"(A1,3X,5A15,5X,A)") "#", "-------", "--------", "-------", "-----", "-------"
 ! 		
@@ -865,7 +870,7 @@ module MarkovChain_
 ! 		write(unit,"(A)") "#------------------------------------"
 ! 		write(unit,"(A)") "# WEIGHT HISTORY"
 ! 		write(unit,"(A)") "#------------------------------------"
-! 		write(unit,"(A1,3X,6A15,5X,A)") "#", "LnWe", "LnWv", "LnWn", "LnWr", "LnWt", "LnW", "formula"
+! 		write(unit,"(A1,3X,6A15,5X,A)") "#", "LnWe", "LnWv", "LnWn", "LnWr", "LnWt", "LnW", "label"
 ! 		write(unit,"(A1,3X,6A15,5X,A)") "#", "arb.", "arb.", "arb.", "arb.", "arb.", "arb.", ""
 ! 		write(unit,"(A1,3X,6A15,5X,A)") "#", "-------", "-------", "--------", "--------", "--------", "-------", "-------"
 ! 		
@@ -1377,7 +1382,7 @@ module MarkovChain_
 			
 			call reactives.init( size(reactiveTokens) )
 			do i=1,size(reactiveTokens)
-				iBuffer = FragmentsDB_instance.getIdFromName( reactiveTokens(i) )
+				iBuffer = FragmentsDB_instance.getIdClusterFromLabel( reactiveTokens(i) )
 				call reactives.set( i, FragmentsDB_instance.clusters(iBuffer) )
 			end do
 		end if
@@ -1415,7 +1420,7 @@ module MarkovChain_
 			write(this.energyHistoryFile.unit,"(A)") "#------------------------------------"
 			write(this.energyHistoryFile.unit,"(A)") "# ENERGY HISTORY"
 			write(this.energyHistoryFile.unit,"(A)") "#------------------------------------"
-			write(this.energyHistoryFile.unit,"(A1,3X,5A15,5X,A)") "#", "trans", "intermol", "vib", "rot", "tot", "formula"
+			write(this.energyHistoryFile.unit,"(A1,3X,5A15,5X,A)") "#", "trans", "intermol", "vib", "rot", "tot", "label"
 			write(this.energyHistoryFile.unit,"(A1,3X,5A15,5X,A)") "#", "eV", "eV", "eV", "eV", ""
 			write(this.energyHistoryFile.unit,"(A1,3X,5A15,5X,A)") "#", "-------", "--------", "-------", "-----", "-------"
 			
@@ -1429,7 +1434,7 @@ module MarkovChain_
 			write(this.weightHistoryFile.unit,"(A)") "#------------------------------------"
 			write(this.weightHistoryFile.unit,"(A)") "# WEIGHT HISTORY"
 			write(this.weightHistoryFile.unit,"(A)") "#------------------------------------"
-			write(this.weightHistoryFile.unit,"(A1,3X,6A15,5X,A)") "#", "LnWe", "LnWv", "LnWn", "LnWr", "LnWt", "LnW", "formula"
+			write(this.weightHistoryFile.unit,"(A1,3X,6A15,5X,A)") "#", "LnWe", "LnWv", "LnWn", "LnWr", "LnWt", "LnW", "label"
 			write(this.weightHistoryFile.unit,"(A1,3X,6A15,5X,A)") "#", "arb.", "arb.", "arb.", "arb.", "arb.", "arb.", ""
 			write(this.weightHistoryFile.unit,"(A1,3X,6A15,5X,A)") "#", "-------", "-------", "--------", "--------", "--------", "-------", "-------"
 			

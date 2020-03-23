@@ -57,13 +57,14 @@ module Reactor_
 	use IOStream_
 	use Timer_
 	use UnitsConverter_
-	use IVector_
 	use RandomUtils_
 	use StringList_
 	use AtomicElementsDB_
 	use BlocksIFileParser_
 	use RealHistogram_
 	use RealList_
+	use RealVector_
+	use IntegerVector_
 	use StringIntegerMap_
 	use StringRealMap_
 	use StringRealPair_
@@ -71,6 +72,7 @@ module Reactor_
 	
 	use GOptionsM3C_
 	use Fragment_
+	use FragmentsListBase_
 	use FragmentsList_
 	use FragmentsDB_
 	
@@ -92,6 +94,9 @@ module Reactor_
 		type(FragmentsList) :: products
 		logical :: state
 		
+		type(FragmentsList) :: productsTS
+		logical :: replaceTS
+		
 		character(3), private :: name
 		integer, private :: type
 		integer, allocatable :: dNFrag(:)
@@ -112,6 +117,7 @@ module Reactor_
 			procedure, private, NOPASS :: isSpinForbidden
 			procedure, private, NOPASS :: reactorConstraint
 			procedure, private, NOPASS :: reactionString
+			procedure, private, NOPASS :: reduceToTransitionStates
 			
 			procedure :: execute
 			procedure :: executeMinFragmentationEnergy
@@ -123,7 +129,7 @@ module Reactor_
 	integer, private :: internalCharge = 0
 	integer, private :: internalNTrials = 0
 ! 	real(8), private :: internalReactivesSpinRange(2) = 0.0_8
-	type(RealList), private :: internalReactivesSpinAvail
+	type(RealVector), private :: internalReactivesSpinAvail
 	
 	contains
 	
@@ -315,6 +321,13 @@ module Reactor_
 				maxIterForbidden = maxIterForbidden + 1
 				cycle
 			else
+				
+				if( allocated(FragmentsDB_instance.transitionState) ) then
+					call reduceToTransitionStates( this.reactives, this.products, this.productsTS )
+					
+					if( this.productsTS.nMolecules() > 0 ) this.replaceTS = .true.
+				end if
+				
 				exit
 			end if
 			
@@ -337,33 +350,27 @@ module Reactor_
 		logical :: output
 		
 		real(8) :: S, Si, Sj
-		type(RealList) :: spinAvail
+		type(RealVector) :: spinAvail
 		integer :: i, j
 		class(RealListIterator), pointer :: it1, it2
 		
-		call spinAvail.init()
+		call spinAvail.init( current, 0.0_8 )
 		
 		if( current == 1 ) then
 			S = (FragmentsDB_instance.clusters( multisetPositions(1) ).multiplicity-1.0_8)/2.0_8
-			call spinAvail.append( S )
+			if( Si < 0.0_8 ) Si=0.0_8
+			
+			call spinAvail.set( 1, S )
 		else
-			do i=1,current-1
+			do i=1,current
 				Si = (FragmentsDB_instance.clusters( multisetPositions(i) ).multiplicity-1.0_8)/2.0_8
-				
 				if( Si < 0.0_8 ) Si=0.0_8
 				
-				do j=i+1,current
-					Sj = (FragmentsDB_instance.clusters( multisetPositions(j) ).multiplicity-1.0_8)/2.0_8
-					
-					if( Sj < 0.0_8 ) Sj=0.0_8
-					
-					S = abs(Si-Sj)
-					do while( int(2.0*S) <= int(2.0*(Si+Sj)) )
-						call spinAvail.append( S )
-						S = S + 1.0_8
-					end do
-				end do
+				call spinAvail.set( i, Si )
 			end do
+			
+			spinAvail = spinListCoupling( spinAvail )
+
 		end if
 		
 		if( spinAvail.size() == 0 ) then
@@ -371,22 +378,13 @@ module Reactor_
 		end if
 		
 		output = .true.
-		
-		it1 => spinAvail.begin
-		do while( associated(it1) )
-			
-			it2 => internalReactivesSpinAvail.begin
-			do while( associated(it2) )
-			
-				if( abs( it1.data - it2.data ) < 0.1 ) then
+		do i=1,spinAvail.size()
+			do j=1,internalReactivesSpinAvail.size()
+				if( abs( spinAvail.at(i) - internalReactivesSpinAvail.at(j) ) < 0.1 ) then
 					output = .false.
 					return
 				end if
-				
-				it2 => it2.next
 			end do
-			
-			it1 => it1.next
 		end do
 		
 		call spinAvail.clear()
@@ -463,6 +461,182 @@ module Reactor_
 		
 		output = trim(reactives.label( details=effDetails ))//"-->"//trim(products.label( details=effDetails ))
 	end function reactionString
+	
+	!>
+	!! @brief Replaces products for the corresponding transition states. Only composition is changed
+	!!
+	subroutine reduceToTransitionStates( reactives, products, productsTS )
+		type(FragmentsList), intent(in) :: reactives
+		type(FragmentsList), intent(inout) :: products
+		type(FragmentsList), intent(out) :: productsTS
+		
+		integer :: i, j, id
+		integer :: ir, jr, kr
+		integer :: ip, jp, kp
+		type(IntegerVector) :: reactiveInTS
+		type(IntegerVector) :: productInTS
+		integer, allocatable :: reactiveInTScomb(:,:)
+		integer, allocatable :: productInTScomb(:,:)
+		integer :: nAtomsR, nAtomsP
+		integer :: massNumberR, massNumberP
+		type(FragmentsList) :: lReactives, lProducts
+		type(String) :: labelTS, label
+		logical :: locatedTS
+		logical :: useDetailsInLabel
+		integer :: transitionStateId
+		
+		useDetailsInLabel = .true.
+		
+		call reactiveInTS.init( resizeIncrement=reactives.nMolecules() )
+		call productInTS.init( resizeIncrement=products.nMolecules() )
+		
+		do i=1,reactives.nMolecules()
+			id = FragmentsDB_instance.getIdClusterFromLabel( reactives.clusters(i).label( details=useDetailsInLabel ) )
+			if( FragmentsDB_instance.involvedInTS( id ) ) then
+				call reactiveInTS.append( i )
+			end if
+		end do
+		
+		do i=1,products.nMolecules()
+			id = FragmentsDB_instance.getIdClusterFromLabel( products.clusters(i).label( details=useDetailsInLabel ) )
+			if( FragmentsDB_instance.involvedInTS( id ) ) then
+					call productInTS.append( i )
+			end if
+		end do
+		
+		if( .not. reactiveInTS.isEmpty() .and. .not. productInTS.isEmpty() ) then
+! 			write(*,"(A,A)") "Reactives = ", trim(reactives.label( details=useDetailsInLabel ))
+! 			write(*,"(A)",advance="no") "reactiveInTS = "
+! 			do i=1,reactiveInTS.size()
+! 				write(*,"(A)",advance="no") trim(reactives.clusters(reactiveInTS.data(i)).label( details=useDetailsInLabel ))//"+"
+! 			end do
+! 			write(*,*) ""
+! 			write(*,"(A,A)") "Products = ", trim(products.label( details=useDetailsInLabel ))
+! 			write(*,"(A)",advance="no") "productInTS = "
+! 			do i=1,productInTS.size()
+! 				write(*,"(A)",advance="no") trim(products.clusters(productInTS.data(i)).label( details=useDetailsInLabel ))//"+"
+! 			end do
+! 			write(*,*) ""
+			
+			locatedTS = .false.
+			
+			do ir=1,reactiveInTS.size()
+				call Math_combinations( reactiveInTS.size(), ir, reactiveInTScomb )
+				
+				do jr=1,size(reactiveInTScomb,dim=1)
+					
+					nAtomsR = 0
+					massNumberR = 0
+					do kr=1,size(reactiveInTScomb,dim=2)
+						massNumberR = massNumberR + reactives.clusters( reactiveInTS.at(reactiveInTScomb(jr,kr)) ).massNumber()
+						nAtomsR = nAtomsR + reactives.clusters( reactiveInTS.at(reactiveInTScomb(jr,kr)) ).nAtoms()
+					end do
+					
+					do ip=1,productInTS.size()
+						call Math_combinations( productInTS.size(), ip, productInTScomb )
+						
+						do jp=1,size(productInTScomb,dim=1)
+							
+							nAtomsP = 0
+							massNumberP = 0
+							do kp=1,size(productInTScomb,dim=2)
+								massNumberP = massNumberP + products.clusters( productInTS.at(productInTScomb(jp,kp)) ).massNumber()
+								nAtomsP = nAtomsP + products.clusters( productInTS.at(productInTScomb(jp,kp)) ).nAtoms()
+							end do
+							
+							if( massNumberR == massNumberP .and. nAtomsR > 1 .and. nAtomsP > 1 ) then
+								
+								call lReactives.init( size(reactiveInTScomb,dim=2) )
+								call lProducts.init( size(productInTScomb,dim=2) )
+								
+								do kr=1,size(reactiveInTScomb,dim=2)
+									lReactives.clusters(kr) = reactives.clusters( reactiveInTS.at(reactiveInTScomb(jr,kr)) )
+								end do
+							
+								do kp=1,size(productInTScomb,dim=2)
+									lProducts.clusters(kp) = products.clusters( productInTS.at(productInTScomb(jp,kp)) )
+								end do
+								
+								if( trim(lReactives.label( details=useDetailsInLabel )) /= trim(lProducts.label( details=useDetailsInLabel )) ) then
+									
+									labelTS = trim(lReactives.label( details=useDetailsInLabel ))//"<-->"//trim(lProducts.label( details=useDetailsInLabel ))
+									
+									if( GOptions_debugLevel >= 2 ) then
+										write(*,*) "      reactives = ", trim(reactives.label( details=useDetailsInLabel ))
+										write(*,*) "       products = ", trim(products.label( details=useDetailsInLabel ))
+										write(*,*) "     TS located = ", trim(labelTS.fstr)
+									end if
+									
+									transitionStateId = FragmentsDB_instance.getIdTransitionStateFromLabel( trim(labelTS.fstr) )
+									
+									if( GOptions_debugLevel >= 2 ) then
+										write(*,*) "          TS id = ", transitionStateId
+									end if
+									
+									if( transitionStateId == -1 ) cycle
+									
+									call productsTS.init( products.nMolecules() - lProducts.nMolecules() + 1 )
+									call productsTS.set( 1, FragmentsDB_instance.transitionState( transitionStateId ) )
+									
+									! @TODO Aca el problema aparece cuando todos los productos estan en un TS como C(t1)+C(t1)+C(t1)
+									!       En este caso nunca se entra en el if
+									j=2
+									do i=1,products.nMolecules()
+										do kp=1,size(productInTScomb,dim=2)
+											label = trim(products.clusters( productInTS.at(productInTScomb(jp,kp)) ).label( details=useDetailsInLabel ))
+											if( label /= trim(products.clusters(i).label( details=useDetailsInLabel )) &
+												.and. j<=productsTS.nMolecules() ) then
+												call productsTS.set( j, products.clusters(i) )
+												j = j+1
+												exit
+											end if
+										end do
+									end do
+									
+									if( j==2 ) then
+										do i=1,products.nMolecules()
+											if( j<=productsTS.nMolecules() ) then
+												call productsTS.set( j, products.clusters(i) )
+												j = j+1
+											end if
+										end do
+									end if
+									
+									if( GOptions_debugLevel >= 2 ) then
+										write(*,*) "       products = ", trim(products.label( details=useDetailsInLabel ))
+										write(*,*) "    Eff channel = ", trim(reactives.label( details=useDetailsInLabel ))//"-->"//trim(productsTS.label( details=useDetailsInLabel ))
+									end if
+									
+									locatedTS = .true.
+									exit ! Only one TS is accepted. The one with minimum size
+									
+								end if
+								
+							end if
+							
+						end do
+						
+						if( locatedTS ) exit
+						
+					end do
+					
+					if( locatedTS ) exit
+					
+				end do
+				
+				if( locatedTS ) exit
+				
+			end do
+			
+		end if
+		
+		if( GOptions_debugLevel >= 2 ) then
+			write(*,*) ""
+		end if
+		
+		if( allocated(reactiveInTScomb) ) deallocate( reactiveInTScomb )
+		if( allocated(productInTScomb) ) deallocate( productInTScomb )
+	end subroutine reduceToTransitionStates
 	
 	!>
 	!! @brief Change the composition of the system
@@ -835,11 +1009,12 @@ module Reactor_
 		
 		real(8) :: min_dLnW
 		
-		integer :: n, nMin
+		integer :: nMin
 		real(8) :: rBuffer
 		type(String) :: sBuffer
 		
 		this.state = .true.
+		this.replaceTS = .false.
 		
 		call this.showReactorHeader()
 		
@@ -861,16 +1036,37 @@ module Reactor_
 ! 				call this.products.changeVibrationalEnergy()
 ! 				call this.products.changeGeometry()
 ! 				call this.products.changeOrientations()
+
+				if( this.replaceTS ) then
+					! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
+					call this.productsTS.setReactorEnergy( this.reactives.reactorEnergy() )
+					
+					! Para que fuerce los centros aleatorios en la siguiente iteración
+					this.productsTS.forceRandomCenters = .true.
+					
+					! Los productos utilizan parte de la energía
+					call this.productsTS.initialGuessFragmentsList()
+					
+! 					write(*,*) "reactive ", trim(this.reactives.label())
+! 					write(*,*) "products ", trim(this.products.label())
+! 					write(*,*) "TS located ", trim(this.productsTS.label())
+! 					sBuffer = this.products.energyHistoryLine()
+! 					write(*,"(A)") trim(sBuffer.fstr)
+! 					sBuffer = this.productsTS.energyHistoryLine()
+! 					write(*,"(A)") trim(sBuffer.fstr)
+					
+				end if
 				
 			case( VIBRATIONAL_REACTOR )
-				
+			
 				! La composición es igual antes y después
 				this.products = this.reactives
 				
 				! Los productos utilizan parte de la energía cinética en vibracional
 				call this.products.changeVibrationalEnergy()
-			
+				
 			case( TRANSLATIONAL_REACTOR )
+			
 				! La composición es igual antes y después
 				this.products = this.reactives
 				
@@ -878,16 +1074,18 @@ module Reactor_
 				call this.products.changeGeometry()
 				
 			case( ROTATIONAL_REACTOR )
+			
 				! La composición es igual antes y después
 				this.products = this.reactives
 				
 				! Los productos utilizan parte de la energía
 				call this.products.changeOrientations()
+				
 		end select
 		
 		if( GOptions_printLevel >= 2 ) then
 			write(*,"(A)") "#--------------------------------------------------------------------------------------------------------------"
-			write(*,"(A1,3X,6A15,5X,A)") "#", "LnWe", "LnWv", "LnWn", "LnWr", "LnWt", "LnW", "formula"
+			write(*,"(A1,3X,6A15,5X,A)") "#", "LnWe", "LnWv", "LnWn", "LnWr", "LnWt", "LnW", "label"
 			write(*,"(A1,3X,6A15,5X,A)") "#", "arb.", "arb.", "arb.", "arb.", "arb.", "arb.", ""
 			write(*,"(A)") "#--------------------------------------------------------------------------------------------------------------"
 			
@@ -902,7 +1100,7 @@ module Reactor_
 
 			write(*,"(A)") ""
 			write(*,"(A)") "#--------------------------------------------------------------------------------------------------------------"
-			write(*,"(A1,3X,5A15,5X,A)") "#", "trans", "intermol", "vib", "rot", "tot", "formula"
+			write(*,"(A1,3X,5A15,5X,A)") "#", "trans", "intermol", "vib", "rot", "tot", "label"
 			write(*,"(A1,3X,5A15,5X,A)") "#", "eV", "eV", "eV", "eV", ""
 			write(*,"(A)") "#--------------------------------------------------------------------------------------------------------------"
 
@@ -977,7 +1175,7 @@ module Reactor_
 			
 			call reactives.init( size(reactiveTokens) )
 			do i=1,size(reactiveTokens)
-				iBuffer = FragmentsDB_instance.getIdFromName( reactiveTokens(i) )
+				iBuffer = FragmentsDB_instance.getIdClusterFromLabel( reactiveTokens(i) )
 				call reactives.set( i, FragmentsDB_instance.clusters(iBuffer) )
 			end do
 			
@@ -1195,7 +1393,7 @@ module Reactor_
 		
 		sBuffer = iParser.getString( "FRAGMENTS_DATABASE:reference", def="@@NONE@@" )
 		if( sBuffer /= "@@NONE@@" ) then
-			id = FragmentsDB_instance.getIdFromName( trim(sBuffer.fstr) )
+			id = FragmentsDB_instance.getIdClusterFromLabel( trim(sBuffer.fstr) )
 		else
 			id = size(FragmentsDB_instance.clusters)
 		end if

@@ -1,6 +1,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                                   !!
 !! This file is part of M3C project                                                  !!
+!!                                                                                   !!
+!! Copyright (c) 2019-2020 by authors                                                !!
+!! Authors:                                                                          !!
+!!                         * Néstor F. Aguirre (2019-2020)                           !!
+!!                           nfaguirrec@gmail.com                                    !!
+!!                                                                                   !!
 !! Copyright (c) 2013-2016 Departamento de Química                                   !!
 !!                         Universidad Autónoma de Madrid                            !!
 !!                         All rights reserved.                                      !!
@@ -66,7 +72,7 @@ module FragmentsListBase_
 	use Atom_
 	use Molecule_
 	use BlocksIFileParser_
-	use RealList_
+	use RealVector_
 	
 	use GOptionsM3C_
 	use Fragment_
@@ -75,9 +81,12 @@ module FragmentsListBase_
 	implicit none
 	private
 	
+	public :: &
+		spinListCoupling
+	
 	type, abstract, public :: FragmentsListBase
 		type(Fragment), allocatable :: clusters(:)    !< Fragment list
-		integer, allocatable :: idSorted(:)            !< Position of the molecule sorted by mass. It is calculated in updateFormula procedure
+		integer, allocatable :: idSorted(:)            !< Position of the molecule sorted by mass. It is calculated in updateLabel procedure
 													   !<            this.clusters(i) ----> this.clusters( this.idSorted(i) )
 		
 		real(8) :: diagInertiaTensor(3)    !< Main inertia tensor components [ Ixx, Iyy, Izz ]. It is calculated into updateInertiaTensor procedure
@@ -109,8 +118,6 @@ module FragmentsListBase_
 		logical :: forceRandomCenters    !< Fuerza a utilizar randomCenters en el siguiente llamado a changeGeometryFragmentsListBase
 		logical :: forceInitializing     !< Fuerza a utilizar initialGuessFragmentsListBase
 		
-		integer :: totalComposition( AtomicElementsDB_nElems ) !< [ n1, n2, ..., nN ] n=numberOfAtomsWithZ, pos = atomicNumber 
-		
 		real(8) :: L_(3)          ! Orbital angular momentum
 		
 		integer, allocatable :: currentProducts(:,:) !< This allows to get the current potential energy surface @see updateIntermolecularPotential
@@ -130,7 +137,7 @@ module FragmentsListBase_
 			procedure, NON_OVERRIDABLE :: nAtoms
 			procedure, NON_OVERRIDABLE :: charge
 			procedure, NON_OVERRIDABLE :: mass
-			procedure, private :: updateFormula
+			procedure, private :: updateLabel
 			procedure, NON_OVERRIDABLE :: label
 			generic :: set => setFromFragment
 			procedure, NON_OVERRIDABLE :: setFromFragment
@@ -238,8 +245,6 @@ module FragmentsListBase_
 		this.forceRandomCenters = .true.
 		this.forceInitializing = .true.
 		
-		this.totalComposition = -1
-		
 		this.L_ = 0.0_8
 		
 		if( allocated(this.currentProducts) ) deallocate(this.currentProducts)
@@ -294,8 +299,6 @@ module FragmentsListBase_
 		
 		this.forceRandomCenters = other.forceRandomCenters
 		this.forceInitializing = other.forceInitializing
-		
-		this.totalComposition = other.totalComposition
 		
 		this.L_ = other.L_
 		
@@ -451,7 +454,7 @@ module FragmentsListBase_
 			y = FString_toReal( tokens(3) )*angs
 			z = FString_toReal( tokens(4) )*angs
 			
-			idClus = FragmentsDB_instance.getIdFromName( name.fstr )
+			idClus = FragmentsDB_instance.getIdClusterFromLabel( name.fstr )
 			
 			call this.setFromFragment( i, FragmentsDB_instance.clusters( idClus ) )
 			call this.clusters(i).setCenter( [ x, y, z ] )
@@ -527,45 +530,12 @@ module FragmentsListBase_
 	!>
 	!! @brief
 	!!
-	subroutine updateFormula( this )
+	subroutine updateLabel( this )
 		class(FragmentsListBase) :: this
 		
-		integer :: i
-		real(8), allocatable :: massVec(:) ! @todo Hay que hacer el Math_sort para enteros
-		
-		allocate( massVec(size(this.clusters)) )
-		
-		this.totalComposition = 0
-		do i=1,size(this.clusters)
-		
-			massVec(i) = this.clusters(i).mass()/amu &
-					+ this.clusters(i).charge/10.0 &
-						+ this.clusters(i).multiplicity/100.0_8 
-
-! 			massVec(i) = 10000000*this.clusters(i).mass()/amu + 1000000*this.clusters(i).nAtoms() + 100*this.clusters(i).charge &
-! 					+ this.clusters(i).multiplicity
-
-			this.totalComposition = this.totalComposition + this.clusters( i ).composition
-		end do
-			
-		call Math_sort( massVec, this.idSorted )
-		
-		this.label_ = ""
-		this.dlabel_ = ""
-		do i=1,size(this.clusters)
-			if( i /= size(this.clusters) ) then
-				this.label_ = trim(this.label_)//trim(this.clusters( this.idSorted(i) ).label( details=.false. ))//"+"
-				this.dlabel_ = trim(this.dlabel_)//trim(this.clusters( this.idSorted(i) ).label( details=.true. ))//"+"
-			else
-				this.label_ = trim(this.label_)//trim(this.clusters( this.idSorted(i) ).label( details=.false. ))
-				this.dlabel_ = trim(this.dlabel_)//trim(this.clusters( this.idSorted(i) ).label( details=.true. ))
-			end if
-		end do
-		
+		call Fragment_getLabelFragments( this.clusters, this.label_, this.dlabel_, this.idSorted )
 		this.testLabel_ = .true.
-		
-		deallocate( massVec )
-	end subroutine updateFormula
+	end subroutine updateLabel
 	
 	!>
 	!! @brief
@@ -581,7 +551,7 @@ module FragmentsListBase_
 		if( present(details) ) effDetails = details
 		
 		if( .not. this.testLabel_ ) then
-			call this.updateFormula()
+			call this.updateLabel()
 		end if
 		
 		if( effDetails ) then
@@ -705,7 +675,7 @@ module FragmentsListBase_
 		
 		call this.orient()
 		
-		call this.updateFormula()
+		call this.updateLabel()
 		
 		call this.updateLogGFactor()
 		
@@ -2296,43 +2266,97 @@ module FragmentsListBase_
 	end function spinRange
 	
 	!>
+	!! @brief Internal. Used only by spinAvailable function
+	!!
+	function spinSpinCoupling( s1, s2 ) result( st )
+		real(8), intent(in) :: s1, s2
+		type(RealVector) :: st
+		
+		real(8) :: s0
+		integer :: i
+		integer :: n
+		
+		n = s1+s2-abs(s1-s2)+1
+		s0 = abs(s1-s2)
+		
+		call st.init( n )
+		do i=1,n
+			call st.set( i, s0+i-1 )
+		end do
+				
+	end function spinSpinCoupling
+	
+	!>
+	!! @brief Internal. Used only by spinAvailable function
+	!!
+	function spinListSpinCoupling( sl1, s2 ) result( st )
+		type(RealVector), intent(in) :: sl1
+		real(8), intent(in) :: s2
+		type(RealVector) :: st
+		
+		real(8) :: s0
+		integer :: i
+		integer :: n
+
+		n = maxval(sl1.data(1:sl1.size())+s2)-minval(abs(sl1.data(1:sl1.size())-s2))+1
+		s0 = minval(abs(sl1.data(1:sl1.size())-s2))
+		
+		call st.init( n, 0.0_8 )
+		do i=1,n
+			call st.set( i, s0+i-1 )
+		end do
+				
+	end function spinListSpinCoupling
+	
+	!>
+	!! @brief Internal. Used only by spinAvailable function
+	!!
+	function spinListCoupling( sl ) result( st )
+		type(RealVector), intent(in) :: sl
+		type(RealVector) :: st
+		
+		integer :: i
+		type(RealVector) :: sij
+		
+		call st.init()
+		
+		if( sl.size() == 1 ) then
+			st = sl
+		else
+			sij = spinSpinCoupling( sl.at(1), sl.at(2) )
+			st = sij
+			
+			do i=3,sl.size()
+				sij = spinListSpinCoupling( sij, sl.at(i) )
+				st = sij
+			end do
+		end if
+
+	end function spinListCoupling
+	
+	!>
 	!! @brief
 	!!
 	function spinAvailable( this ) result( output )
 		class(FragmentsListBase), intent(in) :: this
-		type(RealList) :: output
+		type(RealVector) :: output
 		
-		real(8) :: S, Si, Sj
-		integer :: i, j
+		integer :: i
+		real(8) :: S
+		type(RealVector) :: sl
 		
-		call output.init()
+		call sl.init( this.nMolecules(), 0.0_8 )
+		do i=1,this.nMolecules()
+			S = (this.clusters(i).multiplicity-1.0_8)/2.0_8
+			if( S < 0.0_8 ) S=0.0_8
+			
+			call sl.append( S )
+		end do
 		
-		if( this.nMolecules() == 1 ) then
-			S = (this.clusters(1).multiplicity-1.0_8)/2.0_8
-			call output.append( S )
-		else
-			do i=1,this.nMolecules()-1
-				Si = (this.clusters(i).multiplicity-1.0_8)/2.0_8
-				
-				if( Si < 0.0_8 ) Si=0.0_8
-				
-				do j=i+1,this.nMolecules()
-					Sj = (this.clusters(j).multiplicity-1.0_8)/2.0_8
-					
-					if( Sj < 0.0_8 ) Sj=0.0_8
-					
-					S = abs(Si-Sj)
-					do while( int(2.0*S) <= int(2.0*(Si+Sj)) )
-						call output.append( S )
-						
-						S = S + 1.0_8
-					end do
-				end do
-			end do
-		end if
+		output = spinListCoupling( sl )
 		
 		if( output.size() == 0 ) then
-			write(*,*) "### ERROR ### FragmentsListBase.spinAvailable.size() == 0", this.nMolecules(), S, Si, Sj
+			write(*,*) "### ERROR ### FragmentsListBase.spinAvailable.size() == 0", this.nMolecules(), S
 		end if
 	end function spinAvailable
 	
@@ -2372,7 +2396,7 @@ module FragmentsListBase_
 			
 			call this.init( size(reactiveTokens) )
 			do i=1,size(reactiveTokens)
-				iBuffer = FragmentsDB_instance.getIdFromName( reactiveTokens(i) )
+				iBuffer = FragmentsDB_instance.getIdClusterFromLabel( reactiveTokens(i) )
 				call this.set( i, FragmentsDB_instance.clusters(iBuffer) )
 			end do
 		end if

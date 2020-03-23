@@ -1,0 +1,71 @@
+BEGIN EXCITATION_ENERGY_SCAN
+	excitationEnergy  =  0:20:21  # dE = 1.0 eV
+END EXCITATION_ENERGY_SCAN
+
+BEGIN GOPTIONS
+        systemRadius = 10.0
+        overlappingRadius = 0.2
+        
+        useRandomWalkers = FALSE
+        randomWalkStepRadius = 1.0
+        
+        useZPECorrection = FALSE
+        useSpinConservationRules = FALSE
+        
+        angularMomentumCouplingScheme = JJL
+# 	debugLevel = 2
+END GOPTIONS
+
+BEGIN MARKOV_CHAIN
+	task = 5*V,T,R,S:0,5*V,T,R,S:-1:1
+        burnInFraction = 0.0
+        
+# 	reactives = C3(s1)
+	reactives = C(t1)+C2(s1)
+        excitationEnergy = 20.0
+        
+        tracking = energy
+        
+#         numberOfExperiments = 6
+#         numberOfEvents = 100000
+        numberOfExperiments = 3
+#         numberOfEvents = 50000
+        numberOfEvents = 30000
+        historyFileFrequency = 100
+
+#        geometryHistoryFilePrefix = geom
+        energyHistoryFile = energy.dat
+        weightHistoryFile = weight.dat
+#        JHistoryFile = J.dat
+#        LHistoryFile = L.dat
+        histogramFile = histogram.dat
+END MARKOV_CHAIN
+
+BEGIN FRAGMENTS_DATABASE
+
+	store = .
+	reference = C3(s1)
+
+	#--------------------------------------------------------------------------------------
+	#  Label    Z  M WL  SYM          geomFile         Eelec     maxVib
+	#--------------------------------------------------------------------------------------
+           C(s1)    0  1  5    1    C.q0.m1-1.rxyz  -1026.574168                      #           ¹D (2s²2p²) 
+           C(t1)    0  3  3    1    C.q0.m3-1.rxyz  -1028.024016                      #           ³P (2s²2p²)
+           
+          C2(s1)    0  1  1    2   C2.q0.m1-1.rxyz  -2062.151541     C(t1)+C(t1)      # 6.10351   ^1\Sigma_g^+
+          C2(t1)    0  3  2    2   C2.q0.m3-1.rxyz  -2062.058719     C(t1)+C(t1)      # 6.01069   ^3\Pi_u     
+          
+          C3(s1)    0  1  1    2   C3.q0.m1-1.rxyz  -3097.545476     C(t1)+C2(s1)     # 7.36992   D*H, 1-SGG
+	#--------------------------------------------------------------------------------------
+END FRAGMENTS_DATABASE
+
+BEGIN TRANSITION_STATES_DATABASE
+
+	store = .
+	
+	#--------------------------------------------------------------------------------------
+	#  Label    Z  M WL  SYM          geomFile         Eelec     maxVib     TS
+	#--------------------------------------------------------------------------------------
+          C2(ts1)   0  1  1    2 C2ts.q0.m1-1.rxyz  -2064.151541        4.0     C2(s1)<-->C(t1)+C(t1)
+	#--------------------------------------------------------------------------------------
+END TRANSITION_STATES_DATABASE

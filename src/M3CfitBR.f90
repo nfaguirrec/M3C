@@ -1,6 +1,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                                   !!
 !! This file is part of M3C project                                                  !!
+!!                                                                                   !!
+!! Copyright (c) 2019-2020 by authors                                                !!
+!! Authors:                                                                          !!
+!!                         * Néstor F. Aguirre (2020-2020)                           !!
+!!                           nfaguirrec@gmail.com                                    !!
+!!                                                                                   !!
 !! Copyright (c) 2013-2016 Departamento de Química                                   !!
 !!                         Universidad Autónoma de Madrid                            !!
 !!                         All rights reserved.                                      !!
@@ -70,6 +76,8 @@ program M3CfitBR
 	type(String) :: sBuffer
 	type(Grid) :: bufferGrid
 	logical :: lBuffer
+	
+	real(8) :: averE, stdevE, skewE
 	
 	type(CommandLineParser) :: programOptions
 	type(BlocksIFileParser) :: iParser
@@ -486,10 +494,51 @@ program M3CfitBR
 	write(*,"(A15,F10.5)") "rms = ", sqrt(ssum/nChannels)
 	close(11)
 	
+	! Maxima:
+	! B(E):=E**l*exp(-E/n)/(n**(l+1)*gamma(l+1));
+	! solve(diff(B(E),E)=0,E); #--> E=n*l
+	! integrate(E*B(E),E,0,inf); #---> (l+1)*n
+	! integrate((E-mu)**2*B(E),E,0,inf); #---> (l+1)*(l+2)*n**2-2*(l+1)*n*mu+mu**2
+	! integrate(((E-mu)/sigma)**3*B(E),E,0,inf); #--> ( (l+1)*(l+2)*(l+3)*n**3-3*(l+1)*(l+2)*n**2*mu+3*(l+1)*n*mu**2-mu**3 )/sigma**3
+	
+	averE = 0.0_8
+	k=1
+	do n=1,Nmax
+		do l=1,Lmax
+			averE = averE + (C.get(k,1)/100.0_8)*real((l+1)*n,8)
+			
+			k = k+1
+		end do
+	end do
+	
+	stdevE = 0.0_8
+	k=1
+	do n=1,Nmax
+		do l=1,Lmax
+			stdevE = stdevE + (C.get(k,1)/100.0_8)*( real((l+1)*(l+2)*n**2,8) - 2.0_8*real((l+1)*n,8)*averE + averE**2 )
+			
+			k = k+1
+		end do
+	end do
+	stdevE = sqrt(stdevE)
+	
+	skewE = 0.0_8
+	k=1
+	do n=1,Nmax
+		do l=1,Lmax
+			skewE = skewE + (C.get(k,1)/100.0_8)*( real((l+1)*(l+2)*(l+3)*n**3,8) - 3.0_8*real((l+1)*(l+2)*n**2,8)*averE + 3.0_8*real((l+1)*n,8)*averE**2-averE**3 )/stdevE**3
+			
+			k = k+1
+		end do
+	end do
+	
 	call f.fromFunction( energyGrid, energyFunction )
 	call f.save( energyDistFileName.fstr )
 	call integrator.init( f, NIntegrator_BOOLE )
 	write(*,"(A15,F10.5)") "Integral = ", integrator.evaluate()
+	write(*,"(A15,F10.5)") "<E> = ", averE
+	write(*,"(A15,F10.5)") "stdev(E) = ", stdevE
+	write(*,"(A15,F10.5)") "skew(E) = ", skewE
 	
 	if( abs(integrator.evaluate()-100.0_8) > 2.0_8 ) then
 		write(*,*) ""
