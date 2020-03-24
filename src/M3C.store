@@ -2,6 +2,12 @@
 #####################################################################################
 #                                                                                   #
 # This file is part of M3C project                                                  #
+#                                                                                   #
+# Copyright (c) 2020-2020 by authors                                                #
+# Authors:                                                                          #
+#                         * Néstor F. Aguirre (2020-2020)                           #
+#                           nfaguirrec@gmail.com                                    #
+#                                                                                   #
 # Copyright (c) 2013-2016 Departamento de Química                                   #
 #                         Universidad Autónoma de Madrid                            #
 #                         All rights reserved.                                      #
@@ -109,6 +115,7 @@ WORKDIR=$PWD
 TEMPDIR=/tmp
 
 eV=`echo 1.0/27.211396132 | bc -l`
+TS_AVAILABLE="false" 
 
 declare -A SMULT
 SMULT["1"]="s"
@@ -246,12 +253,16 @@ OMEGAL["HU"]=5    # mios, no de gaussian
 OMEGAL["??"]=1
 
 declare -A MAXVIBCHANNEL
+declare -A MAXVIBENERGY
+declare -A DICT_FILE_TO_NAME
 
 ##############################
 
 function showDataBase()
 {
-	local maxVibChannelsFile=$1
+	local show=$1 # ALL|FRAGMENTS|TRANSITION_STATES
+	
+	[ -z "$show" ] && show="ALL"
 	
 	cd $M3C_STORE
 	
@@ -281,14 +292,49 @@ function showDataBase()
 		fi
 	done
 	
-	printf "\t#---------------------------------------------------------------------------------------------------------------------\n"
-	printf "\t#%20s%5s%3s%3s%5s%30s%20s%30s\n" "Label" "Z" "M" "WL" "SYM" "geomFile" "Eelec" "maxVib"
-	printf "\t#---------------------------------------------------------------------------------------------------------------------\n"
+	if [ "$show" = "ALL" -o "$show" = "FRAGMENTS" ]
+	then
+		printf "\t#---------------------------------------------------------------------------------------------------------------------\n"
+		printf "\t#%20s%5s%3s%3s%5s%30s%20s%30s\n" "Label" "Z" "M" "WL" "SYM" "geomFile" "Eelec" "maxVib"
+		printf "\t#---------------------------------------------------------------------------------------------------------------------\n"
+	elif [ "$show" = "TRANSITION_STATES" ]
+	then
+		printf "\t#-------------------------------------------------------------------------------------------------------------------------------------------------------------\n"
+		printf "\t#%20s%5s%3s%3s%5s%30s%20s%30s%40s\n" "Label" "Z" "M" "WL" "SYM" "geomFile" "Eelec" "maxVib" "TS"
+		printf "\t#-------------------------------------------------------------------------------------------------------------------------------------------------------------\n"
+	fi
 	
 	sort -k1 -n $TEMPDIR/.molValues$$ \
 	| while read line
 	do
 		fileName=`echo $line | gawk '{print $2}'`
+		
+		isTS=`awk '
+			BEGIN{loc=0}
+			{
+				if(loc==1 && $1!~/[[:digit:].]/) loc=0
+				if(loc==1){ if($1<0.0){ print "true"; exit} }
+				if($1=="FREQUENCIES") loc=1
+			}
+			END{
+				if(loc==0) print "false"
+			}
+		' $fileName`
+		
+		if [ "$isTS" = "true" ]
+		then
+			cat /dev/null > $TEMPDIR/.TS_AVAILABLE$$
+			
+			if [ "$show" != "ALL" -a "$show" = "FRAGMENTS" ]
+			then
+				continue
+			fi
+		else
+			if [ "$show" != "ALL" -a "$show" = "TRANSITION_STATES" ]
+			then
+				continue
+			fi
+		fi
 		
 		if [ "`molecule.isFragmentOf $fileName $REFERENCE`" = "OK" ]
 		then
@@ -312,17 +358,52 @@ function showDataBase()
 					"$finalLabel" $charge $mult "${OMEGAL[${elecState#*-}]}" "${RSYMN[$groupSym]}" $fileName $energy "" \
 						"    #" "" "$groupSym($elecState)"
 			else
-				if [ -f "$maxVibChannelsFile" ]
+				if [ "${#MAXVIBCHANNEL[@]}" -gt 0 ]
 				then
-					finalLabelSpecialCharacters=`echo $finalLabel | sed 's/[()]/\\\&/g'`
-					channel=`awk '($1=="'"$finalLabelSpecialCharacters"'"){ print $2; stop }' $maxVibChannelsFile 2> /dev/null`
-					channelEnergy=`awk '($1=="'"$finalLabelSpecialCharacters"'"){ printf "%.2f", $3; stop }' $maxVibChannelsFile 2> /dev/null`
+					channel=${MAXVIBCHANNEL[$finalLabel]}
+					channelEnergy=${MAXVIBENERGY[$finalLabel]}
 					
 					[ -z "$channel" ] && channel="NONE"
 					
-					printf "\t%21s%5d%3d%3d%5d%30s%20.6f%30s%s%8.2f  %s\n" \
-						"$finalLabel" "$charge" "$mult" "${OMEGAL[${elecState#*-}]}" "${RSYMN[$groupSym]}" "$fileName" "$energy" "$channel" \
-						"    #" "$channelEnergy" "$groupSym($elecState)"
+					if [ "$show" = "TRANSITION_STATES" -a "${#DICT_FILE_TO_NAME[@]}" -gt 0 ]
+					then
+						nReactives=`grep "REACTIVES" "$fileName" | gawk '{print $2}'`
+						nProducts=`grep "PRODUCTS" "$fileName" | gawk '{print $2}'`
+						
+						first=0
+						labelReactives=""
+						for item in `grep -A $nReactives "REACTIVES" $fileName | tail -n $nReactives`
+						do
+							if [ "$first" -eq 0 ]
+							then
+								labelReactives="${DICT_FILE_TO_NAME[$item]}"
+								first=1
+							else
+								labelReactives="$labelReactives+${DICT_FILE_TO_NAME[$item]}"
+							fi
+						done
+						
+						first=0
+						labelProducts=""
+						for item in `grep -A $nProducts "PRODUCTS" $fileName | tail -n $nProducts`
+						do
+							if [ "$first" -eq 0 ]
+							then
+								labelProducts="${DICT_FILE_TO_NAME[$item]}"
+								first=1
+							else
+								labelProducts="$labelProducts+${DICT_FILE_TO_NAME[$item]}"
+							fi
+						done
+						
+						printf "\t%21s%5d%3d%3d%5d%30s%20.6f%30s%40s%s%8.2f  %s\n" \
+							"$finalLabel" "$charge" "$mult" "${OMEGAL[${elecState#*-}]}" "${RSYMN[$groupSym]}" "$fileName" "$energy" "$channel" \
+							"$labelReactives<-->$labelProducts" "    #" "$channelEnergy" "$groupSym($elecState)"
+					else
+						printf "\t%21s%5d%3d%3d%5d%30s%20.6f%30s%s%8.2f  %s\n" \
+							"$finalLabel" "$charge" "$mult" "${OMEGAL[${elecState#*-}]}" "${RSYMN[$groupSym]}" "$fileName" "$energy" "$channel" \
+							"    #" "$channelEnergy" "$groupSym($elecState)"
+					fi
 				else
 					printf "\t%21s%5d%3d%3d%5d%30s%20.6f%30s\n" "$finalLabel" $charge $mult 0 1 $fileName $energy 0.0000
 				fi
@@ -330,11 +411,24 @@ function showDataBase()
 			
 		fi
 	done
+	
+	if [ -f $TEMPDIR/.TS_AVAILABLE$$ ]
+	then
+		TS_AVAILABLE="true"
+		rm $TEMPDIR/.TS_AVAILABLE$$
+	fi
+
 
 	rm $TEMPDIR/.molValues$$
 
-	printf "\t#---------------------------------------------------------------------------------------------------------------------\n"
-	
+	if [ "$show" = "ALL" -o "$show" = "FRAGMENTS" ]
+	then
+		printf "\t#---------------------------------------------------------------------------------------------------------------------\n"
+	elif [ "$show" = "TRANSITION_STATES" ]
+	then
+		printf "\t#-------------------------------------------------------------------------------------------------------------------------------------------------------------\n"
+	fi
+
 	cd $WORKDIR
 }
 
@@ -344,7 +438,6 @@ function showDataBase()
 function makeDB()
 {
 	cat /dev/null > $TEMPDIR/.input-$$.m3c
-	cat /dev/null > $TEMPDIR/.channels$$
 
 	echo "BEGIN GOPTIONS" >> $TEMPDIR/.input-$$.m3c
 
@@ -370,23 +463,37 @@ function makeDB()
 	fi
 	
 	showDataBase >> $TEMPDIR/.input-$$.m3c
-	
 	echo "END FRAGMENTS_DATABASE" >> $TEMPDIR/.input-$$.m3c
 	
-	M3C -i $TEMPDIR/.input-$$.m3c > $TEMPDIR/.input-$$.out
+	M3C -i $TEMPDIR/.input-$$.m3c &> $TEMPDIR/.input-$$.out
+	
+	cat $TEMPDIR/.input-$$.out | grep -A1 "file name =" \
+	| gawk '($1 != "--"){ n=split($NF,arr,"/"); if( arr[n]~/.rxyz/ ) printf arr[n]"  "; else print arr[n] }' > $TEMPDIR/.dictBlock$$
+	
+	oldIFS=$IFS
+	IFS=$'\n'
+	for line in `cat $TEMPDIR/.dictBlock$$`
+	do
+		key=`echo $line | awk '{print $1}'`
+		value=`echo $line | awk '{print $2}'`
+		DICT_FILE_TO_NAME["$key"]="$value"
+	done
+	IFS=$oldIFS
 	
 	sed '/^\s*maxVibNSteps =/,/^\s*ELAPSED TIME/!d' $TEMPDIR/.input-$$.out | gawk '( NF>2 && $1~/^[[:digit:].]+$/){ print $0 }' > $TEMPDIR/.vibBlock$$
 	
-	cat $TEMPDIR/.vibBlock$$ | while read line
+	oldIFS=$IFS
+	IFS=$'\n'
+	for line in `cat $TEMPDIR/.vibBlock$$`
 	do
 		maxVibEnergyItem=`echo $line | gawk '{print $1}'`
 		fragmentItem=`echo $line | gawk '{print $2}'`
 		maxVibItem=`echo $line | gawk '{print $3}'`
 		
-		echo "$fragmentItem    $maxVibItem   $maxVibEnergyItem" >> $TEMPDIR/.channels$$
-# 		Es extraño, pero el mapa no funciona cuando se llama fuera de este bucle, probar en otra versión de bash
-# 		MAXVIBCHANNEL["$fragmentItem"]=$maxVibItem
+		MAXVIBCHANNEL["$fragmentItem"]=$maxVibItem
+		MAXVIBENERGY["$fragmentItem"]=$maxVibEnergyItem
 	done
+	IFS=$oldIFS
 	
 	#---------------------------------------------
 	# Para calcular el label de la referencia
@@ -402,15 +509,26 @@ function makeDB()
 	printf "\t%s\n" "store = $M3C_STORE"
 	printf "\t%s\n" "reference = $finalLabel"
 	echo ""
-	showDataBase $TEMPDIR/.channels$$
+	showDataBase "FRAGMENTS"
 	echo "END FRAGMENTS_DATABASE"
+	
+	if [ "$TS_AVAILABLE" = "true" ]
+	then
+		echo ""
+		echo "BEGIN TRANSITION_STATES_DATABASE"
+		echo ""
+		printf "\t%s\n" "store = $M3C_STORE"
+		echo ""
+		showDataBase "TRANSITION_STATES"
+		echo "END TRANSITION_STATES_DATABASE"
+	fi
 	
 	if [ "$DEBUG" = "TRUE" ]
 	then
 		cat $TEMPDIR/.input-$$.out
 	fi
 	
-	rm $TEMPDIR/.input-$$.m3c $TEMPDIR/.input-$$.out $TEMPDIR/.vibBlock$$ $TEMPDIR/.channels$$
+	rm $TEMPDIR/.input-$$.m3c $TEMPDIR/.input-$$.out $TEMPDIR/.dictBlock$$ $TEMPDIR/.vibBlock$$
 }
 
 ##############################
