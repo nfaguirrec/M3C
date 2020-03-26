@@ -114,8 +114,8 @@ function main()
 	mkdir history.iener
 	
 	rxyzFile=( `ls *.rxyz` )
-	charge=( `ls *.rxyz | gawk 'BEGIN{FS="[.]+"}{print $2}' | sed 's/q//g'` )
-	mult=( `ls *.rxyz | gawk 'BEGIN{FS="[.]+"}{print $3}' | sed 's/m//g'` )
+	charge=( `ls *.rxyz | gawk 'BEGIN{FS="[.-]+"}{print $2}' | sed 's/q//g'` )
+	mult=( `ls *.rxyz | gawk 'BEGIN{FS="[.-]+"}{print $3}' | sed 's/m//g'` )
 	
 	cat /dev/null > .commands$$
 	for (( i=0; i<${#rxyzFile[@]}; i++ ))
