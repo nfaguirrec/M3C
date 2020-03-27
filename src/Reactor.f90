@@ -1245,6 +1245,7 @@ module Reactor_
 		logical :: lBuffer
 		integer :: nSteps
 		logical :: detailed
+		logical :: containsTS
 		
 		type(StringHistogram) :: fragmentsHistogram
 		class(StringRealMapIterator), pointer :: iter
@@ -1288,6 +1289,16 @@ module Reactor_
 				do k=1,nSteps
 ! 					call this.run()
 					call this.changeComposition( this.dNFrag )
+					
+					containsTS = .false.
+					do i=1,this.products.nMolecules()
+						if( this.products.clusters(i).isTransitionState ) then
+							containsTS = .true.
+							exit
+						end if
+					end do
+					
+					if( containsTS ) cycle
 					
 					if( this.products.nMolecules() == dN+1 ) then
 						call fragmentsHistogram.add( FString_toString( trim(this.products.label()) ) )
