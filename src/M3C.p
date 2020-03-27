@@ -2,6 +2,12 @@
 #####################################################################################
 #                                                                                   #
 # This file is part of M3C project                                                  #
+#                                                                                   #
+# Copyright (c) 2020-2020 by authors                                                #
+# Authors:                                                                          #
+#                         * Néstor F. Aguirre (2020-2020)                           #
+#                           nfaguirrec@gmail.com                                    #
+#                                                                                   #
 # Copyright (c) 2013-2016 Departamento de Química                                   #
 #                         Universidad Autónoma de Madrid                            #
 #                         All rights reserved.                                      #
@@ -47,6 +53,13 @@
 #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                     #
 #                                                                                   #
 #####################################################################################
+
+if [ -f "$M3C_HOME/bin/parallel.sh" ]
+then
+	source $M3C_HOME/bin/parallel.sh
+else
+	source $M3C_HOME/src/parallel.sh
+fi
 
 runM3C(){
 	local iFile=$1
@@ -215,100 +228,17 @@ main(){
 	cp *.rxyz $outputDir &> /dev/null
 	cp *.molden $outputDir &> /dev/null
 	cd $outputDir
-	
-	ij=0
-	for (( i=0; i<=$(( ${#excitationEnergy[@]}/$nThreads-1 )); i++ ))
-	do
-		iStartTime=`date "+%s"`
-		
-		echo -n "Running: "
-		
-		for (( j=1; j<=$nThreads; j++ ))
-		do
-			ij=$(( $j-1+$nThreads*$i ))
-			
-			iFileEff="E_${excitationEnergy[$ij]}.inp"
-			cp $iFile $iFileEff
-			
-			if (( j != $nThreads ))
-			then
-				printf "%10.5f," "${excitationEnergy[$ij]}"
-			else
-				printf "%10.5f" "${excitationEnergy[$ij]}"
-			fi
-			
-			runM3C $iFileEff ${excitationEnergy[$ij]} ${numberOfEvents[$ij]} $keepOutputFiles &
-		done
-		
-		echo -n " ... "
-		
-		wait
-		
-		iEndTime=`date "+%s"`
-		elapsedTime=$(( $iEndTime-$iStartTime ))
-		echo "OK     Time elapsed: $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
-	done
 
-	if (( $ij < ${#excitationEnergy[@]} ))
-	then
-		iStartTime=`date "+%s"`
-		
-		echo -n "Running: "
-		
-		k=1
-		for (( i=$(( $ij+1 )); i<${#excitationEnergy[@]}; i++ ))
-		do
-			iFileEff="E_${excitationEnergy[$i]}.inp"
-			cp $iFile $iFileEff
-			
-			if (( $i != $(( ${#excitationEnergy[@]} - 1 )) ))
-			then
-				printf "%10.5f," "${excitationEnergy[$i]}"
-			else
-				printf "%10.5f " "${excitationEnergy[$i]}"
-			fi
-			
-			runM3C $iFileEff ${excitationEnergy[$i]} ${numberOfEvents[$ij]} $keepOutputFiles &
-			
-			k=$(( $k+1 ))
-		done
-		
-		for (( i=$k; i<=$nThreads; i++ ))
-		do
-			if (( i != $nThreads ))
-			then
-				printf "%10s " ""
-			else
-				printf "%10s" ""
-			fi
-		done
-		
-		echo -n " ... "
-		
-		wait
-		
-		iEndTime=`date "+%s"`
-		elapsedTime=$(( $iEndTime-$iStartTime ))
-		echo "OK     Time elapsed: $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
-	fi
-	
-	rm $iFile
-	rm `ls *.xyz 2> /dev/null | grep -E -v "^E_[[:digit:].-]+"` &> /dev/null
-	
-	popd . > /dev/null 2> /dev/null
-	
-	echo -n "         "
-	for (( j=1; j<=$nThreads; j++ ))
+	cat /dev/null > .commands$$
+	for (( i=0; i<${#excitationEnergy[@]}; i++ ))
 	do
-		printf "%10s" ""
+		iFileEff="E_${excitationEnergy[$i]}.inp"
+		cp $iFile $iFileEff
+		echo "runM3C $iFileEff ${excitationEnergy[$i]} ${numberOfEvents[$i]} $keepOutputFiles" >> .commands$$
 	done
 	
-	endTime=`date "+%s"`
-	elapsedTime=$(( $endTime-$startTime ))
-	
-	echo -n "         "
-	printf "%$(( ${nThreads} + 2 ))s" ""
-	echo "       Total: $(( $elapsedTime / 3600 ))h $(( ( $elapsedTime / 60 ) % 60 ))m $(( $elapsedTime % 60 ))s"
+	parallel .commands$$ $nThreads
+	rm .commands$$
 	
 	#-----------------------------------------------------------------------
 }
