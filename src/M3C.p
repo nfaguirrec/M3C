@@ -236,6 +236,8 @@ main(){
 		cp $iFile $iFileEff
 		echo "runM3C $iFileEff ${excitationEnergy[$i]} ${numberOfEvents[$i]} $keepOutputFiles" >> .commands$$
 	done
+
+	sed -i '1!G;h;$!d' .commands$$  # Print in reverse order 
 	
 	parallel .commands$$ $nThreads
 	rm .commands$$
