@@ -262,6 +262,7 @@ program M3CBR
 		allocate( idData2Exp(keysFile.numberOfLines) )
 		allocate( isMappedExp2Data(nChannels) )
 		
+		idData2Exp = 0
 		isMappedExp2Data = .false.
 		do i=1,size(key)
 			write(*,"(A)",advance="no") "Mapping "//trim(key(i).fstr)//" ... "

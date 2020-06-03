@@ -245,7 +245,6 @@ program M3CfitBR
 	!-------------------------------------------------------------------
 	call keysFile.init( keysDataFileName.fstr )
 	
-	allocate( idData2Exp(keysFile.numberOfLines) )
 	allocate( key(keysFile.numberOfLines) )
 	
 	do i=1,keysFile.numberOfLines
@@ -285,7 +284,10 @@ program M3CfitBR
 	! fichero de entrada, lo reporta como Failed, pero continua con los
 	! que tiene
 	!----------------------------------------------------------------------
+	allocate( idData2Exp(keysFile.numberOfLines) )
 	allocate( isMappedExp2Data(nChannels) )
+	
+	idData2Exp = 0
 	isMappedExp2Data = .false.
 	do i=1,size(key)
 		write(*,"(A50,A)",advance="no") trim(key(i).fstr), " ... "
