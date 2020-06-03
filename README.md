@@ -117,15 +117,19 @@ export M3C_GAUSSIAN_SCRATCH=/scratch/$USER/gaussian
 
 [![DOI](https://zenodo.org/badge/78819076.svg)](https://zenodo.org/badge/latestdoi/78819076)
 
-1. Fully versus Constrained Statistical Fragmentation of Carbon Clusters and their Heteronuclear Derivatives.<br/>
+1. Dissociation dynamics of the diamondoid adamantane upon photoionization by XUV femtosecond pulses.<br/>
+   S. Maclot, J. Lahl, J. Peschel, H. Wikmark, P. Rudawski, F. Brunner, H. Coudert-Alteirac, S. Indrajith, B. A. Huber, S. Díaz-Tendero, N. F. Aguirre, P. Rousseau, P. Johnsson.<br/>
+   [*Sci. Rep.* **10**, 2884 (2020)](https://www.nature.com/articles/s41598-020-59649-1)
+
+2. Fully versus Constrained Statistical Fragmentation of Carbon Clusters and their Heteronuclear Derivatives.<br/>
    N. F. Aguirre, S. Díaz-Tendero, T. IdBarkach, M. Chabot, K. Béroff, M. Alcamí, and F. Martín.<br/>
    [*J. Chem. Phys.* **150**, 144301 (2019)](https://aip.scitation.org/doi/10.1063/1.5083864)
 
-2. Furan Fragmentation in the Gas Phase: New Insights from Statistical and Molecular Dynamics Calculations.<br/>
+3. Furan Fragmentation in the Gas Phase: New Insights from Statistical and Molecular Dynamics Calculations.<br/>
    E. Erdmann, M. Łabuda, N. F. Aguirre, S. Díaz-Tendero, and M. Alcamí.<br/>
    [*J. Phys. Chem. A* **122**, 4153-4166 (2018)](http://pubs.acs.org/doi/10.1021/acs.jpca.8b00881)
 
-3. Semiempirical breakdown curves of C2N(+) and C3N(+) molecules; application to products branching ratios predictions of physical and chemical processes involving these adducts.<br/>
+4. Semiempirical breakdown curves of C2N(+) and C3N(+) molecules; application to products branching ratios predictions of physical and chemical processes involving these adducts.<br/>
    T. IdBarkach, T. Mahajan, M. Chabot, K. Béroff, N.F. Aguirre, S. Diaz-Tendero, T. Launoy, A. Le Padelle, L. Perrot, M.A. Bonnin, K.C. Le, F. Geslin, N. de Séréville, F. Hammache, A. Jallat, A. Meyer, E. Charon, T. Pino, T. Hamelin, and V. Wakelam<br/>
    [*Mol. Astrophysics* **12**, 25-32 (2018)](https://www.sciencedirect.com/science/article/pii/S2405675818300125)
 
@@ -133,7 +137,7 @@ export M3C_GAUSSIAN_SCRATCH=/scratch/$USER/gaussian
    N. F. Aguirre, S. Díaz-Tendero, P.-A. Hervieux, M. Alcamí, and F. Martín.<br/>
    [*J. Chem. Theory Comput.* **13**, 992-1009 (2017)](http://pubs.acs.org/doi/pdf/10.1021/acs.jctc.6b00984)
 
-5. Structure, Ionization, and Fragmentation of Neutral and Positively Charged Hydrogenated Carbon Clusters:
+6. Structure, Ionization, and Fragmentation of Neutral and Positively Charged Hydrogenated Carbon Clusters:
    C<sub>n</sub>H<sub>m</sub><sup>q+</sup> (n=1-5, m=1-4, q=0-3).<br/>
    J. P. Sánchez, N. F. Aguirre, S. Díaz-Tendero, F. Martín, and M. Alcamí.<br/>
    [*J. Phys. Chem. A* **120**, 588-605 (2016)](http://pubs.acs.org/doi/abs/10.1021/acs.jpca.5b10143)
