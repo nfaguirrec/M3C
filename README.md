@@ -117,18 +117,22 @@ export M3C_GAUSSIAN_SCRATCH=/scratch/$USER/gaussian
 
 [![DOI](https://zenodo.org/badge/78819076.svg)](https://zenodo.org/badge/latestdoi/78819076)
 
-1. Dissociation dynamics of the diamondoid adamantane upon photoionization by XUV femtosecond pulses.<br/>
-   S. Maclot, J. Lahl, J. Peschel, H. Wikmark, P. Rudawski, F. Brunner, H. Coudert-Alteirac, S. Indrajith, B. A. Huber, S. Díaz-Tendero, N. F. Aguirre, P. Rousseau, P. Johnsson.<br/>
+1. Unraveling the structural stability and the electronic structure of ThO<sub>2</sub> clusters<br/>
+   N. F. Aguirre, J. Jung, and  P. Yang <br/>
+   [*Phys. Chem. Chem. Phys.*, **22**, 18614 (2020)](https://pubs.rsc.org/en/content/articlelanding/2020/CP/D0CP00478B)
+
+2. Dissociation dynamics of the diamondoid adamantane upon photoionization by XUV femtosecond pulses.<br/>
+   S. Maclot, J. Lahl, J. Peschel, H. Wikmark, P. Rudawski, F. Brunner, H. Coudert-Alteirac, S. Indrajith, B. A. Huber, S. Díaz-Tendero, N. F. Aguirre, P. Rousseau, and P. Johnsson.<br/>
    [*Sci. Rep.* **10**, 2884 (2020)](https://www.nature.com/articles/s41598-020-59649-1)
 
-2. Fully versus Constrained Statistical Fragmentation of Carbon Clusters and their Heteronuclear Derivatives.<br/>
+3. Fully versus Constrained Statistical Fragmentation of Carbon Clusters and their Heteronuclear Derivatives.<br/>
    N. F. Aguirre, S. Díaz-Tendero, T. IdBarkach, M. Chabot, K. Béroff, M. Alcamí, and F. Martín.<br/>
    [*J. Chem. Phys.* **150**, 144301 (2019)](https://aip.scitation.org/doi/10.1063/1.5083864)
 
-3. Furan Fragmentation in the Gas Phase: New Insights from Statistical and Molecular Dynamics Calculations.<br/>
+4. Furan Fragmentation in the Gas Phase: New Insights from Statistical and Molecular Dynamics Calculations.<br/>
    E. Erdmann, M. Łabuda, N. F. Aguirre, S. Díaz-Tendero, and M. Alcamí.<br/>
    [*J. Phys. Chem. A* **122**, 4153-4166 (2018)](http://pubs.acs.org/doi/10.1021/acs.jpca.8b00881)
 
-4. M3C: A Computational Approach To Describe Statistical Fragmentation of Excited Molecules and Clusters.<br/>
+5. M3C: A Computational Approach To Describe Statistical Fragmentation of Excited Molecules and Clusters.<br/>
    N. F. Aguirre, S. Díaz-Tendero, P.-A. Hervieux, M. Alcamí, and F. Martín.<br/>
    [*J. Chem. Theory Comput.* **13**, 992-1009 (2017)](http://pubs.acs.org/doi/pdf/10.1021/acs.jctc.6b00984)
