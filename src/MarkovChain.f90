@@ -1,6 +1,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                                   !!
 !! This file is part of M3C project                                                  !!
+!!                                                                                   !!
+!! Copyright (c) 2019-2020 by authors                                                !!
+!! Authors:                                                                          !!
+!!                         * Néstor F. Aguirre (2019-2020)                           !!
+!!                           nfaguirrec@gmail.com                                    !!
+!!                                                                                   !!
 !! Copyright (c) 2013-2016 Departamento de Química                                   !!
 !!                         Universidad Autónoma de Madrid                            !!
 !!                         All rights reserved.                                      !!
@@ -485,6 +491,7 @@ module MarkovChain_
 							
 							if( react.replaceTS ) then
 								react.replaceTS = .false.
+								write(*,*) "Hola = ", react.productsTS.LnW(), react.reactives.LnW()
 								Pi = react.productsTS.LnW()-react.reactives.LnW()
 							else
 								Pi = react.products.LnW()-react.reactives.LnW()

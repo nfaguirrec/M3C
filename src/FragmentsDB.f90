@@ -1,6 +1,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                                   !!
 !! This file is part of M3C project                                                  !!
+!!                                                                                   !!
+!! Copyright (c) 2019-2020 by authors                                                !!
+!! Authors:                                                                          !!
+!!                         * Néstor F. Aguirre (2019-2020)                           !!
+!!                           nfaguirrec@gmail.com                                    !!
+!!                                                                                   !!
 !! Copyright (c) 2013-2016 Departamento de Química                                   !!
 !!                         Universidad Autónoma de Madrid                            !!
 !!                         All rights reserved.                                      !!
@@ -447,13 +453,13 @@ module FragmentsDB_
 				call Fragment_getLabelFragments( reactives, reactivesLabel, reactivesdLabel )
 				call Fragment_getLabelFragments( products, productsLabel, productsdLabel )
 				
-				write(*,"(4X,A22,A)")  "Path = ", trim(path.fstr)
+				write(*,"(4X,A22,A)")  "User Path = ", trim(path.fstr)
 ! 				call this.str2id_TS.insert( FString_toString(trim(reactivesLabel)//"<-->"//trim(productsLabel)), i )
 ! 				call this.str2id_TS.insert( FString_toString(trim(productsLabel)//"<-->"//trim(reactivesLabel)), i )
 ! 				write(*,"(4X,A22,A)")  "Interpreted Path = ", trim(reactivesLabel)//"<-->"//trim(productsLabel)
 				call this.str2id_TS.insert( FString_toString(trim(reactivesdLabel)//"<-->"//trim(productsdLabel)), i )
 				call this.str2id_TS.insert( FString_toString(trim(productsdLabel)//"<-->"//trim(reactivesdLabel)), i )
-				write(*,"(4X,A22,A)")  "Interpreted Path = ", trim(reactivesdLabel)//"<-->"//trim(productsdLabel)
+				write(*,"(4X,A22,A)")  "Path = ", trim(reactivesdLabel)//"<-->"//trim(productsdLabel)
 				
 				deallocate(reactives)
 				deallocate(products)

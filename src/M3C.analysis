@@ -2,6 +2,12 @@
 #####################################################################################
 #                                                                                   #
 # This file is part of M3C project                                                  #
+#                                                                                   #
+# Copyright (c) 2019-2020 by authors                                                #
+# Authors:                                                                          #
+#                         * Néstor F. Aguirre (2019-2020)                           #
+#                           nfaguirrec@gmail.com                                    #
+#                                                                                   #
 # Copyright (c) 2013-2016 Departamento de Química                                   #
 #                         Universidad Autónoma de Madrid                            #
 #                         All rights reserved.                                      #
@@ -2092,7 +2098,7 @@ EOF
 	
 cat >> .plotMtj-$iFile$$ << EOF
 "../$eDistFile" u 1:(100*\$2/$y2Max) axis x1y2 notitle smooth cspline w l ls 0 lw 2 lc rgb "gray60", \\
-"../$eDistFile" u 1:(100*\$2/$y2Max) axis x1y2 notitle smooth cspline w filledcurve y2 ls 0 lc rgb "gray90", \\
+"../$eDistFile" u 1:(100*\$2/$y2Max) axis x1y2 notitle smooth cspline w filledcurve y2=0.0 ls 0 lc rgb "gray90", \\
 EOF
 	fi
 	####################################################
@@ -2293,7 +2299,7 @@ set y2range [0:1]
 	
 plot $M3C_PLOT_XRANGE [1:100] \
 "../$eDistFile" u 1:(100*\$2/$y2Max) axis x1y2 notitle smooth cspline w l ls 0 lw 2 lc rgb "gray60", \\
-"../$eDistFile" u 1:(100*\$2/$y2Max) axis x1y2 notitle smooth cspline w filledcurve y2 ls 0 lc rgb "gray90", \\
+"../$eDistFile" u 1:(100*\$2/$y2Max) axis x1y2 notitle smooth cspline w filledcurve y2=0.0 ls 0 lc rgb "gray90", \\
 "$energyDir/ecompTable$$.dat" \
    u 1:(100*(abs(\$2))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))) t "trans" w lp pt 7 ps $M3C_PLOT_LW/2.9 lw $M3C_PLOT_LW lt 1, \
 "" u 1:(100*(abs(\$2))/(abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8))):(100*stdDiv(\$2,\$3,abs(\$2)+abs(\$4)+abs(\$6)+abs(\$8),stdSum(\$3,\$5,\$7,\$9))) notitle w yerrorbars lt 1 lw 0.3 ps 0, \
@@ -3765,36 +3771,42 @@ function main()
 	
 	if [ "$2" = "BR" ]
 	then
+		FILTER="$3"
 		channelBRDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" `getValueFromIFIle ${iFile%.*}.m3c "BRANCHING_RATIOS:diagram"`
 		exit
 	fi
 	
 	if [ "$2" = "sBR" ]
 	then
+		FILTER="$3"
 		speciesBRDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" `getValueFromIFIle ${iFile%.*}.m3c "BRANCHING_RATIOS:diagram"` "TRUE"  # << Last is normalize
 		exit
 	fi
 	
 	if [ "$2" = "fit_BR" ]
 	then
+		FILTER="$3"
 		channelFitBRDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" `getValueFromIFIle ${iFile%.*}.m3c "EXPERIMENTAL_BRANCHING_RATIOS:diagram"` "TRUE"  # << Last is normalize
 		exit
 	fi
 	
 	if [ "$2" = "fit_sBR" ]
 	then
+		FILTER="$3"
 		speciesFitBRDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" "TRUE"  # << Last is normalize
 		exit
 	fi
 	
 	if [ "$2" = "fit_fE" ]
 	then
+		FILTER="$3"
 		energyDistDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" `getValueFromIFIle ${iFile%.*}.m3c "EXPERIMENTAL_BRANCHING_RATIOS:diagram"` "TRUE"  # << Last is normalize
 		exit
 	fi
 	
 	if [ "$2" = "fit_sfE" ]
 	then
+		FILTER="$3"
 		speciesEnergyDistDiagram ${iFile%.*}.m3c "${iFile%.*}.data/" "TRUE"  # << Last is normalize
 		exit
 	fi

@@ -96,6 +96,7 @@ module FragmentsListBase_
 		
 		real(8) :: vibrationalEnergy_    !< It is calculated into LnWi procedure
 		real(8) :: intermolEnergy_       !< It is calculated into changeGeometryFragmentsListBase procedure
+		real(8) :: kineticEnergyTSmode_       !< It is calculated into ???? procedure
 		
 		real(8) :: kineticEnergy_       !< Translational energy internally calculated by difference with the reactor energy
 		real(8), private :: reactorEnergy_    !< Total energy into the reactor which is externally chosen
@@ -149,6 +150,7 @@ module FragmentsListBase_
 			procedure, NON_OVERRIDABLE :: reactorEnergy
 			procedure, NON_OVERRIDABLE :: vibrationalEnergy
 			procedure, NON_OVERRIDABLE :: intermolEnergy
+			procedure, NON_OVERRIDABLE :: kineticEnergyTSmode
 			
 			procedure, NON_OVERRIDABLE :: initialGuessFragmentsListBase
 			procedure, private :: randomCenters
@@ -227,6 +229,7 @@ module FragmentsListBase_
 		
 		this.kineticEnergy_ = 0.0_8
 		this.reactorEnergy_ = 0.0_8
+		this.kineticEnergyTSmode_ = 0.0_8
 		
 		this.logGFactor_ = 0.0_8
 		this.logVfree_ = 0.0_8
@@ -282,6 +285,7 @@ module FragmentsListBase_
 		
 		this.kineticEnergy_ = other.kineticEnergy_
 		this.reactorEnergy_ = other.reactorEnergy_
+		this.kineticEnergyTSmode_ = other.kineticEnergyTSmode_
 		
 		this.logGFactor_ = other.logGFactor_
 		this.logVfree_ = other.logVfree_
@@ -658,6 +662,16 @@ module FragmentsListBase_
 		
 		output = this.intermolEnergy_
 	end function intermolEnergy
+	
+	!>
+	!! @brief
+	!!
+	pure function kineticEnergyTSmode( this ) result( output )
+		class(FragmentsListBase), intent(in) :: this
+		real(8) :: output
+		
+		output = this.kineticEnergyTSmode_
+	end function kineticEnergyTSmode
 	
 	!>
 	!! @brief
@@ -1230,12 +1244,16 @@ module FragmentsListBase_
 			call GOptions_subsection( "Random vibrational energies "//trim(this.label()), indent=2 )
 		end if
 		
-		this.vibrationalEnergy_ = 0.0_8
-		do i=1,this.nMolecules()
-			call this.clusters(i).changeVibrationalEnergy()
-			this.vibrationalEnergy_ = this.vibrationalEnergy_ + this.clusters(i).vibrationalEnergy_
-		end do
+		do
+			this.vibrationalEnergy_ = 0.0_8
+			do i=1,this.nMolecules()
+				call this.clusters(i).changeVibrationalEnergy( maxEnergy=this.reactorEnergy_ )
+				this.vibrationalEnergy_ = this.vibrationalEnergy_ + this.clusters(i).vibrationalEnergy_
+			end do
 			
+			if( this.vibrationalEnergy_ <= this.reactorEnergy_ ) exit
+		end do
+		
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_paragraph( "Vibrational energy summary", indent=2 )
 			

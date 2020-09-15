@@ -1,6 +1,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                                   !!
 !! This file is part of M3C project                                                  !!
+!!                                                                                   !!
+!! Copyright (c) 2019-2020 by authors                                                !!
+!! Authors:                                                                          !!
+!!                         * Néstor F. Aguirre (2019-2020)                           !!
+!!                           nfaguirrec@gmail.com                                    !!
+!!                                                                                   !!
 !! Copyright (c) 2013-2016 Departamento de Química                                   !!
 !!                         Universidad Autónoma de Madrid                            !!
 !!                         All rights reserved.                                      !!
@@ -1083,10 +1089,39 @@ module FragmentsList_
 		integer :: i, n, s
 		real(8) :: logMu, Et
 		integer :: j
+		real(8) :: randNumber
+		integer :: sTS
+		real(8) :: logTSt, Et_TS, iEt_TS
 		
 		n = this.nMolecules()
 		
-		Et = this.kineticEnergy()
+		logTSt = 0.0_8
+		Et_TS = 0.0_8
+		sTS = 0
+		do i=1,n
+			if( this.clusters(i).isTransitionState .and. this.kineticEnergy() > 0.0_8 ) then
+				logTSt = &
+					logTSt &
+					+ 0.5_8*log(2.0_8*Math_PI) &
+					- log( Gamma(0.5_8) ) &
+					+ 0.5_8*log(this.clusters(i).reducedMassVibTS)
+					
+! 				write(*,"(A,3F15.8)") "logTStA = ", logTSt, log(this.clusters(i).reducedMassVibTS), this.clusters(i).reducedMassVibTS
+					
+				call random_number( randNumber ) ! [0-1]
+				iEt_TS = randNumber*( this.kineticEnergy() - Et_TS )  ! Rand [0:E1]
+				Et_TS = Et_TS + iEt_TS
+				
+				logTSt = logTSt - 0.5*log(iEt_TS)
+				
+! 				write(*,"(A,2F15.8)") "logTSt = ", logTSt, Et_TS
+				
+				sTS = sTS + 1
+			end if
+		end do
+		
+		Et = this.kineticEnergy() - Et_TS
+! 		Et = this.kineticEnergy()
 		
 		if( Et < 0.0_8 ) then
 			this.LnLambda_ = 0.0_8
@@ -1096,9 +1131,9 @@ module FragmentsList_
 		else
 			select case( trim(GOptionsM3C_angularMomentumCouplingScheme.fstr) )
 				case( "JJ" )
-					s = this.ft() + this.fr() - this.clusters( this.idSorted(n) ).fr()
+					s = s + this.ft() + this.fr() - this.clusters( this.idSorted(n) ).fr()
 				case( "JJL" )
-					s = this.ft() + this.fr()
+					s = s + this.ft() + this.fr()
 				case default
 					call GOptions_error( &
 						"Unknown angular momentum coupling scheme"//" ("//trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)//")", &
@@ -1114,14 +1149,16 @@ module FragmentsList_
 			logMu = logMu - log( this.mass() )
 			
 			if ( n == 1 ) then	
-				this.LnLambda_ = \
-					0.5_8*this.clusters(1).fr()*log(2.0_8*Math_PI) &
+				this.LnLambda_ = &
+					logTSt &
+					+ 0.5_8*this.clusters(1).fr()*log(2.0_8*Math_PI) &
 					- log( Gamma(0.5_8*this.clusters(1).fr()) ) &
 					+ this.logVtheta_ &
 					+ 0.5_8*this.LnDiagI_
 			else
-				this.LnLambda_ = \
-					0.5_8*s*log(2.0_8*Math_PI) &
+				this.LnLambda_ = &
+					logTSt &
+					+ 0.5_8*s*log(2.0_8*Math_PI) &
 					- log( Gamma(0.5_8*s) ) &
 					+ 1.5*logMu &
 					+ this.logVfree_ + this.logVtheta_ &

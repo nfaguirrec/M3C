@@ -1,6 +1,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                                   !!
 !! This file is part of M3C project                                                  !!
+!!                                                                                   !!
+!! Copyright (c) 2019-2020 by authors                                                !!
+!! Authors:                                                                          !!
+!!                         * Néstor F. Aguirre (2019-2020)                           !!
+!!                           nfaguirrec@gmail.com                                    !!
+!!                                                                                   !!
 !! Copyright (c) 2013-2016 Departamento de Química                                   !!
 !!                         Universidad Autónoma de Madrid                            !!
 !!                         All rights reserved.                                      !!
@@ -467,7 +473,7 @@ module Reactor_
 	!!
 	subroutine reduceToTransitionStates( reactives, products, productsTS )
 		type(FragmentsList), intent(in) :: reactives
-		type(FragmentsList), intent(inout) :: products
+		type(FragmentsList), intent(in) :: products
 		type(FragmentsList), intent(out) :: productsTS
 		
 		integer :: i, j, id
@@ -578,8 +584,6 @@ module Reactor_
 									call productsTS.init( products.nMolecules() - lProducts.nMolecules() + 1 )
 									call productsTS.set( 1, FragmentsDB_instance.transitionState( transitionStateId ) )
 									
-									! @TODO Aca el problema aparece cuando todos los productos estan en un TS como C(t1)+C(t1)+C(t1)
-									!       En este caso nunca se entra en el if
 									j=2
 									do i=1,products.nMolecules()
 										do kp=1,size(productInTScomb,dim=2)
@@ -1047,13 +1051,23 @@ module Reactor_
 					! Los productos utilizan parte de la energía
 					call this.productsTS.initialGuessFragmentsList()
 					
-! 					write(*,*) "reactive ", trim(this.reactives.label())
-! 					write(*,*) "products ", trim(this.products.label())
-! 					write(*,*) "TS located ", trim(this.productsTS.label())
+					write(*,*) "--------------------------------------------------------"
+					write(*,*) "reactives ", trim(this.reactives.label())
+! 					sBuffer = this.reactives.energyHistoryLine()
+! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
+					sBuffer = this.reactives.weightHistoryLine()
+					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+					write(*,*) "products ", trim(this.products.label())
 ! 					sBuffer = this.products.energyHistoryLine()
-! 					write(*,"(A)") trim(sBuffer.fstr)
+! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
+					sBuffer = this.products.weightHistoryLine()
+					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+					write(*,*) "TS located ", trim(this.productsTS.label())
 ! 					sBuffer = this.productsTS.energyHistoryLine()
-! 					write(*,"(A)") trim(sBuffer.fstr)
+! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
+					sBuffer = this.productsTS.weightHistoryLine()
+					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+					write(*,*) "--------------------------------------------------------"
 					
 				end if
 				
@@ -1281,7 +1295,8 @@ module Reactor_
 			warningNegativeEnergy = .false.
 			minValue = Math_INF
 			minNegativeValue = Math_INF
-			do dN=1,2 ! Maximum number of fragments is 3
+!			do dN=1,2 ! Maximum number of fragments is 3
+			do dN=1,6 ! Maximum number of fragments is 5
 				call this.setType( "S:"//trim(FString_fromInteger(dN)) )
 				
 				call fragmentsHistogram.init()
@@ -1314,7 +1329,7 @@ module Reactor_
 					energy = ( FragmentsDB_instance.getEelecFromName(pair.first.fstr)-FragmentsDB_instance.getEelecFromName(reactives.label()) )/eV
 					
 					if( detailed ) &
-						write(*,"(F10.4,5X,A)") energy, trim(adjustl(pair.first.fstr))
+						write(*,"(F10.4,5X,A,5X,A)") energy, trim(adjustl(pair.first.fstr)), "#:"//trim(adjustl(reactives.label()))
 					
 					if( energy < minValue ) then
 						if( energy < 0.0_8 ) then

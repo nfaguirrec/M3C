@@ -1,6 +1,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!                                                                                   !!
 !! This file is part of M3C project                                                  !!
+!!                                                                                   !!
+!! Copyright (c) 2019-2020 by authors                                                !!
+!! Authors:                                                                          !!
+!!                         * Néstor F. Aguirre (2019-2020)                           !!
+!!                           nfaguirrec@gmail.com                                    !!
+!!                                                                                   !!
 !! Copyright (c) 2013-2016 Departamento de Química                                   !!
 !!                         Universidad Autónoma de Madrid                            !!
 !!                         All rights reserved.                                      !!
@@ -62,6 +68,7 @@ module Fragment_
 	use Molecule_
 	use StringList_
 	use RealVector_
+	use AtomicElementsDB_
 	
 	use GOptionsM3C_
 	
@@ -81,11 +88,13 @@ module Fragment_
 		integer :: sigmaSym
 		real(8) :: electronicEnergy
 		real(8), allocatable :: vibFrequencies(:)
+		character(3), allocatable :: vibFrequenciesAssignment(:)
 		logical :: isTransitionState
 		real(8) :: maxEvib
 		real(8) :: ZPE
 		real(8) :: maxJ
 		character(:), allocatable, private :: fileName
+		real(8) :: reducedMassVibTS
 		
 		logical :: frozen
 		
@@ -158,6 +167,7 @@ module Fragment_
 		this.ZPE = 0.0_8
 		this.maxJ = 0.0_8
 		if( allocated(this.fileName) ) deallocate(this.fileName)
+		this.reducedMassVibTS = 0.0_8
 		
 		this.frozen = .false.
 		
@@ -188,6 +198,8 @@ module Fragment_
 		character(100) :: extension
 		
 		type(String) :: effStore
+		integer :: i, j, lowerLimit, upperLimit
+
 		
 		effStore = "."
 		if( present(store) ) effStore = store
@@ -242,10 +254,6 @@ module Fragment_
 				"SMolecule.fromMassTableRow()", &
 				trim(strRow) &
 			)
-		end if
-		
-		if( any( this.vibFrequencies < 0.0_8 ) ) then
-			this.isTransitionState = .true.
 		end if
 		
 		! Zero point energy
@@ -317,14 +325,31 @@ module Fragment_
 			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "             Eelec = ", this.electronicEnergy, "   a.u."
 			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "              Mass = ", this.mass()/amu, "   amu"
 			if( this.nAtoms() > 1 ) then
+				write(IO_STDOUT,"(4X,A22)",advance="no")  "   Frequencies = "
+				do j=1,ceiling( (size(this.vibFrequencies)*1.0)/10.0 )
+					lowerLimit = 10*(j-1)+1
+					upperLimit = min( 10*j, size(this.vibFrequencies) )
+					if( j/=1 ) write (IO_STDOUT,"(26X)",advance="no")
+					write (IO_STDOUT,"(<min(10,size(this.vibFrequencies))>F10.2)") ( this.vibFrequencies(i)/cm1, i = lowerLimit, upperLimit )
+				end do
+				
+				write(IO_STDOUT,"(4X,A22)",advance="no")  " vibAssignment = "
+				do j=1,ceiling( (size(this.vibFrequenciesAssignment)*1.0)/10.0 )
+					lowerLimit = 10*(j-1)+1
+					upperLimit = min( 10*j, size(this.vibFrequenciesAssignment) )
+					if( j/=1 ) write (IO_STDOUT,"(26X)",advance="no")
+					write (IO_STDOUT,"(<min(10,size(this.vibFrequencies))>A10)") ( this.vibFrequenciesAssignment(i), i = lowerLimit, upperLimit )
+				end do
+				
 ! 				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "   aver. vib. freq = ", product(this.vibFrequencies)**(1.0_8/size(this.vibFrequencies))/eV, "   eV"
 				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "               ZPE = ", this.ZPE/eV, "   eV"
 ! 				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "               ZPE = ", this.ZPE, "   a.u."
 			end if
-			if( this.isTransitionState ) then
-				write(IO_STDOUT,"(4X,A22,L)")        " isTransitionState = ", this.isTransitionState
-			end if
 			write(IO_STDOUT,"(4X,A23,2I5,A)")    "          (fr, fv) = (", this.fr(), this.fv(), "  )"
+			if( this.isTransitionState ) then
+				write(IO_STDOUT,"(4X,A22,L15)")        " isTransitionState = ", this.isTransitionState
+				write(IO_STDOUT,"(4X,A22,F15.7)")    " reducedMassVib TS = ", this.reducedMassVibTS/amu, "  amu"
+			end if
 ! 			write(IO_STDOUT,"(A)") ""
 ! 		end if
 		
@@ -361,6 +386,7 @@ module Fragment_
 		this.ZPE = other.ZPE
 		this.maxJ = other.maxJ
 		this.fileName = other.fileName
+		this.reducedMassVibTS = other.reducedMassVibTS
 		
 		this.frozen = other.frozen
 		
@@ -441,10 +467,14 @@ module Fragment_
 		type(String) :: buffer
 		character(1000), allocatable :: tokens(:)
 		integer :: i, nItems
+		real(8) :: mass1, mass2
 		
 		call ifile.init( trim(fileName) )
 		
 		call this.loadXYZ( ifile, loadName )
+		
+		this.isTransitionState = .false.
+		this.reducedMassVibTS = -1.0_8
 		
 		do while( .not. ifile.eof() )
 			buffer = ifile.readLine()
@@ -462,12 +492,39 @@ module Fragment_
 						
 						this.vibFrequencies(i) = buffer.toReal()*cm1
 					end do
+					
+					if( any( this.vibFrequencies < 0.0_8 ) ) then
+						this.isTransitionState = .true.
+					end if
+					
+					if( allocated(this.vibFrequenciesAssignment) ) deallocate(this.vibFrequenciesAssignment)
+					allocate( this.vibFrequenciesAssignment(nItems) )
+					this.vibFrequenciesAssignment = "VIB"
+					
+				else if( trim(tokens(1)) == "FREQUENCIES_ASSIGNMENT" ) then
+					nItems = FString_toInteger(tokens(2))
+					
+					if( allocated(this.vibFrequenciesAssignment) ) deallocate(this.vibFrequenciesAssignment)
+					allocate( this.vibFrequenciesAssignment(nItems) )
+					
+					do i=1,nItems
+						buffer = ifile.readLine()
+						
+						this.vibFrequenciesAssignment(i) = trim(buffer.fstr)
+					end do
+				
+				else if( this.isTransitionState .and. trim(tokens(1)) == "TS_VIB_REDUCED_MASS" ) then
+					
+					this.reducedMassVibTS = FString_toReal( trim(tokens(2)) )*amu
+					
 				end if
+				
 			end if
 		end do
 		
 		call ifile.close()
 		if( allocated(tokens) ) deallocate(tokens)
+		
 	end subroutine loadRXYZ
 	
 	!>
@@ -564,23 +621,33 @@ module Fragment_
 	!>
 	!! @brief Builds a random vibrational energy
 	!!
-	subroutine changeVibrationalEnergy( this )
+	subroutine changeVibrationalEnergy( this, maxEnergy )
 		class(Fragment) :: this
+		real(8), optional, intent(in) :: maxEnergy
+		
+		real(8) :: effMaxEnergy
+		
+		effMaxEnergy = this.maxEvib
+		if( present(maxEnergy) ) effMaxEnergy = min(this.maxEvib,maxEnergy)
 		
 		if( this.frozen ) then
 			this.vibrationalEnergy_ = 0.0_8
 		else
 			if( GOptionsM3C_useZPECorrection ) then
-				this.vibrationalEnergy_ = RandomUtils_uniform( [0.0_8,this.maxEvib] )
+				if( this.ZPE < effMaxEnergy ) then
+					this.vibrationalEnergy_ = RandomUtils_uniform( [this.ZPE,effMaxEnergy] )
+				else
+					this.vibrationalEnergy_ = 0.0_8
+				end if
 			else
-				this.vibrationalEnergy_ = RandomUtils_uniform( [this.ZPE,this.maxEvib] )
+				this.vibrationalEnergy_ = RandomUtils_uniform( [0.0_8,effMaxEnergy] )
 			end if
 		end if
 		
 		if( GOptions_printLevel >= 4 ) then
 			call GOptions_paragraph( "Change vibrational energy "//trim(this.name), indent=3 )
 			call GOptions_valueReport( "ZPE", this.ZPE/eV, "eV", indent=3 )
-			call GOptions_valueReport( "maxEvib", this.maxEvib/eV, "eV", indent=3 )
+			call GOptions_valueReport( "maxEvib", effMaxEnergy/eV, "eV", indent=3 )
 			call GOptions_valueReport( "Evib", this.vibrationalEnergy_/eV, "eV", indent=3 )
 		end if
 		
