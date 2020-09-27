@@ -88,7 +88,8 @@ module Fragment_
 		integer :: sigmaSym
 		real(8) :: electronicEnergy
 		real(8), allocatable :: vibFrequencies(:)
-		character(3), allocatable :: vibFrequenciesAssignment(:)
+		character(3), allocatable :: vibFreqsAssign(:)
+		type(String), allocatable :: vibFreqsAssignData(:)
 		logical :: isTransitionState
 		real(8) :: maxEvib
 		real(8) :: ZPE
@@ -326,19 +327,27 @@ module Fragment_
 			write(IO_STDOUT,"(4X,A22,F15.7,A)")  "              Mass = ", this.mass()/amu, "   amu"
 			if( this.nAtoms() > 1 ) then
 				write(IO_STDOUT,"(4X,A22)",advance="no")  "   Frequencies = "
-				do j=1,ceiling( (size(this.vibFrequencies)*1.0)/10.0 )
-					lowerLimit = 10*(j-1)+1
-					upperLimit = min( 10*j, size(this.vibFrequencies) )
+				do j=1,ceiling( (size(this.vibFrequencies)*1.0)/5.0 )
+					lowerLimit = 5*(j-1)+1
+					upperLimit = min( 5*j, size(this.vibFrequencies) )
 					if( j/=1 ) write (IO_STDOUT,"(26X)",advance="no")
-					write (IO_STDOUT,"(<min(10,size(this.vibFrequencies))>F10.2)") ( this.vibFrequencies(i)/cm1, i = lowerLimit, upperLimit )
+					write (IO_STDOUT,"(<min(5,size(this.vibFrequencies))>F20.2)") ( this.vibFrequencies(i)/cm1, i = lowerLimit, upperLimit )
 				end do
 				
-				write(IO_STDOUT,"(4X,A22)",advance="no")  " vibAssignment = "
-				do j=1,ceiling( (size(this.vibFrequenciesAssignment)*1.0)/10.0 )
-					lowerLimit = 10*(j-1)+1
-					upperLimit = min( 10*j, size(this.vibFrequenciesAssignment) )
+				write(IO_STDOUT,"(4X,A22)",advance="no")  " vibAssign = "
+				do j=1,ceiling( (size(this.vibFreqsAssign)*1.0)/5.0 )
+					lowerLimit = 5*(j-1)+1
+					upperLimit = min( 5*j, size(this.vibFreqsAssign) )
 					if( j/=1 ) write (IO_STDOUT,"(26X)",advance="no")
-					write (IO_STDOUT,"(<min(10,size(this.vibFrequencies))>A10)") ( this.vibFrequenciesAssignment(i), i = lowerLimit, upperLimit )
+					write (IO_STDOUT,"(<min(5,size(this.vibFrequencies))>A20)") ( this.vibFreqsAssign(i), i = lowerLimit, upperLimit )
+				end do
+				
+				write(IO_STDOUT,"(4X,A22)",advance="no")  " vibFreqsData = "
+				do j=1,ceiling( (size(this.vibFreqsAssignData)*1.0)/5.0 )
+					lowerLimit = 5*(j-1)+1
+					upperLimit = min( 5*j, size(this.vibFreqsAssignData) )
+					if( j/=1 ) write (IO_STDOUT,"(26X)",advance="no")
+					write (IO_STDOUT,"(<min(5,size(this.vibFrequencies))>A20)") ( " "//trim(this.vibFreqsAssignData(i).fstr), i = lowerLimit, upperLimit )
 				end do
 				
 ! 				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "   aver. vib. freq = ", product(this.vibFrequencies)**(1.0_8/size(this.vibFrequencies))/eV, "   eV"
@@ -411,6 +420,8 @@ module Fragment_
 		type(Fragment) :: this
 		
 		if( allocated(this.vibFrequencies) ) deallocate(this.vibFrequencies)
+		if( allocated(this.vibFreqsAssign) ) deallocate(this.vibFreqsAssign)
+		if( allocated(this.vibFreqsAssignData) ) deallocate(this.vibFreqsAssignData)
 	end subroutine destroyFragment
 	
 	!>
@@ -465,7 +476,7 @@ module Fragment_
 		
 		type(IFStream) :: ifile
 		type(String) :: buffer
-		character(1000), allocatable :: tokens(:)
+		character(1000), allocatable :: tokens(:), tokens2(:)
 		integer :: i, nItems
 		real(8) :: mass1, mass2
 		
@@ -497,20 +508,36 @@ module Fragment_
 						this.isTransitionState = .true.
 					end if
 					
-					if( allocated(this.vibFrequenciesAssignment) ) deallocate(this.vibFrequenciesAssignment)
-					allocate( this.vibFrequenciesAssignment(nItems) )
-					this.vibFrequenciesAssignment = "VIB"
+					if( allocated(this.vibFreqsAssign) ) deallocate(this.vibFreqsAssign)
+					allocate( this.vibFreqsAssign(nItems) )
+					this.vibFreqsAssign = "VIB"
+					
+					if( allocated(this.vibFreqsAssignData) ) deallocate(this.vibFreqsAssignData)
+					allocate( this.vibFreqsAssignData(nItems) )
+					do i=1,nItems
+						this.vibFreqsAssignData(i) = ""
+					end do
 					
 				else if( trim(tokens(1)) == "FREQUENCIES_ASSIGNMENT" ) then
 					nItems = FString_toInteger(tokens(2))
 					
-					if( allocated(this.vibFrequenciesAssignment) ) deallocate(this.vibFrequenciesAssignment)
-					allocate( this.vibFrequenciesAssignment(nItems) )
+					if( allocated(this.vibFreqsAssign) ) deallocate(this.vibFreqsAssign)
+					allocate( this.vibFreqsAssign(nItems) )
+					
+					if( allocated(this.vibFreqsAssignData) ) deallocate(this.vibFreqsAssignData)
+					allocate( this.vibFreqsAssignData(nItems) )
 					
 					do i=1,nItems
 						buffer = ifile.readLine()
+						call buffer.split( tokens2, " " )
 						
-						this.vibFrequenciesAssignment(i) = trim(buffer.fstr)
+						if( size(tokens2) == 1 ) then
+							this.vibFreqsAssign(i) = trim(tokens2(1))
+							this.vibFreqsAssignData(i) = ""
+						else if( size(tokens2) == 2 ) then
+							this.vibFreqsAssign(i) = trim(tokens2(1))
+							this.vibFreqsAssignData(i) = trim(tokens2(2))
+						end if
 					end do
 				
 				else if( this.isTransitionState .and. trim(tokens(1)) == "TS_VIB_REDUCED_MASS" ) then
@@ -524,7 +551,13 @@ module Fragment_
 		
 		call ifile.close()
 		if( allocated(tokens) ) deallocate(tokens)
+		if( allocated(tokens2) ) deallocate(tokens2)
 		
+		if( size(this.vibFrequencies) /= size(this.vibFreqsAssign) .or. size(this.vibFrequencies) /= size(this.vibFreqsAssignData) ) then
+			write(*,*) "### ERROR ### Fragment.loadRXYZ(fileName="//trim(fileName)//")"
+			write(*,*) "              size(FREQUENCIES) /= size(FREQUENCIES_ASSIGNMENT)"
+			stop
+		end if
 	end subroutine loadRXYZ
 	
 	!>

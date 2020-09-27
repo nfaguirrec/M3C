@@ -715,6 +715,8 @@ module FragmentsList_
 		nMu = effMu
 		nNu = effNu
 		
+		! @TODO Agregar los grados de libertad de los productos del TS y sumarlos a nMu y nNu
+		
 		if( GOptions_debugLevel >= 3 ) then
 			call GOptions_subsection( "Angular momentum coupling JJL --> "//trim(this.label()), indent=2 )
 		end if
@@ -838,6 +840,8 @@ module FragmentsList_
 			end if
 			
 		end do
+		
+		! @TODO Aca hay que agregar los valores que faltan a la matriz grande que vienen de los productos del TS
 		
 		if( GOptions_printLevel >= 3 .or. GOptions_debugLevel >= 3 ) then
 			write(*,*) ""
