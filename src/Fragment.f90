@@ -95,7 +95,6 @@ module Fragment_
 		real(8) :: ZPE
 		real(8) :: maxJ
 		character(:), allocatable, private :: fileName
-		real(8) :: reducedMassVibTS
 		
 		logical :: frozen
 		
@@ -111,6 +110,9 @@ module Fragment_
 		character(100), private :: label_
 		character(100), private :: dlabel_
 		logical, private :: testLabel_
+		
+		! Specific for TS support
+		
 		
 		contains
 			generic :: init => initDefault, fromMassTableRow
@@ -163,12 +165,13 @@ module Fragment_
 		this.electronicEnergy = 0.0_8
 		
 		if( allocated(this.vibFrequencies) ) deallocate( this.vibFrequencies )
+		if( allocated(this.vibFreqsAssign) ) deallocate( this.vibFreqsAssign )
+		if( allocated(this.vibFreqsAssignData) ) deallocate( this.vibFreqsAssignData )
 		this.isTransitionState = .false.
 		this.maxEvib = 0.0_8
 		this.ZPE = 0.0_8
 		this.maxJ = 0.0_8
 		if( allocated(this.fileName) ) deallocate(this.fileName)
-		this.reducedMassVibTS = 0.0_8
 		
 		this.frozen = .false.
 		
@@ -357,7 +360,6 @@ module Fragment_
 			write(IO_STDOUT,"(4X,A23,2I5,A)")    "          (fr, fv) = (", this.fr(), this.fv(), "  )"
 			if( this.isTransitionState ) then
 				write(IO_STDOUT,"(4X,A22,L15)")        " isTransitionState = ", this.isTransitionState
-				write(IO_STDOUT,"(4X,A22,F15.7)")    " reducedMassVib TS = ", this.reducedMassVibTS/amu, "  amu"
 			end if
 ! 			write(IO_STDOUT,"(A)") ""
 ! 		end if
@@ -386,16 +388,23 @@ module Fragment_
 		this.electronicEnergy = other.electronicEnergy
 		
 		if( allocated(this.vibFrequencies) ) deallocate(this.vibFrequencies)
-		
 		allocate( this.vibFrequencies( size(other.vibFrequencies) ) )
 		this.vibFrequencies = other.vibFrequencies
+		
+		if( allocated(this.vibFreqsAssign) ) deallocate(this.vibFreqsAssign)
+		allocate( this.vibFreqsAssign( size(other.vibFreqsAssign) ) )
+		this.vibFreqsAssign = other.vibFreqsAssign
+		
+		if( allocated(this.vibFreqsAssignData) ) deallocate(this.vibFreqsAssignData)
+		allocate( this.vibFreqsAssignData( size(other.vibFreqsAssignData) ) )
+		this.vibFreqsAssignData = other.vibFreqsAssignData
+		
 		this.isTransitionState = other.isTransitionState
 		
 		this.maxEvib = other.maxEvib
 		this.ZPE = other.ZPE
 		this.maxJ = other.maxJ
 		this.fileName = other.fileName
-		this.reducedMassVibTS = other.reducedMassVibTS
 		
 		this.frozen = other.frozen
 		
@@ -485,7 +494,6 @@ module Fragment_
 		call this.loadXYZ( ifile, loadName )
 		
 		this.isTransitionState = .false.
-		this.reducedMassVibTS = -1.0_8
 		
 		do while( .not. ifile.eof() )
 			buffer = ifile.readLine()
@@ -540,10 +548,6 @@ module Fragment_
 						end if
 					end do
 				
-				else if( this.isTransitionState .and. trim(tokens(1)) == "TS_VIB_REDUCED_MASS" ) then
-					
-					this.reducedMassVibTS = FString_toReal( trim(tokens(2)) )*amu
-					
 				end if
 				
 			end if

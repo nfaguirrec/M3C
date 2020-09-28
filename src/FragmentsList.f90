@@ -1096,6 +1096,9 @@ module FragmentsList_
 		real(8) :: randNumber
 		integer :: sTS
 		real(8) :: logTSt, Et_TS, iEt_TS
+		character(100), allocatable :: tokens(:)
+		character(100) :: fsBuffer
+		real(8) :: reducedMass
 		
 		n = this.nMolecules()
 		
@@ -1104,13 +1107,25 @@ module FragmentsList_
 		sTS = 0
 		do i=1,n
 			if( this.clusters(i).isTransitionState .and. this.kineticEnergy() > 0.0_8 ) then
+			
+				call this.clusters(i).vibFreqsAssignData(i).split( tokens,  ";" )
+				fsBuffer = tokens(1)
+				call FString_split( fsBuffer, tokens, "=" )
+				if( tokens(1) == "rMass" ) then
+					reducedMass = FString_toReal( tokens(2) )
+				else
+					write(*,*) "### ERROR ### FragmentsList.updateLambda: rMass undefined for cluster"
+					stop
+				end if
+				deallocate( tokens )
+				
 				logTSt = &
 					logTSt &
 					+ 0.5_8*log(2.0_8*Math_PI) &
 					- log( Gamma(0.5_8) ) &
-					+ 0.5_8*log(this.clusters(i).reducedMassVibTS)
+					+ 0.5_8*log(reducedMass)
 					
-! 				write(*,"(A,3F15.8)") "logTStA = ", logTSt, log(this.clusters(i).reducedMassVibTS), this.clusters(i).reducedMassVibTS
+! 				write(*,"(A,3F15.8)") "logTStA = ", logTSt, log(reducedMass), reducedMass
 					
 				call random_number( randNumber ) ! [0-1]
 				iEt_TS = randNumber*( this.kineticEnergy() - Et_TS )  ! Rand [0:E1]
