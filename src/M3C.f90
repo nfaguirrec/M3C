@@ -52,6 +52,7 @@ program M3C
 	use String_
 	use CommandLineParser_
 	use BlocksIFileParser_
+	use RandomUtils_
 	
 	use GOptionsM3C_
 	use FragmentsDB_
@@ -80,6 +81,9 @@ program M3C
 	
 	type(String) :: sBuffer
 	
+	integer :: randomSeed, n
+	integer, dimension(:), allocatable :: seed
+	
 	!------------------------------------------------------------------------------
 	
 	call programOptions.init()
@@ -107,6 +111,16 @@ program M3C
 	! Loading the global options
 	!-------------------------------------------------------------------
 	GOptions_zero = iParser.getReal( "GOPTIONS:zero", def=1d-12 )
+	randomSeed = iParser.getInteger( "GOPTIONS:randomSeed", def=-1 )
+	
+	call RandomUtils_init()
+	if( randomSeed /= -1 ) then
+		call random_seed(size = n)
+		allocate(seed(n))
+		seed = randomSeed
+		call random_seed( put=seed )
+		deallocate(seed)
+	end if
 	
 	GOptionsM3C_systemRadius = iParser.getReal( "GOPTIONS:systemRadius", def=10.0_8*angs )*angs
 	GOptionsM3C_randomWalkStepRadius = iParser.getReal( "GOPTIONS:randomWalkStepRadius", def=2.0_8*angs )*angs
@@ -136,6 +150,7 @@ program M3C
 	GOptions_debugLevel = iParser.getInteger( "GOPTIONS:debugLevel", def=1 )
 	
 	write(*,*)
+	write(*,"(A40,I15)") "randomSeed = ", randomSeed
 	write(*,"(A40,E15.2)") "zero = ", GOptions_zero
 	write(*,"(A40,F15.5,A)") "systemRadius = ", GOptionsM3C_systemRadius/angs, " A"
 	write(*,"(A40,L5)") "useRandomWalkers = ", GOptionsM3C_useRandomWalkers

@@ -1,0 +1,124 @@
+BEGIN EXCITATION_ENERGY_SCAN
+	excitationEnergy  =  0:35:36  # dE = 1.0 eV
+# 	excitationEnergy  =  0:35:71  # dE = 0.5 eV
+# 	excitationEnergy  =  0:35:141  # dE = 0.25 eV
+	
+# 	numberOfEvents = 10000:30000:71
+END EXCITATION_ENERGY_SCAN
+
+BEGIN GOPTIONS
+	randomSeed = 10
+        systemRadius = 10.0
+        overlappingRadius = 0.2
+        
+        useRandomWalkers = FALSE
+        randomWalkStepRadius = 1.0
+        
+        useZPECorrection = TRUE
+        useSpinConservationRules = FALSE
+        
+        angularMomentumCouplingScheme = JJL
+END GOPTIONS
+
+BEGIN MARKOV_CHAIN
+	task = 5*V,T,R,S:0,5*V,T,R,S:-1:1
+        burnInFraction = 0.1
+        
+	reactives = C5(s1)
+        excitationEnergy = 18.0
+        
+        tracking = energy
+        historyFileFrequency = 500
+#         tracking = none
+#         historyFileFrequency = 5000
+        
+        numberOfExperiments = 10
+        numberOfEvents = 5000
+
+#        geometryHistoryFilePrefix = geom
+        energyHistoryFile = energy.dat
+        weightHistoryFile = weight.dat
+#        JHistoryFile = J.dat
+#        LHistoryFile = L.dat
+        histogramFile = histogram.dat
+END MARKOV_CHAIN
+
+BEGIN FRAGMENTS_DATABASE
+
+	store = store
+	reference = C5(s1)
+
+	#---------------------------------------------------------------------------------------------------------------------
+	#               Label    Z  M WL  SYM                      geomFile               Eelec     maxVib
+	#---------------------------------------------------------------------------------------------------------------------
+                        C(s1)    0  1  5    1                C.q0.m1-1.rxyz        -1026.574168                      #           ¹D (2s²2p²) 
+                        C(t1)    0  3  3    1                C.q0.m3-1.rxyz        -1028.024016                      #           ³P (2s²2p²)
+                        
+                       C2(s1)    0  1  1    2               C2.q0.m1-1.rxyz        -2062.151541     C(t1)+C(t1)      # 6.10351   ^1\Sigma_g^+
+                       C2(t1)    0  3  2    2               C2.q0.m3-1.rxyz        -2062.058719     C(t1)+C(t1)      # 6.01069   ^3\Pi_u     
+                       
+                       C3(s1)    0  1  1    2               C3.q0.m1-1.rxyz        -3097.545476     C(t1)+C2(s1)     # 7.36992   D*H, 1-SGG
+                       C3(t1)    0  3  1    6               C3.q0.m3-1.rxyz        -3096.702170     C(t1)+C2(s1)     # 6.52661   D3H, 3-A1'
+                       C3(t2)    0  3  1    1               C3.q0.m3-2.rxyz        -3095.328290     C(t1)+C2(s1)     # 5.15273    CS, 3-A''
+                      
+                       C4(s1)    0  1  1    2               C4.q0.m1-1.rxyz        -4130.023944     C(t1)+C3(s1)     # 4.45445   D*H, --
+                       C4(t1)    0  3  1    2               C4.q0.m3-1.rxyz        -4130.415052     C(t1)+C3(s1)     # 4.84556   D*H, 3-SGG
+                       C4(s2)    0  1  1    4               C4.q0.m1-2.rxyz        -4130.503317     C(t1)+C3(s1)     # 4.93382   D2H, 1-AG
+                       C4(t2)    0  3  1    4               C4.q0.m3-2.rxyz        -4128.396925     C(t1)+C3(s1)     # 2.82743   D2H, 3-B2G
+                       C4(s3)    0  1  1    1               C4.q0.m1-3.rxyz        -4129.321150     C(t1)+C3(s1)     # 3.75166    C1, 1-A
+                       C4(t5)    0  3  1    1               C4.q0.m3-5.rxyz        -4129.245480     C(t1)+C3(s1)     # 3.67599    C1, 3-A
+                       
+                       C5(s1)    0  1  1    2               C5.q0.m1-1.rxyz        -5165.692754     C2(s1)+C3(s1)    # 5.99574   D*H, 1SGG
+                       C5(t1)    0  3  1    2               C5.q0.m3-1.rxyz        -5163.414736     C2(s1)+C3(s1)    # 3.71772   D*H, --
+                       C5(s2)    0  1  1    1               C5.q0.m1-2.rxyz        -5163.669217     C2(s1)+C3(s1)    # 3.97220    C1, 1-A
+                       C5(t2)    0  3  1    1               C5.q0.m3-2.rxyz        -5162.597064     C2(s1)+C3(s1)    # 2.90005    C1, 3-A
+                       C5(s4)    0  1  1    1               C5.q0.m1-4.rxyz        -5162.602660     C2(s1)+C3(s1)    # 2.90564    C1, 1-A
+                       C5(s5)    0  1  1    1               C5.q0.m1-5.rxyz        -5162.746792     C2(s1)+C3(s1)    # 3.04978    C1, 1-A
+                       C5(t5)    0  3  1    1               C5.q0.m3-5.rxyz        -5161.474556     C2(s1)+C3(s1)    # 1.77754    C1, 3-A
+                       C5(t6)    0  3  1    1               C5.q0.m3-6.rxyz        -5162.206671     C2(s1)+C3(s1)    # 2.50965    C1, 3-A
+	#---------------------------------------------------------------------------------------------------------------------
+END FRAGMENTS_DATABASE
+
+BEGIN EXPERIMENTAL_BRANCHING_RATIOS
+	error = absolute
+	diagram = C.vs.E
+	
+        #----------------------------------
+        #  Channel       BR   error   q/m
+        #----------------------------------
+           C5                 15.0     1.0
+           
+           C+C4                8.0     1.0
+           C2+C3              59.0     3.0
+           
+           C+C+C3              8.0     1.0
+           C+C2+C2             7.0     1.0
+           
+           C+C+C+C2            2.5     0.6
+           
+           C+C+C+C+C          0.27     0.2
+        #----------------------------------
+END EXPERIMENTAL_BRANCHING_RATIOS
+
+BEGIN FIT_BRANCHING_RATIOS
+        method = NNLS
+        basis = 5,5
+        eDistfile = C5-ccsdt.edist.dat
+        BRfile = C5-ccsdt.fitBR.dat
+END FIT_BRANCHING_RATIOS
+
+BEGIN BRANCHING_RATIOS
+        eDistOFile = C5-ccsdt.edist.dat
+        BRfile = C5-ccsdt.BR.dat
+        diagram = C.vs.E
+        
+        #-----------------------
+        #   Coeff  basis
+        #-----------------------
+        22.261800  B(1,8)
+        21.639932  B(1,9)
+        45.714079  B(2,5)
+        10.384190  B(2,6)
+        #-----------------------
+END BRANCHING_RATIOS
+
