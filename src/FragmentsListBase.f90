@@ -143,8 +143,6 @@ module FragmentsListBase_
 			generic :: set => setFromFragment
 			procedure, NON_OVERRIDABLE :: setFromFragment
 			
-			procedure, NON_OVERRIDABLE :: setFrozen
-			
 			procedure, NON_OVERRIDABLE :: kineticEnergy
 			procedure, NON_OVERRIDABLE :: setReactorEnergy
 			procedure, NON_OVERRIDABLE :: reactorEnergy
@@ -586,20 +584,6 @@ module FragmentsListBase_
 		
 		this.testLabel_ = .false.
 	end subroutine setFromFragment
-	
-	!>
-	!! @brief
-	!!
-	subroutine setFrozen( this, frozen )
-		class(FragmentsListBase) :: this
-		logical, intent(in) :: frozen
-		
-		integer :: i
-		
-		do i=1,this.nMolecules()
-			this.clusters(i).frozen = frozen
-		end do
-	end subroutine setFrozen
 	
 	!>
 	!! @brief

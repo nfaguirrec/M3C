@@ -490,9 +490,12 @@ module Reactor_
 		logical :: locatedTS
 		logical :: useDetailsInLabel
 		integer :: transitionStateId
+		logical :: quasiTS
+		integer :: extraNAtomsQuasiTS
 		
 		useDetailsInLabel = .true.
 		
+		! First we locate the clusters involded in a TS from both reactive and product
 		call reactiveInTS.init( resizeIncrement=reactives.nMolecules() )
 		call productInTS.init( resizeIncrement=products.nMolecules() )
 		
@@ -527,6 +530,7 @@ module Reactor_
 			locatedTS = .false.
 			
 			do ir=1,reactiveInTS.size()
+				! We generate all possible combinations of the clusters in the reactives which are involded in a TS
 				call Math_combinations( reactiveInTS.size(), ir, reactiveInTScomb )
 				
 				do jr=1,size(reactiveInTScomb,dim=1)
@@ -539,6 +543,7 @@ module Reactor_
 					end do
 					
 					do ip=1,productInTS.size()
+						! We generate all possible combinations of the clusters in the products which are involded in a TS
 						call Math_combinations( productInTS.size(), ip, productInTScomb )
 						
 						do jp=1,size(productInTScomb,dim=1)
@@ -550,8 +555,11 @@ module Reactor_
 								nAtomsP = nAtomsP + products.clusters( productInTS.at(productInTScomb(jp,kp)) ).nAtoms()
 							end do
 							
+							! For the given combination of clusters in reactives and products, we check mass and number of atoms conservation
 							if( massNumberR == massNumberP .and. nAtomsR > 1 .and. nAtomsP > 1 ) then
 								
+								! lReactives and lProducts include only those clusters involded in a TS
+								! They should be the reactives and products of a TS in the database
 								call lReactives.init( size(reactiveInTScomb,dim=2) )
 								call lProducts.init( size(productInTScomb,dim=2) )
 								
@@ -567,11 +575,13 @@ module Reactor_
 									
 									labelTS = trim(lReactives.label( details=useDetailsInLabel ))//"<-->"//trim(lProducts.label( details=useDetailsInLabel ))
 									
-									if( GOptions_debugLevel >= 2 ) then
-										write(*,*) "      reactives = ", trim(reactives.label( details=useDetailsInLabel ))
-										write(*,*) "       products = ", trim(products.label( details=useDetailsInLabel ))
-										write(*,*) "     TS located = ", trim(labelTS.fstr)
-									end if
+! 									if( GOptions_debugLevel >= 2 ) then
+										write(*,*) "       reactives = ", trim(reactives.label( details=useDetailsInLabel ))
+										write(*,*) "        products = ", trim(products.label( details=useDetailsInLabel ))
+										write(*,*) "      lreactives = ", trim(lReactives.label( details=useDetailsInLabel ))
+										write(*,*) "       lproducts = ", trim(lProducts.label( details=useDetailsInLabel ))
+										write(*,*) "label TS located = ", trim(labelTS.fstr)
+! 									end if
 									
 									transitionStateId = FragmentsDB_instance.getIdTransitionStateFromLabel( trim(labelTS.fstr) )
 									
@@ -581,35 +591,74 @@ module Reactor_
 									
 									if( transitionStateId == -1 ) cycle
 									
-									call productsTS.init( products.nMolecules() - lProducts.nMolecules() + 1 )
+									quasiTS = .true.
+! 									extraNAtomsQuasiTS = 
+									
+									if( quasiTS ) then
+										call productsTS.init( products.nMolecules() + 1 )
+									else
+										call productsTS.init( products.nMolecules() - lProducts.nMolecules() + 1 )
+									end if
+									
+									! The TS is included first
 									call productsTS.set( 1, FragmentsDB_instance.transitionState( transitionStateId ) )
 									
-									j=2
-									do i=1,products.nMolecules()
-										do kp=1,size(productInTScomb,dim=2)
-											label = trim(products.clusters( productInTS.at(productInTScomb(jp,kp)) ).label( details=useDetailsInLabel ))
-											if( label /= trim(products.clusters(i).label( details=useDetailsInLabel )) &
-												.and. j<=productsTS.nMolecules() ) then
-												call productsTS.set( j, products.clusters(i) )
-												j = j+1
-												exit
-											end if
-										end do
-									end do
-									
-									if( j==2 ) then
+									if( quasiTS ) then
+										call productsTS.clusters(1).frozenVibrations( filter="asymp=rot" )
+										
+										! .. Then all clusters are included. Including those which are products in the TS 
+! 										do i=1,products.nMolecules()
+! 											call productsTS.set( i+1, products.clusters(i) )
+! 										end do
+
+										j=2
 										do i=1,products.nMolecules()
-											if( j<=productsTS.nMolecules() ) then
-												call productsTS.set( j, products.clusters(i) )
-												j = j+1
-											end if
+											do kp=1,size(productInTScomb,dim=2)
+												label = trim(products.clusters( productInTS.at(productInTScomb(jp,kp)) ).label( details=useDetailsInLabel ))
+												if( label /= trim(products.clusters(i).label( details=useDetailsInLabel )) &
+													.and. j<=productsTS.nMolecules() ) then
+													call productsTS.set( j, products.clusters(i) )
+													call productsTS.clusters(j).frozenVibrations()
+													j = j+1
+													exit
+												end if
+											end do
 										end do
+					
+									else
+									
+										! .. Then those clusters which are in the TS are also included
+										j=2
+										do i=1,products.nMolecules()
+											do kp=1,size(productInTScomb,dim=2)
+												label = trim(products.clusters( productInTS.at(productInTScomb(jp,kp)) ).label( details=useDetailsInLabel ))
+												if( label /= trim(products.clusters(i).label( details=useDetailsInLabel )) &
+													.and. j<=productsTS.nMolecules() ) then
+													call productsTS.set( j, products.clusters(i) )
+													j = j+1
+													exit
+												end if
+											end do
+										end do
+										
+										! .. Then those clusters which are not products in the TS are also included
+										if( j==2 ) then
+											do i=1,products.nMolecules()
+												if( j<=productsTS.nMolecules() ) then
+													call productsTS.set( j, products.clusters(i) )
+													j = j+1
+												end if
+											end do
+										end if
+										
 									end if
 									
-									if( GOptions_debugLevel >= 2 ) then
-										write(*,*) "       products = ", trim(products.label( details=useDetailsInLabel ))
-										write(*,*) "    Eff channel = ", trim(reactives.label( details=useDetailsInLabel ))//"-->"//trim(productsTS.label( details=useDetailsInLabel ))
-									end if
+									
+! 									if( GOptions_debugLevel >= 2 ) then
+										write(*,*) "        products = ", trim(products.label( details=useDetailsInLabel ))
+										write(*,*) "     Eff channel = ", trim(reactives.label( details=useDetailsInLabel ))//"-->"//trim(productsTS.label( details=useDetailsInLabel ))
+										stop
+! 									end if
 									
 									locatedTS = .true.
 									exit ! Only one TS is accepted. The one with minimum size

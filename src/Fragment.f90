@@ -88,15 +88,12 @@ module Fragment_
 		integer :: sigmaSym
 		real(8) :: electronicEnergy
 		real(8), allocatable :: vibFrequencies(:)
-		character(3), allocatable :: vibFreqsAssign(:)
-		type(String), allocatable :: vibFreqsAssignData(:)
+		type(String), allocatable :: vibFrequenciesData(:)
 		logical :: isTransitionState
 		real(8) :: maxEvib
 		real(8) :: ZPE
 		real(8) :: maxJ
 		character(:), allocatable, private :: fileName
-		
-		logical :: frozen
 		
 		real(8) :: vibrationalEnergy_
 		real(8) :: J_(3)
@@ -111,8 +108,7 @@ module Fragment_
 		character(100), private :: dlabel_
 		logical, private :: testLabel_
 		
-		! Specific for TS support
-		
+		logical, allocatable :: frozenVibrations_(:)
 		
 		contains
 			generic :: init => initDefault, fromMassTableRow
@@ -129,6 +125,8 @@ module Fragment_
 ! 			procedure, private :: loadRXYZ
 			procedure :: loadRXYZ
 			procedure, private :: loadMOLDEN
+			
+			procedure :: frozenVibrations
 			
 			procedure :: changeVibrationalEnergy
 			procedure :: changeOrientation
@@ -165,15 +163,12 @@ module Fragment_
 		this.electronicEnergy = 0.0_8
 		
 		if( allocated(this.vibFrequencies) ) deallocate( this.vibFrequencies )
-		if( allocated(this.vibFreqsAssign) ) deallocate( this.vibFreqsAssign )
-		if( allocated(this.vibFreqsAssignData) ) deallocate( this.vibFreqsAssignData )
+		if( allocated(this.vibFrequenciesData) ) deallocate( this.vibFrequenciesData )
 		this.isTransitionState = .false.
 		this.maxEvib = 0.0_8
 		this.ZPE = 0.0_8
 		this.maxJ = 0.0_8
 		if( allocated(this.fileName) ) deallocate(this.fileName)
-		
-		this.frozen = .false.
 		
 		this.vibrationalEnergy_ = 0.0_8
 		this.J_(3) = 0.0_8
@@ -186,6 +181,8 @@ module Fragment_
 		this.label_ = ""
 		this.dlabel_ = ""
 		this.testLabel_ = .false.
+		
+		if( allocated(this.frozenVibrations_) ) deallocate( this.frozenVibrations_)
 	end subroutine initDefault
 	
 	!>
@@ -302,6 +299,10 @@ module Fragment_
 			)
 		end if
 		
+		if( allocated(this.frozenVibrations_) ) deallocate(this.frozenVibrations_)
+		allocate( this.frozenVibrations_(this.fv()) )
+		this.frozenVibrations_ = .false.
+		
 ! 		if( GOptions_printLevel >= 4 ) then
 			write(IO_STDOUT,"(A)") ""
 ! 			write(IO_STDOUT,"(4X,A22,I15)") "id = ", this.id
@@ -337,20 +338,12 @@ module Fragment_
 					write (IO_STDOUT,"(<min(5,size(this.vibFrequencies))>F20.2)") ( this.vibFrequencies(i)/cm1, i = lowerLimit, upperLimit )
 				end do
 				
-				write(IO_STDOUT,"(4X,A22)",advance="no")  " vibAssign = "
-				do j=1,ceiling( (size(this.vibFreqsAssign)*1.0)/5.0 )
-					lowerLimit = 5*(j-1)+1
-					upperLimit = min( 5*j, size(this.vibFreqsAssign) )
-					if( j/=1 ) write (IO_STDOUT,"(26X)",advance="no")
-					write (IO_STDOUT,"(<min(5,size(this.vibFrequencies))>A20)") ( this.vibFreqsAssign(i), i = lowerLimit, upperLimit )
-				end do
-				
 				write(IO_STDOUT,"(4X,A22)",advance="no")  " vibFreqsData = "
-				do j=1,ceiling( (size(this.vibFreqsAssignData)*1.0)/5.0 )
+				do j=1,ceiling( (size(this.vibFrequenciesData)*1.0)/5.0 )
 					lowerLimit = 5*(j-1)+1
-					upperLimit = min( 5*j, size(this.vibFreqsAssignData) )
+					upperLimit = min( 5*j, size(this.vibFrequenciesData) )
 					if( j/=1 ) write (IO_STDOUT,"(26X)",advance="no")
-					write (IO_STDOUT,"(<min(5,size(this.vibFrequencies))>A20)") ( " "//trim(this.vibFreqsAssignData(i).fstr), i = lowerLimit, upperLimit )
+					write (IO_STDOUT,"(<min(5,size(this.vibFrequencies))>A20)") ( " "//trim(this.vibFrequenciesData(i).fstr), i = lowerLimit, upperLimit )
 				end do
 				
 ! 				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "   aver. vib. freq = ", product(this.vibFrequencies)**(1.0_8/size(this.vibFrequencies))/eV, "   eV"
@@ -391,13 +384,9 @@ module Fragment_
 		allocate( this.vibFrequencies( size(other.vibFrequencies) ) )
 		this.vibFrequencies = other.vibFrequencies
 		
-		if( allocated(this.vibFreqsAssign) ) deallocate(this.vibFreqsAssign)
-		allocate( this.vibFreqsAssign( size(other.vibFreqsAssign) ) )
-		this.vibFreqsAssign = other.vibFreqsAssign
-		
-		if( allocated(this.vibFreqsAssignData) ) deallocate(this.vibFreqsAssignData)
-		allocate( this.vibFreqsAssignData( size(other.vibFreqsAssignData) ) )
-		this.vibFreqsAssignData = other.vibFreqsAssignData
+		if( allocated(this.vibFrequenciesData) ) deallocate(this.vibFrequenciesData)
+		allocate( this.vibFrequenciesData( size(other.vibFrequenciesData) ) )
+		this.vibFrequenciesData = other.vibFrequenciesData
 		
 		this.isTransitionState = other.isTransitionState
 		
@@ -405,8 +394,6 @@ module Fragment_
 		this.ZPE = other.ZPE
 		this.maxJ = other.maxJ
 		this.fileName = other.fileName
-		
-		this.frozen = other.frozen
 		
 		this.vibrationalEnergy_ = other.vibrationalEnergy_
 		this.J_ = other.J_
@@ -420,6 +407,10 @@ module Fragment_
 		this.dlabel_ = other.dlabel_
 		this.testLabel_ = other.testLabel_
 		
+		if( allocated(this.frozenVibrations_) ) deallocate(this.frozenVibrations_)
+		allocate( this.frozenVibrations_( size(other.frozenVibrations_) ) )
+		this.frozenVibrations_ = other.frozenVibrations_
+		
 	end subroutine copyFragment
 	
 	!>
@@ -429,8 +420,8 @@ module Fragment_
 		type(Fragment) :: this
 		
 		if( allocated(this.vibFrequencies) ) deallocate(this.vibFrequencies)
-		if( allocated(this.vibFreqsAssign) ) deallocate(this.vibFreqsAssign)
-		if( allocated(this.vibFreqsAssignData) ) deallocate(this.vibFreqsAssignData)
+		if( allocated(this.vibFrequenciesData) ) deallocate(this.vibFrequenciesData)
+		if( allocated(this.frozenVibrations_) ) deallocate(this.frozenVibrations_)
 	end subroutine destroyFragment
 	
 	!>
@@ -506,48 +497,27 @@ module Fragment_
 					if( allocated(this.vibFrequencies) ) deallocate(this.vibFrequencies)
 					allocate( this.vibFrequencies(nItems) )
 					
-					do i=1,nItems
-						buffer = ifile.readLine()
-						
-						this.vibFrequencies(i) = buffer.toReal()*cm1
-					end do
-					
-					if( any( this.vibFrequencies < 0.0_8 ) ) then
-						this.isTransitionState = .true.
-					end if
-					
-					if( allocated(this.vibFreqsAssign) ) deallocate(this.vibFreqsAssign)
-					allocate( this.vibFreqsAssign(nItems) )
-					this.vibFreqsAssign = "VIB"
-					
-					if( allocated(this.vibFreqsAssignData) ) deallocate(this.vibFreqsAssignData)
-					allocate( this.vibFreqsAssignData(nItems) )
-					do i=1,nItems
-						this.vibFreqsAssignData(i) = ""
-					end do
-					
-				else if( trim(tokens(1)) == "FREQUENCIES_ASSIGNMENT" ) then
-					nItems = FString_toInteger(tokens(2))
-					
-					if( allocated(this.vibFreqsAssign) ) deallocate(this.vibFreqsAssign)
-					allocate( this.vibFreqsAssign(nItems) )
-					
-					if( allocated(this.vibFreqsAssignData) ) deallocate(this.vibFreqsAssignData)
-					allocate( this.vibFreqsAssignData(nItems) )
+					if( allocated(this.vibFrequenciesData) ) deallocate(this.vibFrequenciesData)
+					allocate( this.vibFrequenciesData(nItems) )
 					
 					do i=1,nItems
 						buffer = ifile.readLine()
 						call buffer.split( tokens2, " " )
 						
 						if( size(tokens2) == 1 ) then
-							this.vibFreqsAssign(i) = trim(tokens2(1))
-							this.vibFreqsAssignData(i) = ""
+							this.vibFrequencies(i) = FString_toReal(tokens2(1))*cm1
+							this.vibFrequenciesData(i) = ""
 						else if( size(tokens2) == 2 ) then
-							this.vibFreqsAssign(i) = trim(tokens2(1))
-							this.vibFreqsAssignData(i) = trim(tokens2(2))
+							this.vibFrequencies(i) = FString_toReal(tokens2(1))*cm1
+							this.vibFrequenciesData(i) = trim(tokens2(2))
 						end if
+
 					end do
-				
+					
+					if( any( this.vibFrequencies < 0.0_8 ) ) then
+						this.isTransitionState = .true.
+					end if
+					
 				end if
 				
 			end if
@@ -557,9 +527,9 @@ module Fragment_
 		if( allocated(tokens) ) deallocate(tokens)
 		if( allocated(tokens2) ) deallocate(tokens2)
 		
-		if( size(this.vibFrequencies) /= size(this.vibFreqsAssign) .or. size(this.vibFrequencies) /= size(this.vibFreqsAssignData) ) then
+		if( size(this.vibFrequencies) /= size(this.vibFrequenciesData) ) then
 			write(*,*) "### ERROR ### Fragment.loadRXYZ(fileName="//trim(fileName)//")"
-			write(*,*) "              size(FREQUENCIES) /= size(FREQUENCIES_ASSIGNMENT)"
+			write(*,*) "              size(FREQUENCIES) /= size(VIBFREQUENCIESDATA)"
 			stop
 		end if
 	end subroutine loadRXYZ
@@ -653,7 +623,31 @@ module Fragment_
 			
 			iter => iter.next
 		end do
-	end subroutine loadMOLDEN
+	end subroutine loadMOLDEN	
+	
+	!>
+	!! @brief Frozens vibrations
+	!!
+	subroutine frozenVibrations( this, filter )
+		class(Fragment) :: this
+		character(*), optional, intent(in) :: filter
+		
+		integer :: i, j
+		character(1000), allocatable :: tokens(:)
+		
+		do i=1,size(this.frozenVibrations_)
+			call this.vibFrequenciesData(i).split( tokens, ";" )
+			
+			do j=1,size(tokens)
+				if( trim(tokens(j)) == trim(filter) ) then
+					this.frozenVibrations_(i) = .true.
+					exit
+				end if
+			end do
+		end do
+		
+		deallocate( tokens )
+	end subroutine frozenVibrations
 	
 	!>
 	!! @brief Builds a random vibrational energy
@@ -667,18 +661,14 @@ module Fragment_
 		effMaxEnergy = this.maxEvib
 		if( present(maxEnergy) ) effMaxEnergy = min(this.maxEvib,maxEnergy)
 		
-		if( this.frozen ) then
-			this.vibrationalEnergy_ = 0.0_8
-		else
-			if( GOptionsM3C_useZPECorrection ) then
-				if( this.ZPE < effMaxEnergy ) then
-					this.vibrationalEnergy_ = RandomUtils_uniform( [this.ZPE,effMaxEnergy] )
-				else
-					this.vibrationalEnergy_ = 0.0_8
-				end if
+		if( GOptionsM3C_useZPECorrection ) then
+			if( this.ZPE < effMaxEnergy ) then
+				this.vibrationalEnergy_ = RandomUtils_uniform( [this.ZPE,effMaxEnergy] )
 			else
-				this.vibrationalEnergy_ = RandomUtils_uniform( [0.0_8,effMaxEnergy] )
+				this.vibrationalEnergy_ = 0.0_8
 			end if
+		else
+			this.vibrationalEnergy_ = RandomUtils_uniform( [0.0_8,effMaxEnergy] )
 		end if
 		
 		if( GOptions_printLevel >= 4 ) then
@@ -869,7 +859,7 @@ module Fragment_
 		
 		! @todo Hay que estar seguro que en el caso que no se considere la rotación
 		!       el elemento de volumen se mantiene o desaparece
-		if( this.nAtoms() /= 1 .and. .not. this.frozen ) then
+		if( this.nAtoms() /= 1 ) then
 			if( effForce1D ) then
 			
 				if( GOptions_printLevel >= 4 ) then
@@ -942,7 +932,7 @@ module Fragment_
 		
 		! @todo Hay que estar seguro que en el caso que no se considere la rotación
 		!       el elemento de volumen se mantiene o desaparece
-! 		if( this.nAtoms() /= 1 .and. .not. this.frozen ) then
+! 		if( this.nAtoms() /= 1 ) then
 ! 			if( .not. effForce1D ) then
 				this.logVJ_ = - this.fr()*log(2.0_8*Math_PI) - log(real(this.sigmaSym,8))
 				
@@ -982,12 +972,8 @@ module Fragment_
 		integer :: i, eff_fv
 		real(8) :: ssum
 		
-		if( this.nAtoms() == 1 .or. this.frozen ) then
+		if( this.nAtoms() == 1 ) then
 			this.LnWv_ = 0.0_8
-			
-			if( GOptions_printLevel >= 4 ) then
-				write(*,*) "frozen"
-			end if
 		else
 			ssum = 0.0_8
 			eff_fv = 0

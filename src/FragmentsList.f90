@@ -1108,7 +1108,7 @@ module FragmentsList_
 		do i=1,n
 			if( this.clusters(i).isTransitionState .and. this.kineticEnergy() > 0.0_8 ) then
 			
-				call this.clusters(i).vibFreqsAssignData(i).split( tokens,  ";" )
+				call this.clusters(i).vibFrequenciesData(i).split( tokens,  ";" )
 				fsBuffer = tokens(1)
 				call FString_split( fsBuffer, tokens, "=" )
 				if( tokens(1) == "rMass" ) then
@@ -1150,9 +1150,9 @@ module FragmentsList_
 		else
 			select case( trim(GOptionsM3C_angularMomentumCouplingScheme.fstr) )
 				case( "JJ" )
-					s = s + this.ft() + this.fr() - this.clusters( this.idSorted(n) ).fr()
+					s = this.ft() + this.fr() - this.clusters( this.idSorted(n) ).fr()
 				case( "JJL" )
-					s = s + this.ft() + this.fr()
+					s = this.ft() + this.fr()
 				case default
 					call GOptions_error( &
 						"Unknown angular momentum coupling scheme"//" ("//trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)//")", &
