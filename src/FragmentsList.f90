@@ -1096,7 +1096,7 @@ module FragmentsList_
 		real(8) :: randNumber
 		integer :: sTS
 		real(8) :: logTSt, Et_TS, iEt_TS
-		character(100), allocatable :: tokens(:)
+		character(100), allocatable :: tokens(:), tokens2(:)
 		character(100) :: fsBuffer
 		real(8) :: reducedMass
 		
@@ -1109,15 +1109,22 @@ module FragmentsList_
 			if( this.clusters(i).isTransitionState .and. this.kineticEnergy() > 0.0_8 ) then
 			
 				call this.clusters(i).vibFrequenciesData(i).split( tokens,  ";" )
-				fsBuffer = tokens(1)
-				call FString_split( fsBuffer, tokens, "=" )
-				if( tokens(1) == "rMass" ) then
-					reducedMass = FString_toReal( tokens(2) )
-				else
+				
+				reducedMass = 0.0_8
+				do j=1,size(tokens)
+					call FString_split( tokens(j), tokens2, "=" )
+					if( trim(tokens2(1)) == "rMass" ) then
+						reducedMass = FString_toReal( tokens2(2) )
+						exit
+					end if
+				end do
+
+				if( abs(reducedMass-0.0_8) < 1d-6 ) then
 					write(*,*) "### ERROR ### FragmentsList.updateLambda: rMass undefined for cluster"
 					stop
 				end if
 				deallocate( tokens )
+				if( allocated(tokens2) ) deallocate(tokens2)
 				
 				logTSt = &
 					logTSt &

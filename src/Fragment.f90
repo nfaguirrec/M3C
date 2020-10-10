@@ -661,14 +661,18 @@ module Fragment_
 		effMaxEnergy = this.maxEvib
 		if( present(maxEnergy) ) effMaxEnergy = min(this.maxEvib,maxEnergy)
 		
-		if( GOptionsM3C_useZPECorrection ) then
-			if( this.ZPE < effMaxEnergy ) then
-				this.vibrationalEnergy_ = RandomUtils_uniform( [this.ZPE,effMaxEnergy] )
-			else
-				this.vibrationalEnergy_ = 0.0_8
-			end if
+		if( all(this.frozenVibrations_ == .true.) ) then
+			this.vibrationalEnergy_ = 0.0_8
 		else
-			this.vibrationalEnergy_ = RandomUtils_uniform( [0.0_8,effMaxEnergy] )
+			if( GOptionsM3C_useZPECorrection ) then
+				if( this.ZPE < effMaxEnergy ) then
+					this.vibrationalEnergy_ = RandomUtils_uniform( [this.ZPE,effMaxEnergy] )
+				else
+					this.vibrationalEnergy_ = 0.0_8
+				end if
+			else
+				this.vibrationalEnergy_ = RandomUtils_uniform( [0.0_8,effMaxEnergy] )
+			end if
 		end if
 		
 		if( GOptions_printLevel >= 4 ) then
@@ -972,13 +976,13 @@ module Fragment_
 		integer :: i, eff_fv
 		real(8) :: ssum
 		
-		if( this.nAtoms() == 1 ) then
+		if( this.nAtoms() == 1 .or. all(this.frozenVibrations_ == .true.) ) then
 			this.LnWv_ = 0.0_8
 		else
 			ssum = 0.0_8
 			eff_fv = 0
 			do i=1,size(this.vibFrequencies)
-				if( this.vibFrequencies(i) > 0.0_8 ) then
+				if( this.vibFrequencies(i) > 0.0_8 .and. .not. this.frozenVibrations_(i) ) then
 					ssum = ssum + log(this.vibFrequencies(i))
 					eff_fv = eff_fv + 1
 				end if

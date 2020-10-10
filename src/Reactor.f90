@@ -100,7 +100,11 @@ module Reactor_
 		type(FragmentsList) :: products
 		logical :: state
 		
-		type(FragmentsList) :: productsTS
+		type(FragmentsList) :: productsTS  ! model = 2
+		type(FragmentsList) :: productsTS2 ! model = 3
+		type(Fragment) :: TS ! model = 3
+		type(IntegerVector) :: productsType  ! Same size than products
+		type(IntegerVector) :: productsTSType ! same size than productsTS
 		logical :: replaceTS
 		
 		character(3), private :: name
@@ -329,7 +333,7 @@ module Reactor_
 			else
 				
 				if( allocated(FragmentsDB_instance.transitionState) ) then
-					call reduceToTransitionStates( this.reactives, this.products, this.productsTS )
+					call reduceToTransitionStates( this.reactives, this.products, this.productsTS, this.productsType, this.productsTSType )
 					
 					if( this.productsTS.nMolecules() > 0 ) this.replaceTS = .true.
 				end if
@@ -471,10 +475,12 @@ module Reactor_
 	!>
 	!! @brief Replaces products for the corresponding transition states. Only composition is changed
 	!!
-	subroutine reduceToTransitionStates( reactives, products, productsTS )
+	subroutine reduceToTransitionStates( reactives, products, productsTS, productsType, productsTSType )
 		type(FragmentsList), intent(in) :: reactives
 		type(FragmentsList), intent(in) :: products
 		type(FragmentsList), intent(out) :: productsTS
+		type(IntegerVector), intent(out) :: productsType
+		type(IntegerVector), intent(out) :: productsTSType
 		
 		integer :: i, j, id
 		integer :: ir, jr, kr
@@ -546,6 +552,7 @@ module Reactor_
 						! We generate all possible combinations of the clusters in the products which are involded in a TS
 						call Math_combinations( productInTS.size(), ip, productInTScomb )
 						
+						! For each combination ...
 						do jp=1,size(productInTScomb,dim=1)
 							
 							nAtomsP = 0
@@ -591,73 +598,50 @@ module Reactor_
 									
 									if( transitionStateId == -1 ) cycle
 									
-									quasiTS = .true.
-! 									extraNAtomsQuasiTS = 
+									call productsTS.init( products.nMolecules() - lProducts.nMolecules() + 1 )
+									call productsType.init( products.nMolecules() )
+									call productsTSType.init( productsTS.nMolecules() )
 									
-									if( quasiTS ) then
-										call productsTS.init( products.nMolecules() + 1 )
-									else
-										call productsTS.init( products.nMolecules() - lProducts.nMolecules() + 1 )
-									end if
+									productsType.data = 0
+									productsTSType.data = 0
 									
 									! The TS is included first
 									call productsTS.set( 1, FragmentsDB_instance.transitionState( transitionStateId ) )
+									call productsTSType.set( 1, 2 )  ! 2 for TS
 									
-									if( quasiTS ) then
-										call productsTS.clusters(1).frozenVibrations( filter="asymp=rot" )
-										
-										! .. Then all clusters are included. Including those which are products in the TS 
-! 										do i=1,products.nMolecules()
-! 											call productsTS.set( i+1, products.clusters(i) )
-! 										end do
-
-										j=2
-										do i=1,products.nMolecules()
-											do kp=1,size(productInTScomb,dim=2)
-												label = trim(products.clusters( productInTS.at(productInTScomb(jp,kp)) ).label( details=useDetailsInLabel ))
-												if( label /= trim(products.clusters(i).label( details=useDetailsInLabel )) &
-													.and. j<=productsTS.nMolecules() ) then
-													call productsTS.set( j, products.clusters(i) )
-													call productsTS.clusters(j).frozenVibrations()
-													j = j+1
-													exit
-												end if
-											end do
+									! .. We include in productsTS all clusters except those which are in the TS
+									j=2
+									do i=1,products.nMolecules()
+										do kp=1,lProducts.nMolecules()
+											label = trim(lProducts.clusters(kp).label( details=useDetailsInLabel ))
+											
+											if( label == trim(products.clusters(i).label( details=useDetailsInLabel )) ) then
+												call productsType.set( i, 1 )    ! 1 for products from TS
+												call productsTSType.set( j, 1 )  ! 1 for products from TS
+											end if
+											
+											if( label /= trim(products.clusters(i).label( details=useDetailsInLabel )) .and. j<=productsTS.nMolecules() ) then
+												call productsTS.set( j, products.clusters(i) )
+												j = j+1
+												exit
+											end if
 										end do
-					
-									else
+									end do
 									
-										! .. Then those clusters which are in the TS are also included
-										j=2
+									! .. If There were no clusters in the TS, then we include all the clusters
+									if( j==2 ) then
 										do i=1,products.nMolecules()
-											do kp=1,size(productInTScomb,dim=2)
-												label = trim(products.clusters( productInTS.at(productInTScomb(jp,kp)) ).label( details=useDetailsInLabel ))
-												if( label /= trim(products.clusters(i).label( details=useDetailsInLabel )) &
-													.and. j<=productsTS.nMolecules() ) then
-													call productsTS.set( j, products.clusters(i) )
-													j = j+1
-													exit
-												end if
-											end do
+											if( j<=productsTS.nMolecules() ) then
+												call productsTS.set( j, products.clusters(i) )
+												j = j+1
+											end if
 										end do
-										
-										! .. Then those clusters which are not products in the TS are also included
-										if( j==2 ) then
-											do i=1,products.nMolecules()
-												if( j<=productsTS.nMolecules() ) then
-													call productsTS.set( j, products.clusters(i) )
-													j = j+1
-												end if
-											end do
-										end if
-										
 									end if
-									
 									
 ! 									if( GOptions_debugLevel >= 2 ) then
 										write(*,*) "        products = ", trim(products.label( details=useDetailsInLabel ))
 										write(*,*) "     Eff channel = ", trim(reactives.label( details=useDetailsInLabel ))//"-->"//trim(productsTS.label( details=useDetailsInLabel ))
-										stop
+! 										stop
 ! 									end if
 									
 									locatedTS = .true.
@@ -1066,6 +1050,9 @@ module Reactor_
 		real(8) :: rBuffer
 		type(String) :: sBuffer
 		
+		integer :: model, i
+		real(8) :: vibrationalEnergy
+		
 		this.state = .true.
 		this.replaceTS = .false.
 		
@@ -1090,16 +1077,39 @@ module Reactor_
 ! 				call this.products.changeGeometry()
 ! 				call this.products.changeOrientations()
 
+! 				if( this.replaceTS ) then
+! 					! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
+! 					call this.productsTS.setReactorEnergy( this.reactives.reactorEnergy() )
+! 					
+! 					! Para que fuerce los centros aleatorios en la siguiente iteración
+! 					this.productsTS.forceRandomCenters = .true.
+! 					
+! 					! Los productos utilizan parte de la energía
+! 					call this.productsTS.initialGuessFragmentsList()
+! 					
+! 					write(*,*) "--------------------------------------------------------"
+! 					write(*,*) "reactives ", trim(this.reactives.label())
+! ! 					sBuffer = this.reactives.energyHistoryLine()
+! ! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
+! 					sBuffer = this.reactives.weightHistoryLine()
+! 					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+! 					write(*,*) "products ", trim(this.products.label())
+! ! 					sBuffer = this.products.energyHistoryLine()
+! ! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
+! 					sBuffer = this.products.weightHistoryLine()
+! 					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+! 					write(*,*) "TS located ", trim(this.productsTS.label())
+! 					write(*,*) "first isTS?", this.productsTS.clusters(1).isTransitionState
+! ! 					sBuffer = this.productsTS.energyHistoryLine()
+! ! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
+! 					sBuffer = this.productsTS.weightHistoryLine()
+! 					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+! 					write(*,*) "--------------------------------------------------------"
+! 					
+! 				end if
+
 				if( this.replaceTS ) then
-					! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
-					call this.productsTS.setReactorEnergy( this.reactives.reactorEnergy() )
-					
-					! Para que fuerce los centros aleatorios en la siguiente iteración
-					this.productsTS.forceRandomCenters = .true.
-					
-					! Los productos utilizan parte de la energía
-					call this.productsTS.initialGuessFragmentsList()
-					
+				
 					write(*,*) "--------------------------------------------------------"
 					write(*,*) "reactives ", trim(this.reactives.label())
 ! 					sBuffer = this.reactives.energyHistoryLine()
@@ -1111,11 +1121,68 @@ module Reactor_
 ! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
 					sBuffer = this.products.weightHistoryLine()
 					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
-					write(*,*) "TS located ", trim(this.productsTS.label())
-! 					sBuffer = this.productsTS.energyHistoryLine()
-! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
-					sBuffer = this.productsTS.weightHistoryLine()
-					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+					write(*,*) "productsTS ", trim(this.productsTS.label())
+					write(*,*) "productsTSType", this.productsTSType.data
+					write(*,*) "productsType", this.productsType.data
+				
+					model = 2
+					
+					select case( model )
+						case( 1 )
+							! No correction by TS
+							
+							! Los productos utilizan parte de la energía
+							call this.products.initialGuessFragmentsList()
+
+						case( 2 )
+							! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
+							call this.productsTS.setReactorEnergy( this.reactives.reactorEnergy() )
+							
+							! Para que fuerce los centros aleatorios en la siguiente iteración
+							this.productsTS.forceRandomCenters = .true.
+							
+							! Los productos utilizan parte de la energía
+							call this.productsTS.initialGuessFragmentsList()
+							
+		! 					sBuffer = this.productsTS.energyHistoryLine()
+		! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
+							sBuffer = this.productsTS.weightHistoryLine()
+							write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+							
+						case( 3 )
+							this.productsTS2 = this.products
+							this.TS = this.productsTS.clusters(1) ! EL primer cluster siempre es el TS
+							
+! 		type(IntegerVector) :: productsType  ! Same size than products
+! 		type(IntegerVector) :: productsTSType ! same size than productsTS
+
+							vibrationalEnergy = 0.0_8
+							do i=1,this.productsTS2.nMolecules()
+								if( this.productsType.data(i) == 1 ) then
+									call this.productsTS2.clusters(i).frozenVibrations()
+									vibrationalEnergy = vibrationalEnergy + this.productsTS2.clusters(i).vibrationalEnergy_
+								end if
+							end do
+							
+							! Uso la energia vibracional de los productos y la redistribuyo en el TS
+							call this.TS.frozenVibrations( filter="asymp=rot" )
+							call this.TS.changeVibrationalEnergy( maxEnergy=vibrationalEnergy )
+							
+							! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
+							call this.productsTS2.setReactorEnergy( this.reactives.reactorEnergy() )
+							
+							! Para que fuerce los centros aleatorios en la siguiente iteración
+							this.productsTS2.forceRandomCenters = .true.
+							
+							! Los productos utilizan parte de la energía
+							call this.productsTS2.initialGuessFragmentsList()
+							
+		! 					sBuffer = this.productsTS.energyHistoryLine()
+		! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
+							sBuffer = this.productsTS2.weightHistoryLine()
+							write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+					end select
+				
 					write(*,*) "--------------------------------------------------------"
 					
 				end if
