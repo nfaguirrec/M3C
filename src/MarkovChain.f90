@@ -499,7 +499,7 @@ module MarkovChain_
 ! 								Pi = react.products.LnW()-react.reactives.LnW()
 ! 							end if
 
-							model = 2
+							model = 3
 							
 							if( react.replaceTS ) then
 								react.replaceTS = .false.

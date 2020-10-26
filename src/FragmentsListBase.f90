@@ -97,6 +97,7 @@ module FragmentsListBase_
 		real(8) :: vibrationalEnergy_    !< It is calculated into LnWi procedure
 		real(8) :: intermolEnergy_       !< It is calculated into changeGeometryFragmentsListBase procedure
 		real(8) :: kineticEnergyTSmode_       !< It is calculated into ???? procedure
+		real(8) :: energyShift
 		
 		real(8) :: kineticEnergy_       !< Translational energy internally calculated by difference with the reactor energy
 		real(8), private :: reactorEnergy_    !< Total energy into the reactor which is externally chosen
@@ -228,6 +229,7 @@ module FragmentsListBase_
 		this.kineticEnergy_ = 0.0_8
 		this.reactorEnergy_ = 0.0_8
 		this.kineticEnergyTSmode_ = 0.0_8
+		this.energyShift = 0.0_8
 		
 		this.logGFactor_ = 0.0_8
 		this.logVfree_ = 0.0_8
@@ -284,6 +286,7 @@ module FragmentsListBase_
 		this.kineticEnergy_ = other.kineticEnergy_
 		this.reactorEnergy_ = other.reactorEnergy_
 		this.kineticEnergyTSmode_ = other.kineticEnergyTSmode_
+		this.energyShift = other.energyShift
 		
 		this.logGFactor_ = other.logGFactor_
 		this.logVfree_ = other.logVfree_

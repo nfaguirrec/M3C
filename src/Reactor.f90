@@ -1052,6 +1052,7 @@ module Reactor_
 		
 		integer :: model, i
 		real(8) :: vibrationalEnergy
+		real(8) :: electronicEnergy
 		
 		this.state = .true.
 		this.replaceTS = .false.
@@ -1125,7 +1126,7 @@ module Reactor_
 					write(*,*) "productsTSType", this.productsTSType.data
 					write(*,*) "productsType", this.productsType.data
 				
-					model = 2
+					model = 3
 					
 					select case( model )
 						case( 1 )
@@ -1157,10 +1158,12 @@ module Reactor_
 ! 		type(IntegerVector) :: productsTSType ! same size than productsTS
 
 							vibrationalEnergy = 0.0_8
+							electronicEnergy = 0.0_8
 							do i=1,this.productsTS2.nMolecules()
 								if( this.productsType.data(i) == 1 ) then
 									call this.productsTS2.clusters(i).frozenVibrations()
 									vibrationalEnergy = vibrationalEnergy + this.productsTS2.clusters(i).vibrationalEnergy_
+									electronicEnergy = electronicEnergy + this.productsTS2.clusters(i).electronicEnergy
 								end if
 							end do
 							
@@ -1168,7 +1171,9 @@ module Reactor_
 							call this.TS.frozenVibrations( filter="asymp=rot" )
 							call this.TS.changeVibrationalEnergy( maxEnergy=vibrationalEnergy )
 							
-							! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
+							this.productsTS2.energyShift = this.TS.electronicEnergy-electronicEnergy
+							
+							! Se le asocia la energía del reactor para asegurar que calcula un peso Wt adecuado para los productos
 							call this.productsTS2.setReactorEnergy( this.reactives.reactorEnergy() )
 							
 							! Para que fuerce los centros aleatorios en la siguiente iteración

@@ -351,7 +351,7 @@ module FragmentsList_
 		class(FragmentsList), intent(in) :: this
 		real(8) :: output
 		
-		output = this.vibrationalEnergy_  + this.intermolEnergy_ + this.E_totJ
+		output = this.vibrationalEnergy_  + this.intermolEnergy_ + this.E_totJ + this.energyShift
 	end function internalEnergy
 	
 	!>

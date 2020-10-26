@@ -538,9 +538,6 @@ function addMolecules()
 {
 	local listTarget=$*
 	
-	echo "### ERROR ### Esto hay que arreglarlo. hay que realizar la busqueda por categoria y luego dentro de la categoría verificar si el archivo existe o no. EL algoritmo sería similar a filterIsomers de M3C.geniso"
-	exit
-	
 	for target in $listTarget
 	do
 		categoryTarget=${target%-*}
@@ -565,18 +562,19 @@ function addMolecules()
 				exit
 			fi
 			
-			valueF=`molecule.compare $target $item 1.5 | grep "Chemical"`
-			valueR=`molecule.compare $target $item 1.5 | grep "Radius"`
-			valueI=`molecule.compare $target $item 1.5 | grep "Inertia"`
+			echo "Comparing $target $item"
+			valueF=`molecule.compare $target $item | grep "Chemical"`
+			valueR=`molecule.compare $target $item | grep "Geometry"`
+			valueI=`molecule.compare $target $item | grep "Connectivity"`
 			
 			if [ "$nAtoms1" -ge 2 ]
 			then
 				
 				if [ "$valueF" = "Chemical formula ...  OK" ]
 				then
-					if [[ "$valueR" =~ "Radius ...  OK" ]]
+					if [[ "$valueR" =~ "Geometry ...  OK" ]]
 					then
-						if [[ "$valueI" =~ "Inertia moment ...  OK" ]]
+						if [[ "$valueI" =~ "Connectivity ...  OK" ]]
 						then
 							echo "-------------------------------------------------------------------------------------------------------"
 							echo "This fragment already exist"
@@ -614,11 +612,19 @@ function addMolecules()
 		
 		if [ "$isNew" = "TRUE" ]
 		then
-			lastID=`ls $M3C_STORE/ | grep "$categoryTarget.*.rxyz" | awk 'BEGIN{FS="[-.]+"}{print $4}' | sort -n | tail -n1`
+			id=1
+			while true
+			do
+				if [ ! -f $M3C_STORE/$categoryTarget-$id.rxyz ]
+				then
+					break
+				fi
+				id=$(( $id+1 ))
+			done
 			
-			echo -n "Including file $target --> $categoryTarget-$(( $lastID + 1 )).rxyz ... "
+			echo -n "Including file $target --> $M3C_STORE/$categoryTarget-$id.rxyz ... "
 			
-			cp $target $M3C_STORE/$categoryTarget-$(( $lastID + 1 )).rxyz
+			cp $target $M3C_STORE/$categoryTarget-$id.rxyz
 
 			echo "OK"
 		fi
