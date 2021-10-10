@@ -74,4 +74,5 @@ module GOptionsM3C_
 	integer :: GOptionsM3C_fixMultiplicity = -1
 	logical :: GOptionsM3C_checkAtomicOverlapping = .false.
 	real(8) :: GOptionsM3C_atomicOverlappingRadius = 0.0_8*angs
+	type(String) :: GOptionsM3C_TSModel ! = "NONE"
 end module GOptionsM3C_

@@ -1113,14 +1113,14 @@ module FragmentsList_
 				reducedMass = 0.0_8
 				do j=1,size(tokens)
 					call FString_split( tokens(j), tokens2, "=" )
-					if( trim(tokens2(1)) == "rMass" ) then
+					if( trim(tokens2(1)) == "rMassg" ) then
 						reducedMass = FString_toReal( tokens2(2) )
 						exit
 					end if
 				end do
 
 				if( abs(reducedMass-0.0_8) < 1d-6 ) then
-					write(*,*) "### ERROR ### FragmentsList.updateLambda: rMass undefined for cluster"
+					write(*,"(A)") "### ERROR ### FragmentsList.updateLambda: rMassg undefined for cluster "//trim(this.clusters(i).label())
 					stop
 				end if
 				deallocate( tokens )

@@ -146,6 +146,7 @@ program M3C
 	GOptionsM3C_checkAtomicOverlapping = iParser.getLogical( "GOPTIONS:checkAtomicOverlapping", def=.false. )
 	GOptionsM3C_atomicOverlappingRadius = iParser.getReal( "GOPTIONS:atomicOverlappingRadius", def=0.0_8 )*angs
 	GOptionsM3C_totalJ(3) = iParser.getReal( "GOPTIONS:totalJ", def=0.0_8 )
+	GOptionsM3C_TSModel = iParser.getString( "GOPTIONS:TSModel", def="NONE" )
 	GOptions_printLevel = iParser.getInteger( "GOPTIONS:printLevel", def=1 )
 	GOptions_debugLevel = iParser.getInteger( "GOPTIONS:debugLevel", def=1 )
 	
@@ -172,6 +173,7 @@ program M3C
 	write(*,"(A40,A5)") "angularMomentumCouplingScheme = ", trim(GOptionsM3C_angularMomentumCouplingScheme.fstr)
 	write(*,"(A40,A10)") "structureSamplingMethod = ", trim(GOptionsM3C_structureSamplingMethod.fstr)
 	write(*,"(A40,3F15.5,A)") "totalJ = ", GOptionsM3C_totalJ, " a.u."
+	write(*,"(A40,A5)") "TSModel = ", trim(GOptionsM3C_TSModel.fstr)
 	write(*,"(A40,I5)") "printLevel = ", GOptions_printLevel
 	write(*,"(A40,I5)") "debugLevel = ", GOptions_debugLevel
 	write(*,*)

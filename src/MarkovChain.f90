@@ -337,8 +337,6 @@ module MarkovChain_
 		character(100) :: geometryFileName
 		character(2) :: origin
 		
-		integer :: model
-
 		!!--------------------------------------------------------------------
 		!! Este bloque expande los operadores n*(XXX) a XXX,XXX,XXX,...,XXX
 		!! @todo El codigo funciona bien, pero no me gusta.
@@ -499,22 +497,24 @@ module MarkovChain_
 ! 								Pi = react.products.LnW()-react.reactives.LnW()
 ! 							end if
 
-							model = 3
-							
 							if( react.replaceTS ) then
 								react.replaceTS = .false.
 								
-								select case( model )
-									case( 1 )
+								select case( trim(GOptionsM3C_TSModel.fstr) )
+									case( "NONE" )
 										Pi = react.products.LnW()-react.reactives.LnW()  ! No correction by TS
-									case( 2 )
+									case( "EARLY" )
 										Pi = react.productsTS.LnW()-react.reactives.LnW()
 										
-										write(*,"(A,4F10.5)") "W,WTS,Wreact,Pi =", react.products.LnW(), react.productsTS.LnW(), react.reactives.LnW(), Pi
-									case( 3 )
+! 										write(*,"(A,4F10.5)") "W,WTS,Wreact,Pi =", react.products.LnW(), react.productsTS.LnW(), react.reactives.LnW(), Pi
+									case( "LATE" )
 										Pi = react.productsTS2.LnW()+react.TS.LnWv()-react.reactives.LnW()
 										
-										write(*,"(A,4F10.5)") "W,WTS,Wreact,Pi =", react.products.LnW(), react.productsTS2.LnW()+react.TS.LnWv(), react.reactives.LnW(), Pi
+! 										write(*,"(A,4F10.5)") "W,WTS,Wreact,Pi =", react.products.LnW(), react.productsTS2.LnW()+react.TS.LnWv(), react.reactives.LnW(), Pi
+									case default
+										write(*,"(A)") "### ERROR ###: MarkovChain.run(). Unknown TS model ("//trim(GOptionsM3C_TSModel.fstr)//")"
+										write(*,"(A)") "               Available options: NONE, EARLY, LATE. Default NONE"
+										stop
 								end select
 							else
 								Pi = react.products.LnW()-react.reactives.LnW()  ! Normal channel without TS. No correction by TS needed
@@ -675,8 +675,11 @@ module MarkovChain_
 				end if
 				
 ! 			end if
-			write(6,"(A)") ""
-			write(6,"(A)") ""
+
+			if( this.tracking /= "none" ) then
+				write(6,"(A)") ""
+				write(6,"(A)") ""
+			end if
 			
 			if( this.JHistoryFile.isOpen() ) then
 				write( this.JHistoryFile.unit, "(A)" ) trim(sBuffer.fstr)

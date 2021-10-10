@@ -100,9 +100,9 @@ module Reactor_
 		type(FragmentsList) :: products
 		logical :: state
 		
-		type(FragmentsList) :: productsTS  ! model = 2
-		type(FragmentsList) :: productsTS2 ! model = 3
-		type(Fragment) :: TS ! model = 3
+		type(FragmentsList) :: productsTS  ! model = EARLY
+		type(FragmentsList) :: productsTS2 ! model = LATE
+		type(Fragment) :: TS ! model = LATE
 		type(IntegerVector) :: productsType  ! Same size than products
 		type(IntegerVector) :: productsTSType ! same size than productsTS
 		logical :: replaceTS
@@ -364,6 +364,8 @@ module Reactor_
 		integer :: i, j
 		class(RealListIterator), pointer :: it1, it2
 		
+		integer :: composition( AtomicElementsDB_nElems )
+		
 		call spinAvail.init( current, 0.0_8 )
 		
 		if( current == 1 ) then
@@ -396,6 +398,20 @@ module Reactor_
 				end if
 			end do
 		end do
+		
+		composition = 0
+		do i=1,current
+			composition = composition + FragmentsDB_instance.clusters( multisetPositions(i) ).composition
+		end do
+
+		if( all( FragmentsDB_instance.clusters( multisetPositions(1) ).composition == composition ) ) then
+			write(*,*) "Spin forbidden: ", current
+			write(*,*) trim(FragmentsDB_instance.clusters( multisetPositions(1) ).label())
+			do i=1,current
+				write(*,*) "   ", trim(FragmentsDB_instance.clusters( multisetPositions(i) ).label())
+			end do
+			write(*,*) "End spin forbidden"
+		end if
 		
 		call spinAvail.clear()
 	end function isSpinForbidden
@@ -582,13 +598,13 @@ module Reactor_
 									
 									labelTS = trim(lReactives.label( details=useDetailsInLabel ))//"<-->"//trim(lProducts.label( details=useDetailsInLabel ))
 									
-! 									if( GOptions_debugLevel >= 2 ) then
+									if( GOptions_debugLevel >= 2 ) then
 										write(*,*) "       reactives = ", trim(reactives.label( details=useDetailsInLabel ))
 										write(*,*) "        products = ", trim(products.label( details=useDetailsInLabel ))
 										write(*,*) "      lreactives = ", trim(lReactives.label( details=useDetailsInLabel ))
 										write(*,*) "       lproducts = ", trim(lProducts.label( details=useDetailsInLabel ))
 										write(*,*) "label TS located = ", trim(labelTS.fstr)
-! 									end if
+									end if
 									
 									transitionStateId = FragmentsDB_instance.getIdTransitionStateFromLabel( trim(labelTS.fstr) )
 									
@@ -638,11 +654,11 @@ module Reactor_
 										end do
 									end if
 									
-! 									if( GOptions_debugLevel >= 2 ) then
+									if( GOptions_debugLevel >= 2 ) then
 										write(*,*) "        products = ", trim(products.label( details=useDetailsInLabel ))
 										write(*,*) "     Eff channel = ", trim(reactives.label( details=useDetailsInLabel ))//"-->"//trim(productsTS.label( details=useDetailsInLabel ))
 ! 										stop
-! 									end if
+									end if
 									
 									locatedTS = .true.
 									exit ! Only one TS is accepted. The one with minimum size
@@ -818,6 +834,8 @@ module Reactor_
 		integer :: nProducts ! number of products in one channel
 		integer :: i, j, targetMolecule1, targetMolecule2
 		real(8) :: St1, St2, S ! spin target molecule 1, 2 and total
+		type(FragmentsList) :: lReactives, lProducts
+		type(String) :: sBuffer
 		
 		logical :: successFrag
 		
@@ -886,6 +904,26 @@ module Reactor_
 					)
 				end if
 				
+				products = reactives
+				return
+			end if
+			
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Si la reaccion esta prohibida, se mantienen los rectivos
+			call lReactives.init(1)
+			lReactives.clusters(1) = reactives.clusters(targetMolecule1)
+			
+			call lProducts.init(dNfrag+1)
+			do i=1,dNfrag+1
+				call lProducts.set( i, FragmentsDB_instance.clusters( channelInfo(i) ) )
+			end do
+			
+			sBuffer = reactionString( lReactives, lProducts, details=FragmentsDB_instance.useForbiddenReactionsDetails )
+			if( FragmentsDB_instance.isForbidden( sBuffer ) ) then
+				if( GOptions_printLevel >= 2 ) then
+					call GOptions_info( "This reaction is forbidden: "//trim(sBuffer.fstr), &
+							"Reactor.changeCompositionSequential()", "The reactives composition is kept." )
+				end if
 				products = reactives
 				return
 			end if
@@ -999,6 +1037,25 @@ module Reactor_
 				return
 			end if
 			
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			! Si la reaccion esta prohibida, se mantienen los rectivos
+			call lReactives.init(2)
+			call lReactives.set( 1, reactives.clusters(targetMolecule1) )
+			call lReactives.set( 2, reactives.clusters(targetMolecule2) )
+			
+			call lProducts.init(1)
+			call lProducts.set( 1, FragmentsDB_instance.clusters( channelInfo(1) ) )
+			
+			sBuffer = reactionString( lReactives, lProducts, details=FragmentsDB_instance.useForbiddenReactionsDetails )
+			if( FragmentsDB_instance.isForbidden( sBuffer ) ) then
+				if( GOptions_printLevel >= 2 ) then
+					call GOptions_info( "This reaction is forbidden: "//trim(sBuffer.fstr), &
+							"Reactor.changeCompositionSequential()", "The reactives composition is kept." )
+				end if
+				products = reactives
+				return
+			end if
+			
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Se muestran lo valores importantes
 			if( GOptions_printLevel >= 2 ) then
@@ -1050,7 +1107,7 @@ module Reactor_
 		real(8) :: rBuffer
 		type(String) :: sBuffer
 		
-		integer :: model, i
+		integer :: i
 		real(8) :: vibrationalEnergy
 		real(8) :: electronicEnergy
 		
@@ -1111,31 +1168,29 @@ module Reactor_
 
 				if( this.replaceTS ) then
 				
-					write(*,*) "--------------------------------------------------------"
-					write(*,*) "reactives ", trim(this.reactives.label())
-! 					sBuffer = this.reactives.energyHistoryLine()
-! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
-					sBuffer = this.reactives.weightHistoryLine()
-					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
-					write(*,*) "products ", trim(this.products.label())
-! 					sBuffer = this.products.energyHistoryLine()
-! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
-					sBuffer = this.products.weightHistoryLine()
-					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
-					write(*,*) "productsTS ", trim(this.productsTS.label())
-					write(*,*) "productsTSType", this.productsTSType.data
-					write(*,*) "productsType", this.productsType.data
+! 					write(*,*) "--------------------------------------------------------"
+! 					write(*,*) "reactives ", trim(this.reactives.label())
+! ! 					sBuffer = this.reactives.energyHistoryLine()
+! ! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
+! 					sBuffer = this.reactives.weightHistoryLine()
+! 					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+! 					write(*,*) "products ", trim(this.products.label())
+! ! 					sBuffer = this.products.energyHistoryLine()
+! ! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
+! 					sBuffer = this.products.weightHistoryLine()
+! 					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+! 					write(*,*) "productsTS ", trim(this.productsTS.label())
+! 					write(*,*) "productsTSType", this.productsTSType.data
+! 					write(*,*) "productsType", this.productsType.data
 				
-					model = 3
-					
-					select case( model )
-						case( 1 )
+					select case( trim(GOptionsM3C_TSModel.fstr) )
+						case( "NONE" )
 							! No correction by TS
 							
 							! Los productos utilizan parte de la energía
 							call this.products.initialGuessFragmentsList()
 
-						case( 2 )
+						case( "EARLY" )
 							! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
 							call this.productsTS.setReactorEnergy( this.reactives.reactorEnergy() )
 							
@@ -1150,12 +1205,12 @@ module Reactor_
 							sBuffer = this.productsTS.weightHistoryLine()
 							write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
 							
-						case( 3 )
+						case( "LATE" )
 							this.productsTS2 = this.products
-							this.TS = this.productsTS.clusters(1) ! EL primer cluster siempre es el TS
+							this.TS = this.productsTS.clusters(1) ! El primer cluster siempre es el TS
 							
-! 		type(IntegerVector) :: productsType  ! Same size than products
-! 		type(IntegerVector) :: productsTSType ! same size than productsTS
+! 								type(IntegerVector) :: productsType  ! Same size than products
+! 								type(IntegerVector) :: productsTSType ! same size than productsTS
 
 							vibrationalEnergy = 0.0_8
 							electronicEnergy = 0.0_8
@@ -1168,7 +1223,7 @@ module Reactor_
 							end do
 							
 							! Uso la energia vibracional de los productos y la redistribuyo en el TS
-							call this.TS.frozenVibrations( filter="asymp=rot" )
+							call this.TS.frozenVibrations( filter="asympt=rot" )
 							call this.TS.changeVibrationalEnergy( maxEnergy=vibrationalEnergy )
 							
 							this.productsTS2.energyShift = this.TS.electronicEnergy-electronicEnergy
@@ -1182,13 +1237,17 @@ module Reactor_
 							! Los productos utilizan parte de la energía
 							call this.productsTS2.initialGuessFragmentsList()
 							
-		! 					sBuffer = this.productsTS.energyHistoryLine()
-		! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
-							sBuffer = this.productsTS2.weightHistoryLine()
-							write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+! 								sBuffer = this.productsTS.energyHistoryLine()
+! 								write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
+! 								sBuffer = this.productsTS2.weightHistoryLine()
+! 								write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+						case default
+							write(*,"(A)") "### ERROR ###: Reactor.run(). Unknown TS model ("//trim(GOptionsM3C_TSModel.fstr)//")"
+							write(*,"(A)") "               Available options: NONE, EARLY, LATE. Default NONE"
+							stop
 					end select
 				
-					write(*,*) "--------------------------------------------------------"
+! 					write(*,*) "--------------------------------------------------------"
 					
 				end if
 				

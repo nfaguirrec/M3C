@@ -638,15 +638,19 @@ module Fragment_
 		do i=1,size(this.frozenVibrations_)
 			call this.vibFrequenciesData(i).split( tokens, ";" )
 			
-			do j=1,size(tokens)
-				if( trim(tokens(j)) == trim(filter) ) then
-					this.frozenVibrations_(i) = .true.
-					exit
-				end if
-			end do
+			if( present(filter) ) then
+				do j=1,size(tokens)
+					if( trim(tokens(j)) == trim(filter) ) then  ! e.g. filter="asymp=rot"
+						this.frozenVibrations_(i) = .true.
+						exit
+					end if
+				end do
+			else
+				this.frozenVibrations_(i) = .true.
+			end if
 		end do
 		
-		deallocate( tokens )
+		if( allocated(tokens) ) deallocate( tokens )
 	end subroutine frozenVibrations
 	
 	!>
@@ -988,8 +992,12 @@ module Fragment_
 				end if
 			end do
 			
-			this.LnWv_ = real(eff_fv-1,8)*log(this.vibrationalEnergy_) &
-						-log(Gamma(real(eff_fv,8))) - ssum
+			this.LnWv_ = 0.0_8
+			
+			if( abs(this.vibrationalEnergy_) > 1d-6 ) then
+				this.LnWv_ = real(eff_fv-1,8)*log(this.vibrationalEnergy_) &
+							-log(Gamma(real(eff_fv,8))) - ssum
+			end if
 			
 ! 			this.LnWv_ = real(this.fv()-1,8)*log(this.vibrationalEnergy_) &
 ! 						-log(Gamma(real(this.fv(),8))) - sum(log(this.vibFrequencies))

@@ -17,8 +17,7 @@ clean:
 binary:
 	mkdir M3C-v${VERSION}
 	mkdir M3C-v${VERSION}/doc
-	cp README M3C-v${VERSION}/
-	cp NEWS M3C-v${VERSION}/
+	cp README.md M3C-v${VERSION}/
 	cp M3Cvars.sh M3C-v${VERSION}/
 	cp doc/tutorial/tutorial-*.pdf M3C-v${VERSION}/doc/
 #	cp -r examples M3C-v${VERSION}

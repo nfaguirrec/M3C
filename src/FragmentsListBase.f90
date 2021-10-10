@@ -1220,7 +1220,7 @@ module FragmentsListBase_
 	subroutine changeVibrationalEnergyFragmentsListBase( this )
 		class(FragmentsListBase) :: this
 		
-		integer :: i
+		integer :: i, n
 		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsListBase()
@@ -1231,7 +1231,7 @@ module FragmentsListBase_
 			call GOptions_subsection( "Random vibrational energies "//trim(this.label()), indent=2 )
 		end if
 		
-		do
+		do n=1,10000
 			this.vibrationalEnergy_ = 0.0_8
 			do i=1,this.nMolecules()
 				call this.clusters(i).changeVibrationalEnergy( maxEnergy=this.reactorEnergy_ )
