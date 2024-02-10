@@ -342,7 +342,7 @@ program M3CfitBR
 			bufferGrid.data = 0.0_8
 		end if
 		
-		call P(i).fromGridArray( energyGrid, bufferGrid.data )
+		P(i) = RNFunction( energyGrid, bufferGrid.data )
 		write(*,"(A)") "OK"
 	end do
 	
@@ -366,7 +366,7 @@ program M3CfitBR
 	k=1
 	do n=1,Nmax
 		do l=1,Lmax
-			call B(k).fromFunction( energyGrid, basisFunction )
+			B(k) = RNFunction( energyGrid, basisFunction )
 			k=k+1
 		end do
 	end do
@@ -534,7 +534,7 @@ program M3CfitBR
 		end do
 	end do
 	
-	call f.fromFunction( energyGrid, energyFunction )
+	f = RNFunction( energyGrid, energyFunction )
 	call f.save( energyDistFileName.fstr )
 	call integrator.init( f, NIntegrator_BOOLE )
 	write(*,"(A15,F10.5)") "Integral = ", integrator.evaluate()

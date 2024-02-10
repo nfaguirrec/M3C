@@ -520,7 +520,7 @@ module FragmentsListBase_
 	!>
 	!! @brief Returns the total mass
 	!!
-	pure function mass( this ) result( output )
+	function mass( this ) result( output )
 		class(FragmentsListBase), intent(in) :: this
 		real(8) :: output
 		
@@ -1331,7 +1331,7 @@ module FragmentsListBase_
 	!>
 	!! @brief Number of rotational degrees of freedom
 	!!
-	pure function fr( this ) result( output )
+	function fr( this ) result( output )
 		class(FragmentsListBase), intent(in) :: this
 		integer :: output
 		
@@ -1539,7 +1539,7 @@ module FragmentsListBase_
 		class(StringIntegerMapIterator), pointer :: iter
 		type(StringIntegerPair) :: pair
 		
-		call counts.init()
+		counts = StringIntegerMap()
 		
 		do i=1,this.nMolecules()
 			label = this.clusters(i).label( details=.true. )

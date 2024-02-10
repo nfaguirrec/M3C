@@ -189,7 +189,7 @@ program M3CBR
 		NL(i,1) = n
 		NL(i,2) = l
 		
-		call B(i).fromFunction( energyGrid, basisFunction )
+		B(i) = RNFunction( energyGrid, basisFunction )
 		
 		write(*,"(F15.5,2I5)") C.get(i,1), n, l
 	end do
@@ -323,7 +323,7 @@ program M3CBR
 			call bufferGrid.fromFile( dataFileName.fstr, column=2*i )
 		end if
 		
-		call P(i).fromGridArray( energyGrid, bufferGrid.data )
+		P(i) = RNFunction( energyGrid, bufferGrid.data )
 		write(*,"(A)") "OK"
 	end do
 	
@@ -411,7 +411,7 @@ program M3CBR
 		skewE = skewE + (C.get(k,1)/100.0_8)*( real((l+1)*(l+2)*(l+3)*n**3,8) - 3.0_8*real((l+1)*(l+2)*n**2,8)*averE + 3.0_8*real((l+1)*n,8)*averE**2-averE**3 )/stdevE**3
 	end do
 	
-	call f.fromFunction( energyGrid, energyFunction )
+	f = RNFunction( energyGrid, energyFunction )
 	call f.save( energyDistFileName.fstr )
 	call integrator.init( f, NIntegrator_BOOLE )
 	write(*,*) ""

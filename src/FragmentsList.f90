@@ -82,11 +82,6 @@ module FragmentsList_
 		real(8), private :: LnDiagI_     !< Contiene el log del producto de la diagonal de los tensores de inercia efectivos
 		
 		contains
-			generic :: init => initFragmentsList
-			generic :: assignment(=) => copyFragmentsList
-			
-			procedure :: initFragmentsList
-			procedure :: copyFragmentsList
 			final :: destroyFragmentsList
 			
 			procedure :: initialGuessFragmentsList
@@ -114,6 +109,14 @@ module FragmentsList_
 			
 			procedure :: iTemperature
 	end type FragmentsList
+
+	interface FragmentsList
+		 module procedure initFragmentsList
+	end interface
+
+	interface assignment(=)
+		module procedure copyFragmentsList
+	end interface
 	
 	contains
 	
@@ -122,8 +125,8 @@ module FragmentsList_
 	!!
 	!! @param[in] nMolecules Number of clusters that will be contained
 	!!
-	subroutine initFragmentsList( this, nMolecules )
-		class(FragmentsList) :: this 
+	function initFragmentsList( nMolecules ) result( this )
+		type(FragmentsList) :: this
 		integer, intent(in) :: nMolecules
 		
 		if( GOptions_printLevel >= 3 ) then
@@ -136,7 +139,7 @@ module FragmentsList_
 		this.E_totJ = 0.0_8
 		this.LnLambda_ = 0.0_8
 		this.LnDiagI_ = 0.0_8
-	end subroutine initFragmentsList
+	end function initFragmentsList
 	
 	!>
 	!! @brief Copy constructor

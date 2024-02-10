@@ -382,7 +382,7 @@ module FragmentsDB_
 		if( allocated(this.transitionState) ) deallocate( this.transitionState )
 		allocate( this.transitionState(size(transitionStatesTable)) )
 		
-		call this.str2id_TS.init()
+		this.str2id_TS = StringIntegerMap()
 		
 		if( allocated(this.involvedInTS) ) deallocate( this.involvedInTS )
 		allocate( this.involvedInTS(size(this.clusters)) )
@@ -1143,7 +1143,7 @@ module FragmentsDB_
 	!! @brief Returns true if the reaction associated with the label is forbidden
 	!!        according with the user
 	!!
-	pure function isForbidden( this, label ) result ( output )
+	function isForbidden( this, label ) result ( output )
 		class(FragmentsDB), intent(in) :: this
 		type(String), intent(in) :: label
 		logical :: output

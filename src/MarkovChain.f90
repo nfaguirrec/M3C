@@ -294,25 +294,25 @@ module MarkovChain_
 		call this.transitionDetHistogram.initStringHistogram( algorithm=Histogram_RUNNING )
 		
 		do nExp=1,this.numberOfExperiments
-			call this.iTemperatureHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			this.iTemperatureHistogram(nExp) = RealHistogram( algorithm=Histogram_RUNNING )
 			
-			call this.translationalEnergyHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
-			call this.intermolEnergyHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
-			call this.vibrationalEnergyHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
-			call this.rotationalEnergyHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			this.translationalEnergyHistogram(nExp) = RealHistogram( algorithm=Histogram_RUNNING )
+			this.intermolEnergyHistogram(nExp) = RealHistogram( algorithm=Histogram_RUNNING )
+			this.vibrationalEnergyHistogram(nExp) = RealHistogram( algorithm=Histogram_RUNNING )
+			this.rotationalEnergyHistogram(nExp) = RealHistogram( algorithm=Histogram_RUNNING )
 			
-			call this.electronicWeightHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
-			call this.vibrationalWeightHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
-			call this.combinatorialWeightHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
-			call this.rotationalWeightHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
-			call this.translationalWeightHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
-			call this.totalWeightHistogram(nExp).initRealHistogram( algorithm=Histogram_RUNNING )
+			this.electronicWeightHistogram(nExp) = RealHistogram( algorithm=Histogram_RUNNING )
+			this.vibrationalWeightHistogram(nExp) = RealHistogram( algorithm=Histogram_RUNNING )
+			this.combinatorialWeightHistogram(nExp) = RealHistogram( algorithm=Histogram_RUNNING )
+			this.rotationalWeightHistogram(nExp) = RealHistogram( algorithm=Histogram_RUNNING )
+			this.translationalWeightHistogram(nExp) = RealHistogram( algorithm=Histogram_RUNNING )
+			this.totalWeightHistogram(nExp) = RealHistogram( algorithm=Histogram_RUNNING )
 			
-			call this.nFragsHistogram(nExp).init()
-			call this.speciesHistogram(nExp).init()
-			call this.speciesDetHistogram(nExp).init()
-			call this.channelHistogram(nExp).init()
-			call this.channelDetHistogram(nExp).init()
+			this.nFragsHistogram(nExp) = StringIntegerMap()
+			this.speciesHistogram(nExp) = StringIntegerMap()
+			this.speciesDetHistogram(nExp) = StringIntegerMap()
+			this.channelHistogram(nExp) = StringIntegerMap()
+			this.channelDetHistogram(nExp) = StringIntegerMap()
 		end do
 	end subroutine initHistograms
 	
@@ -737,7 +737,7 @@ module MarkovChain_
 			call ebklFile.open( ebklFileName )
 		end if
 		
-		call averHistogram.init()
+		averHistogram = StringIntegerMap()
 		numberOfExperiments = size(histogramVec)
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1123,7 +1123,7 @@ module MarkovChain_
 		write(unit,"(A1,9X,<this.numberOfExperiments>I15,5X,2A15)") "#", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
 		write(unit,"(A1,9X,<this.numberOfExperiments>A15,5X,2A15)") "#", ( "-----", i=1,this.numberOfExperiments ), "----", "----"
 		
-		call histBuffer.initRealHistogram()
+		histBuffer = RealHistogram()
 		
 		do i=1,this.numberOfExperiments
 			call histBuffer.add( 1.0_8/this.iTemperatureHistogram(i).mean() )
@@ -1146,7 +1146,7 @@ module MarkovChain_
 		write(unit,"(A1,9X,A5,<this.numberOfExperiments>I15,5X,2A15)") "#", "  ", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
 		write(unit,"(A1,9X,A5,<this.numberOfExperiments>A15,5X,2A15)") "#", "  ", ( "-----", i=1,this.numberOfExperiments ), "----", "----"
 		
-		call histBuffer.initRealHistogram()
+		histBuffer = RealHistogram()
 		
 		do i=1,this.numberOfExperiments
 			call histBuffer.add( this.translationalEnergyHistogram(i).mean() )
@@ -1160,7 +1160,7 @@ module MarkovChain_
 		
 		write(unit,"(5X,2F15.5)") histBuffer.mean()/eV, histBuffer.stdev()/eV
 		
-		call histBuffer.initRealHistogram()
+		histBuffer = RealHistogram()
 		
 		do i=1,this.numberOfExperiments
 			call histBuffer.add( this.intermolEnergyHistogram(i).mean() )
@@ -1174,7 +1174,7 @@ module MarkovChain_
 		
 		write(unit,"(5X,2F15.5)") histBuffer.mean()/eV, histBuffer.stdev()/eV
 		
-		call histBuffer.initRealHistogram()
+		histBuffer = RealHistogram()
 		
 		do i=1,this.numberOfExperiments
 			call histBuffer.add( this.vibrationalEnergyHistogram(i).mean() )
@@ -1188,7 +1188,7 @@ module MarkovChain_
 		
 		write(unit,"(5X,2F15.5)") histBuffer.mean()/eV, histBuffer.stdev()/eV
 		
-		call histBuffer.initRealHistogram()
+		histBuffer = RealHistogram()
 		
 		do i=1,this.numberOfExperiments
 			call histBuffer.add( this.rotationalEnergyHistogram(i).mean() )
@@ -1211,7 +1211,7 @@ module MarkovChain_
 		write(unit,"(A1,9X,A5,<this.numberOfExperiments>I15,5X,2A15)") "#", "  ", ( i, i=1,this.numberOfExperiments ), "aver", "desv"
 		write(unit,"(A1,9X,A5,<this.numberOfExperiments>A15,5X,2A15)") "#", "  ", ( "-----", i=1,this.numberOfExperiments ), "----", "----"
 		
-		call histBuffer.initRealHistogram()
+		histBuffer = RealHistogram()
 		
 		do i=1,this.numberOfExperiments
 			call histBuffer.add( this.electronicWeightHistogram(i).mean() )
@@ -1225,7 +1225,7 @@ module MarkovChain_
 		
 		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
 		
-		call histBuffer.initRealHistogram()
+		histBuffer = RealHistogram()
 		
 		do i=1,this.numberOfExperiments
 			call histBuffer.add( this.vibrationalWeightHistogram(i).mean() )
@@ -1239,7 +1239,7 @@ module MarkovChain_
 		
 		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
 		
-		call histBuffer.initRealHistogram()
+		histBuffer = RealHistogram()
 		
 		do i=1,this.numberOfExperiments
 			call histBuffer.add( this.combinatorialWeightHistogram(i).mean() )
@@ -1253,7 +1253,7 @@ module MarkovChain_
 		
 		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
 		
-		call histBuffer.initRealHistogram()
+		histBuffer = RealHistogram()
 		
 		do i=1,this.numberOfExperiments
 			call histBuffer.add( this.rotationalWeightHistogram(i).mean() )
@@ -1267,7 +1267,7 @@ module MarkovChain_
 		
 		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
 		
-		call histBuffer.initRealHistogram()
+		histBuffer = RealHistogram()
 		
 		do i=1,this.numberOfExperiments
 			call histBuffer.add( this.translationalWeightHistogram(i).mean() )
@@ -1281,7 +1281,7 @@ module MarkovChain_
 		
 		write(unit,"(5X,2F15.5)") histBuffer.mean(), histBuffer.stdev()
 		
-		call histBuffer.initRealHistogram()
+		histBuffer = RealHistogram()
 		
 		do i=1,this.numberOfExperiments
 			call histBuffer.add( this.totalWeightHistogram(i).mean() )
