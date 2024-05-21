@@ -84,7 +84,8 @@ module FragmentsListBase_
 	public :: &
 		spinListCoupling
 	
-	type, abstract, public :: FragmentsListBase
+! 	type, abstract, public :: FragmentsListBase
+	type, public :: FragmentsListBase
 		type(Fragment), allocatable :: clusters(:)    !< Fragment list
 		integer, allocatable :: idSorted(:)            !< Position of the molecule sorted by mass. It is calculated in updateLabel procedure
 													   !<            this.clusters(i) ----> this.clusters( this.idSorted(i) )
@@ -258,8 +259,8 @@ module FragmentsListBase_
 	!! @brief Copy constructor
 	!!
 	subroutine copyFragmentsListBase( this, other )
-		class(FragmentsListBase), intent(out) :: this
-		class(FragmentsListBase), intent(in) :: other
+		class(FragmentsListBase), intent(inout) :: this
+		type(FragmentsListBase), intent(in) :: other
 		
 		integer :: i
 		

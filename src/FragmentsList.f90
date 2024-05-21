@@ -82,9 +82,11 @@ module FragmentsList_
 		real(8), private :: LnDiagI_     !< Contiene el log del producto de la diagonal de los tensores de inercia efectivos
 		
 		contains
+			generic :: assignment(=) => copyFragmentsList
 			final :: destroyFragmentsList
 			
 			procedure :: initialGuessFragmentsList
+			procedure :: copyFragmentsList
 			procedure :: changeGeometry
 			procedure :: changeVibrationalEnergy
 			procedure :: changeOrientations
@@ -101,7 +103,7 @@ module FragmentsList_
 			procedure :: LnLambda
 			procedure :: LnDiagI
 			procedure, private :: updateLambda
-! 			procedure :: showLnWComponents
+			procedure :: showLnWComponents
 			
 			procedure, private :: updateDiagInertiaTensor
 			procedure, private :: updateDiagInertiaTensorJJ
@@ -112,10 +114,6 @@ module FragmentsList_
 
 	interface FragmentsList
 		 module procedure initFragmentsList
-	end interface
-
-	interface assignment(=)
-		module procedure copyFragmentsList
 	end interface
 	
 	contains
@@ -146,9 +144,10 @@ module FragmentsList_
 	!!
 	subroutine copyFragmentsList( this, other )
 		class(FragmentsList), intent(inout) :: this
-		class(FragmentsList), intent(in) :: other
-		
-		call this.copyFragmentsListBase( other )
+		type(FragmentsList), intent(in) :: other
+
+! 		call this.copyFragmentsListBase( other )
+		this.FragmentsListBase = other.FragmentsListBase
 		
 		this.rotationalEnergy_ = other.rotationalEnergy_
 		this.E_totJ = other.E_totJ
@@ -267,6 +266,9 @@ module FragmentsList_
 		call this.updateLambda()
 		
 		if( GOptions_printLevel >= 3 ) then
+			write(*,*) "LnW = ", this.LnW()
+			write(*,*) "0.5*LnDiagI+this.logVtheta = ", 0.5*this.LnDiagI_+this.logVtheta_
+			write(*,*) "LnLambda-0.5*this.LnDiagI-this.logVtheta = ", this.LnLambda_-0.5*this.LnDiagI_-this.logVtheta_
 			call GOptions_section( "END CHANGE VIBRATIONAL ENERGY "//trim(this.label()), indent=2 )
 		end if
 	end subroutine changeVibrationalEnergy
@@ -321,21 +323,21 @@ module FragmentsList_
 	end function LnDiagI
 
 	! Creo que esto ya no lo uso
-! 	subroutine showLnWComponents( this )
-! 		class(FragmentsList) :: this
-! 		
-! 		integer :: i
-! 		
-! 		write(6,*) ""
-! 		write(6,"(A)") &
-! 			trim(FString_fromReal(this.LnWe(),"(F10.5)"))// &
-! 			trim(FString_fromReal(this.LnWv(),"(F10.5)"))// &
-! 			trim(FString_fromReal(this.LnWn(),"(F10.5)"))// &
-! 			trim(FString_fromReal(this.LnDiagI_,"(F10.5)"))// &
-! 			trim(FString_fromReal(this.LnLambda_,"(F10.5)"))// &
-! 			trim(FString_fromReal(this.LnWe()+this.LnWv()+this.LnWn()+this.LnLambda_,"(F10.5)"))// &
-! 			"     "//trim(this.label())
-! 	end subroutine showLnWComponents
+	subroutine showLnWComponents( this )
+		class(FragmentsList) :: this
+
+		integer :: i
+
+		write(6,*) ""
+		write(6,"(A)") &
+			trim(FString_fromReal(this.LnWe(),"(F10.5)"))// &
+			trim(FString_fromReal(this.LnWv(),"(F10.5)"))// &
+			trim(FString_fromReal(this.LnWn(),"(F10.5)"))// &
+			trim(FString_fromReal(this.LnDiagI_,"(F10.5)"))// &
+			trim(FString_fromReal(this.LnLambda_,"(F10.5)"))// &
+			trim(FString_fromReal(this.LnWe()+this.LnWv()+this.LnWn()+this.LnLambda_,"(F10.5)"))// &
+			"     "//trim(this.label())
+	end subroutine showLnWComponents
 	
 	!>
 	!! @brief Returns the total energy
@@ -1110,9 +1112,9 @@ module FragmentsList_
 		sTS = 0
 		do i=1,n
 			if( this.clusters(i).isTransitionState .and. this.kineticEnergy() > 0.0_8 ) then
-			
+
 				call this.clusters(i).vibFrequenciesData(i).split( tokens,  ";" )
-				
+
 				reducedMass = 0.0_8
 				do j=1,size(tokens)
 					call FString_split( tokens(j), tokens2, "=" )
@@ -1128,23 +1130,23 @@ module FragmentsList_
 				end if
 				deallocate( tokens )
 				if( allocated(tokens2) ) deallocate(tokens2)
-				
+
 				logTSt = &
 					logTSt &
 					+ 0.5_8*log(2.0_8*Math_PI) &
 					- log( Gamma(0.5_8) ) &
 					+ 0.5_8*log(reducedMass)
-					
+
 ! 				write(*,"(A,3F15.8)") "logTStA = ", logTSt, log(reducedMass), reducedMass
-					
+
 				call random_number( randNumber ) ! [0-1]
 				iEt_TS = randNumber*( this.kineticEnergy() - Et_TS )  ! Rand [0:E1]
 				Et_TS = Et_TS + iEt_TS
-				
+
 				logTSt = logTSt - 0.5*log(iEt_TS)
-				
+
 ! 				write(*,"(A,2F15.8)") "logTSt = ", logTSt, Et_TS
-				
+
 				sTS = sTS + 1
 			end if
 		end do

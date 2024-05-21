@@ -295,7 +295,7 @@ module Reactor_
 		
 		integer :: n
 		integer :: maxIterForbidden
-		
+
 		maxIterForbidden = 0
 		do while( .true. )
 		
@@ -708,7 +708,7 @@ module Reactor_
 		logical :: successFrag
 		
 		nProducts = reactives.nMolecules() + dNfrag
-		
+
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Si el cluster no se puede fragmentar mas, mantenga los reactivos
 		if( nProducts > reactives.nAtoms() ) then
@@ -1215,7 +1215,7 @@ module Reactor_
 							vibrationalEnergy = 0.0_8
 							electronicEnergy = 0.0_8
 							do i=1,this.productsTS2.nMolecules()
-								if( this.productsType.data(i) == 1 ) then
+								if( this.productsType.data(i) == 1 ) then  ! If it is the product of the reaction?
 									call this.productsTS2.clusters(i).frozenVibrations()
 									vibrationalEnergy = vibrationalEnergy + this.productsTS2.clusters(i).vibrationalEnergy_
 									electronicEnergy = electronicEnergy + this.productsTS2.clusters(i).electronicEnergy
@@ -1255,7 +1255,7 @@ module Reactor_
 			
 				! La composición es igual antes y después
 				this.products = this.reactives
-				
+
 				! Los productos utilizan parte de la energía cinética en vibracional
 				call this.products.changeVibrationalEnergy()
 				

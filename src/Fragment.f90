@@ -146,6 +146,10 @@ module Fragment_
 			procedure :: spinAvailable
 ! 			procedure :: rotSymNumber
 	end type Fragment
+
+! 	interface assignment(=)
+! 		module procedure copyFragment
+! 	end interface
 	
 	contains
 	
@@ -367,12 +371,12 @@ module Fragment_
 	!!
 	subroutine copyFragment( this, other )
 		class(Fragment), intent(inout) :: this
-		class(Fragment), intent(in) :: other
-		
+		type(Fragment), intent(in) :: other
+
 		if( allocated(this.fileName) ) deallocate(this.fileName)
 		
-		call this.copyMolecule( other )
-		
+		this.Molecule = other.Molecule
+
 		this.id = other.id
 		this.charge = other.charge
 		this.multiplicity = other.multiplicity
