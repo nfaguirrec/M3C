@@ -1,18 +1,37 @@
-cmake_minimum_required(VERSION 2.8)
-project(msym)
-#add_definitions(-std=c99 -I. -static -static-libstdc++ -static-libgcc)
+cmake_minimum_required(VERSION 3.5)
 
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -I. -static -static-libgcc -static-libstdc++")
+# Set C99 standard
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+# Compile flags and include path
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I${CMAKE_CURRENT_SOURCE_DIR} -static -static-libgcc")
 
 add_library(msym STATIC
-basis_function.c   character_table.h  debug.c     elements.h         geometry.h  msym.c        msym.h         point_group.c  rsh.h       symmetrize.c  symmetry.h
-basis_function.h   context.c          debug.h     equivalence_set.c  linalg.c    msym_error.c  permutation.c  point_group.h  subspace.c  symmetrize.h  symop.c
-character_table.c  context.h          elements.c  equivalence_set.h  geometry.c  linalg.h    msym_error.h  permutation.h  rsh.c          subspace.h  symmetry.c    symop.h
+  basis_function.c
+  character_table.c
+  context.c
+  debug.c
+  elements.c
+  equivalence_set.c
+  geometry.c
+  linalg.c
+  msym.c
+  msym_error.c
+  permutation.c
+  point_group.c
+  rsh.c
+  subspace.c
+  symmetrize.c
+  symmetry.c
+  symop.c
 )
 
 add_executable(molecule.symmetrize molecule.symmetrize.c)
-target_link_libraries(molecule.symmetrize msym)
-target_link_libraries(molecule.symmetrize m)
+target_link_libraries(molecule.symmetrize msym m)
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/../)
-install(TARGETS molecule.symmetrize DESTINATION bin)
+set_target_properties(molecule.symmetrize PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/utils"
+)
+
+install(TARGETS molecule.symmetrize DESTINATION utils)

@@ -72,32 +72,56 @@ doc   doxyfile  LICENSE.jmol     LICENSE.scift  Makefile   src        utils
 docs  LICENSE   LICENSE.libmsym  M3Cvars.sh     README.md  templates  VERSION
 ```
 
-Enter the M3C directory (`cd M3C`). To build the code, you can select the Fortran compiler by specifying the `FC` variable (which defaults to `ifort`):
+To build the library and executables, use the modern **CMake** build system (supporting out-of-source builds).
 
-Using the Intel Compiler:
+Before compiling M3C, ensure that **SciFT** has been compiled using the corresponding compiler configuration. You select this by specifying the `-DSCIFT_HOME=/path/to/scift` option during CMake configuration.
+
+### 1. gfortran (GNU Fortran, standard LAPACK)
 ```bash
-$ make
+$ FC=gfortran cmake -B build_gfortran -S .
+$ cmake --build build_gfortran -j$(nproc)
 ```
 
-Using the GNU Fortran Compiler (`gfortran`):
+### 2. gfortran + Intel MKL
 ```bash
-$ make FC=gfortran
+$ FC=gfortran cmake -B build_gfortran_mkl -S . -DWITH_MKL=ON
+$ cmake --build build_gfortran_mkl -j$(nproc)
 ```
 
-You can also override the path to the `SciFT` library using `SCIFT_HOME` (which defaults to `/home/aguirre/Develop/scift`):
+### 3. ifort (Intel Fortran, standard LAPACK)
 ```bash
-$ make FC=gfortran SCIFT_HOME=/path/to/scift
+$ FC=ifort cmake -B build_ifort -S . -DWITH_MKL=OFF
+$ cmake --build build_ifort -j$(nproc)
 ```
 
-The build process will automatically propagate the chosen compiler down to all sub-makes and dependency builders.
+### 4. ifort + Intel MKL
+```bash
+$ FC=ifort cmake -B build_ifort_mkl -S . -DWITH_MKL=ON
+$ cmake --build build_ifort_mkl -j$(nproc)
+```
 
+## Creating a Binary Distribution (CPack)
+
+You can package the compiled binaries into a standard `.tar.gz` distribution archive using CMake's built-in **CPack** tool.
+
+After compiling one of your target builds (for example, `build_gfortran`), run:
+```bash
+$ cpack --config build_gfortran/CPackConfig.cmake
+```
+
+This will generate a packaged tarball (e.g. `M3C-v2.2-GNU-x86_64.tar.gz`) containing:
+- Executables (`M3C`, `M3CBR`, `M3CfitBR`, `molecule.ZPE`) inside `bin/`
+- Copied SciFT `molecule.*` executable examples inside `bin/`
+- `molecule.symmetrize` and other scripts inside `utils/`
+- Documentation PDFs inside `doc/`
+- `README.md` and `M3Cvars.sh` at the root folder of the distribution
 
 ## Installing M3C
 
-The basic environmental variables that M3C needs can be loaded just adding the following command anywhere in the ~/.bashrc file:
+To install the environment variables required by M3C, add the following line anywhere in your `~/.bashrc` file, specifying the compiled build directory as the first parameter (e.g., `build_gfortran`):
 
-```
-source <PATH_TO_M3C>/M3Cvars.sh
+```bash
+source <PATH_TO_M3C>/M3Cvars.sh build_gfortran
 ```
 
 M3C is also able to obtain data from electronic structure calculations by interfacing with some standard quantum chemistry programs. To enable this option the following variables must be specified:
