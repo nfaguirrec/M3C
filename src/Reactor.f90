@@ -105,6 +105,7 @@ module Reactor_
 		type(Fragment) :: TS ! model = LATE
 		type(IntegerVector) :: productsType  ! Same size than products
 		type(IntegerVector) :: productsTSType ! same size than productsTS
+		type(String) :: productsTSModel
 		logical :: replaceTS
 		
 		character(3), private :: name
@@ -151,8 +152,8 @@ module Reactor_
 		type(FragmentsList), intent(in) :: reactives
 		real(8), intent(in) :: excitationEnergy
 		
-		call this.initReactor( reactives, excitationEnergy )
-		call this.reactives.initialGuessFragmentsList()
+		call this%initReactor( reactives, excitationEnergy )
+		call this%reactives%initialGuessFragmentsList()
 	end subroutine init
 	
 	!>
@@ -165,32 +166,32 @@ module Reactor_
 		
 		real(8) :: rBuffer1, rBuffer2
 		
-		this.name = "R"
-		this.state = .true.
+		this%name = "R"
+		this%state = .true.
 		
-		this.reactives = reactives
+		this%reactives = reactives
 		
 		! Este es el cero de energía
-		call this.reactives.setReactorEnergy( excitationEnergy )
+		call this%reactives%setReactorEnergy( excitationEnergy )
 		
 		if( GOptions_printLevel >= 2 ) then
 			call GOptions_section( "REACTOR INITIALIZATION" )
 			
-			call GOptions_valueReport( "Eelec", reactives.electronicEnergy()/eV, "eV", indent=1 )
+			call GOptions_valueReport( "Eelec", reactives%electronicEnergy()/eV, "eV", indent=1 )
 			call GOptions_valueReport( "Eexcit", excitationEnergy/eV, "eV", indent=1 )
-			call GOptions_valueReport( "Reacts", trim(this.reactives.label()), indent=1 )
+			call GOptions_valueReport( "Reacts", trim(this%reactives%label()), indent=1 )
 		end if
 		
-! 		call this.reactives.buildInitialConfiguration()
+! 		call this%reactives%buildInitialConfiguration()
 		
 		! La energía total es igual a la energía de excitación
-! 		call this.reactives.setTranslationalEnergy( this.reactives.reactorEnergy() - this.reactives.internalEnergy() )
+! 		call this%reactives%setTranslationalEnergy( this%reactives%reactorEnergy() - this%reactives%internalEnergy() )
 		
 		if( GOptions_printLevel >= 2 ) then
 			call GOptions_paragraph( "Energy balance", indent=1 )
-			call GOptions_valueReport( "Reactor energy", this.reactives.reactorEnergy()/eV, "eV", indent=1 )
-			call GOptions_valueReport( "Int. energy", this.reactives.internalEnergy()/eV, "eV", indent=1 )
-			call GOptions_valueReport( "T energy", this.reactives.kineticEnergy()/eV, "eV", indent=1 )
+			call GOptions_valueReport( "Reactor energy", this%reactives%reactorEnergy()/eV, "eV", indent=1 )
+			call GOptions_valueReport( "Int. energy", this%reactives%internalEnergy()/eV, "eV", indent=1 )
+			call GOptions_valueReport( "T energy", this%reactives%kineticEnergy()/eV, "eV", indent=1 )
 			write(*,*) ""
 		end if
 		
@@ -215,7 +216,7 @@ module Reactor_
 	subroutine destroyReactor( this )
 		type(Reactor) :: this
 		
-		if( allocated(this.dNFrag) ) deallocate( this.dNFrag )
+		if( allocated(this%dNFrag) ) deallocate( this%dNFrag )
 		
 	end subroutine destroyReactor
 	
@@ -229,7 +230,7 @@ module Reactor_
 		integer :: i
 		character(10), allocatable :: tokens(:)
 		
-		this.name = trim(strId)
+		this%name = trim(strId)
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! En caso que el strId sea de un reactor de estructura
@@ -238,17 +239,17 @@ module Reactor_
 		
 		if( size(tokens) > 1 ) then
 			
-			if( allocated(this.dNFrag) ) deallocate(this.dNFrag)
-			allocate(this.dNFrag(size(tokens)-1))
+			if( allocated(this%dNFrag) ) deallocate(this%dNFrag)
+			allocate(this%dNFrag(size(tokens)-1))
 			
 			do i=2,size(tokens)
-				this.dNFrag(i-1) = FString_toInteger( tokens(i) )
+				this%dNFrag(i-1) = FString_toInteger( tokens(i) )
 			end do
 		end if
 		
 		do i=1,size(REACTOR_LABEL)
 			if( trim(REACTOR_LABEL(i)) == trim( tokens(1) ) ) then
-				this.type = i
+				this%type = i
 				return
 			end if
 		end do
@@ -270,10 +271,10 @@ module Reactor_
 		if( GOptions_printLevel >= 2 ) then
 			call GOptions_section( "REACTOR STARTS RUNNING", indent=1 )
 			
-			select case( this.type )
+			select case( this%type )
 				case( STRUCTURE_REACTOR )
 					call GOptions_valueReport( "type", "STRUCTURE", indent=1 )
-					call GOptions_valueReport( "dNFrag", this.dNFrag, indent=1 )
+					call GOptions_valueReport( "dNFrag", this%dNFrag, indent=1 )
 				case( TRANSLATIONAL_REACTOR )
 					call GOptions_valueReport( "type", "TRANSLATIONAL", indent=1 )
 				case( ROTATIONAL_REACTOR )
@@ -299,28 +300,28 @@ module Reactor_
 		maxIterForbidden = 0
 		do while( .true. )
 		
-			n = RandomUtils_uniform( [ 1, size(this.dNFrag) ] )
+			n = RandomUtils_uniform( [ 1, size(this%dNFrag) ] )
 			
 			if( GOptions_printLevel >= 2 ) then
 				call GOptions_paragraph("CHANGE COMPOSITION")
 				
-				write(*,"(A10,I20,5X,A)") "dN", this.dNFrag(n), "used for reactor"
+				write(*,"(A10,I20,5X,A)") "dN", this%dNFrag(n), "used for reactor"
 			end if
 		
-			select case( trim(GOptionsM3C_structureSamplingMethod.fstr) )
+			select case( trim(GOptionsM3C_structureSamplingMethod%fstr) )
 				case( "RANDOM" )
-					call changeCompositionRandomly( this.reactives, this.products, this.dNFrag(n) )
+					call changeCompositionRandomly( this%reactives, this%products, this%dNFrag(n) )
 				case( "SEQUENTIAL" )
-					call changeCompositionSequential( this.reactives, this.products, this.dNFrag(n) )
+					call changeCompositionSequential( this%reactives, this%products, this%dNFrag(n) )
 				case default
 					call GOptions_error( &
-						"Unknown change composition sampling method"//" ("//trim(GOptionsM3C_structureSamplingMethod.fstr)//")", &
+						"Unknown change composition sampling method"//" ("//trim(GOptionsM3C_structureSamplingMethod%fstr)//")", &
 						"Reactor.changeComposition()", &
 						"Implemented methods: RANDOM, SEQUENTIAL" &
 						)
 			end select
 			
-			if( FragmentsDB_instance.isForbidden( reactionString( this.reactives, this.products, details=FragmentsDB_instance.useForbiddenReactionsDetails ) ) ) then
+			if( FragmentsDB_instance%isForbidden( reactionString( this%reactives, this%products, details=FragmentsDB_instance%useForbiddenReactionsDetails ) ) ) then
 				if( GOptions_printLevel >= 2 ) then
 					write(*,*) ""
 					write(*,*) "### Warning ### This reaction is forbidden"
@@ -332,10 +333,10 @@ module Reactor_
 				cycle
 			else
 				
-				if( allocated(FragmentsDB_instance.transitionState) ) then
-					call reduceToTransitionStates( this.reactives, this.products, this.productsTS, this.productsType, this.productsTSType )
+				if( allocated(FragmentsDB_instance%transitionState) ) then
+					call reduceToTransitionStates( this%reactives, this%products, this%productsTS, this%productsType, this%productsTSType, this%productsTSModel )
 					
-					if( this.productsTS.nMolecules() > 0 ) this.replaceTS = .true.
+					if( this%productsTS%nMolecules() > 0 ) this%replaceTS = .true.
 				end if
 				
 				exit
@@ -366,33 +367,33 @@ module Reactor_
 		
 		integer :: composition( AtomicElementsDB_nElems )
 		
-		call spinAvail.init( current, 0.0_8 )
+		call spinAvail%init( current, 0.0_8 )
 		
 		if( current == 1 ) then
-			S = (FragmentsDB_instance.clusters( multisetPositions(1) ).multiplicity-1.0_8)/2.0_8
+			S = (FragmentsDB_instance%clusters( multisetPositions(1) )%multiplicity-1.0_8)/2.0_8
 			if( Si < 0.0_8 ) Si=0.0_8
 			
-			call spinAvail.set( 1, S )
+			call spinAvail%set( 1, S )
 		else
 			do i=1,current
-				Si = (FragmentsDB_instance.clusters( multisetPositions(i) ).multiplicity-1.0_8)/2.0_8
+				Si = (FragmentsDB_instance%clusters( multisetPositions(i) )%multiplicity-1.0_8)/2.0_8
 				if( Si < 0.0_8 ) Si=0.0_8
 				
-				call spinAvail.set( i, Si )
+				call spinAvail%set( i, Si )
 			end do
 			
 			spinAvail = spinListCoupling( spinAvail )
 
 		end if
 		
-		if( spinAvail.size() == 0 ) then
+		if( spinAvail%size() == 0 ) then
 			write(*,*) "### ERROR ### spinAvail.size() == 0", current, S, Si, Sj
 		end if
 		
 		output = .true.
-		do i=1,spinAvail.size()
-			do j=1,internalReactivesSpinAvail.size()
-				if( abs( spinAvail.at(i) - internalReactivesSpinAvail.at(j) ) < 0.1 ) then
+		do i=1,spinAvail%size()
+			do j=1,internalReactivesSpinAvail%size()
+				if( abs( spinAvail%at(i) - internalReactivesSpinAvail%at(j) ) < 0.1 ) then
 					output = .false.
 					return
 				end if
@@ -401,19 +402,19 @@ module Reactor_
 		
 		composition = 0
 		do i=1,current
-			composition = composition + FragmentsDB_instance.clusters( multisetPositions(i) ).composition
+			composition = composition + FragmentsDB_instance%clusters( multisetPositions(i) )%composition
 		end do
 
-		if( all( FragmentsDB_instance.clusters( multisetPositions(1) ).composition == composition ) ) then
+		if( all( FragmentsDB_instance%clusters( multisetPositions(1) )%composition == composition ) ) then
 			write(*,*) "Spin forbidden: ", current
-			write(*,*) trim(FragmentsDB_instance.clusters( multisetPositions(1) ).label())
+			write(*,*) trim(FragmentsDB_instance%clusters( multisetPositions(1) )%label())
 			do i=1,current
-				write(*,*) "   ", trim(FragmentsDB_instance.clusters( multisetPositions(i) ).label())
+				write(*,*) "   ", trim(FragmentsDB_instance%clusters( multisetPositions(i) )%label())
 			end do
 			write(*,*) "End spin forbidden"
 		end if
 		
-		call spinAvail.clear()
+		call spinAvail%clear()
 	end function isSpinForbidden
 
 	!>
@@ -433,9 +434,9 @@ module Reactor_
 		totalCharge = 0
 		productsComposition = 0
 		do i=1,current
-			totalMass = totalMass + FragmentsDB_instance.clusters( multisetPositions(i) ).mass()
-			totalCharge = totalCharge + FragmentsDB_instance.clusters( multisetPositions(i) ).charge
-			productsComposition = productsComposition + FragmentsDB_instance.clusters( multisetPositions(i) ).composition
+			totalMass = totalMass + FragmentsDB_instance%clusters( multisetPositions(i) )%mass()
+			totalCharge = totalCharge + FragmentsDB_instance%clusters( multisetPositions(i) )%charge
+			productsComposition = productsComposition + FragmentsDB_instance%clusters( multisetPositions(i) )%composition
 		end do
 		
 		if( current == size(multisetPositions) ) then
@@ -485,18 +486,19 @@ module Reactor_
 		effDetails = .false.
 		if( present(details) ) effDetails = details
 		
-		output = trim(reactives.label( details=effDetails ))//"-->"//trim(products.label( details=effDetails ))
+		output = trim(reactives%label( details=effDetails ))//"-->"//trim(products%label( details=effDetails ))
 	end function reactionString
 	
 	!>
 	!! @brief Replaces products for the corresponding transition states. Only composition is changed
 	!!
-	subroutine reduceToTransitionStates( reactives, products, productsTS, productsType, productsTSType )
+	subroutine reduceToTransitionStates( reactives, products, productsTS, productsType, productsTSType, productsTSModel )
 		type(FragmentsList), intent(in) :: reactives
 		type(FragmentsList), intent(in) :: products
 		type(FragmentsList), intent(out) :: productsTS
 		type(IntegerVector), intent(out) :: productsType
 		type(IntegerVector), intent(out) :: productsTSType
+		type(String), intent(out) :: productsTSModel
 		
 		integer :: i, j, id
 		integer :: ir, jr, kr
@@ -515,27 +517,28 @@ module Reactor_
 		logical :: quasiTS
 		integer :: extraNAtomsQuasiTS
 		
+		productsTSModel = "NONE"
 		useDetailsInLabel = .true.
 		
 		! First we locate the clusters involded in a TS from both reactive and product
-		call reactiveInTS.init( resizeIncrement=reactives.nMolecules() )
-		call productInTS.init( resizeIncrement=products.nMolecules() )
+		call reactiveInTS%init( resizeIncrement=reactives%nMolecules() )
+		call productInTS%init( resizeIncrement=products%nMolecules() )
 		
-		do i=1,reactives.nMolecules()
-			id = FragmentsDB_instance.getIdClusterFromLabel( reactives.clusters(i).label( details=useDetailsInLabel ) )
-			if( FragmentsDB_instance.involvedInTS( id ) ) then
-				call reactiveInTS.append( i )
+		do i=1,reactives%nMolecules()
+			id = FragmentsDB_instance%getIdClusterFromLabel( reactives%clusters(i)%label( details=useDetailsInLabel ) )
+			if( FragmentsDB_instance%involvedInTS( id ) ) then
+				call reactiveInTS%append( i )
 			end if
 		end do
 		
-		do i=1,products.nMolecules()
-			id = FragmentsDB_instance.getIdClusterFromLabel( products.clusters(i).label( details=useDetailsInLabel ) )
-			if( FragmentsDB_instance.involvedInTS( id ) ) then
-					call productInTS.append( i )
+		do i=1,products%nMolecules()
+			id = FragmentsDB_instance%getIdClusterFromLabel( products%clusters(i)%label( details=useDetailsInLabel ) )
+			if( FragmentsDB_instance%involvedInTS( id ) ) then
+					call productInTS%append( i )
 			end if
 		end do
 		
-		if( .not. reactiveInTS.isEmpty() .and. .not. productInTS.isEmpty() ) then
+		if( .not. reactiveInTS%isEmpty() .and. .not. productInTS%isEmpty() ) then
 ! 			write(*,"(A,A)") "Reactives = ", trim(reactives.label( details=useDetailsInLabel ))
 ! 			write(*,"(A)",advance="no") "reactiveInTS = "
 ! 			do i=1,reactiveInTS.size()
@@ -551,22 +554,22 @@ module Reactor_
 			
 			locatedTS = .false.
 			
-			do ir=1,reactiveInTS.size()
+			do ir=1,reactiveInTS%size()
 				! We generate all possible combinations of the clusters in the reactives which are involded in a TS
-				call Math_combinations( reactiveInTS.size(), ir, reactiveInTScomb )
+				call Math_combinations( reactiveInTS%size(), ir, reactiveInTScomb )
 				
 				do jr=1,size(reactiveInTScomb,dim=1)
 					
 					nAtomsR = 0
 					massNumberR = 0
 					do kr=1,size(reactiveInTScomb,dim=2)
-						massNumberR = massNumberR + reactives.clusters( reactiveInTS.at(reactiveInTScomb(jr,kr)) ).massNumber()
-						nAtomsR = nAtomsR + reactives.clusters( reactiveInTS.at(reactiveInTScomb(jr,kr)) ).nAtoms()
+						massNumberR = massNumberR + reactives%clusters( reactiveInTS%at(reactiveInTScomb(jr,kr)) )%massNumber()
+						nAtomsR = nAtomsR + reactives%clusters( reactiveInTS%at(reactiveInTScomb(jr,kr)) )%nAtoms()
 					end do
 					
-					do ip=1,productInTS.size()
+					do ip=1,productInTS%size()
 						! We generate all possible combinations of the clusters in the products which are involded in a TS
-						call Math_combinations( productInTS.size(), ip, productInTScomb )
+						call Math_combinations( productInTS%size(), ip, productInTScomb )
 						
 						! For each combination ...
 						do jp=1,size(productInTScomb,dim=1)
@@ -574,8 +577,8 @@ module Reactor_
 							nAtomsP = 0
 							massNumberP = 0
 							do kp=1,size(productInTScomb,dim=2)
-								massNumberP = massNumberP + products.clusters( productInTS.at(productInTScomb(jp,kp)) ).massNumber()
-								nAtomsP = nAtomsP + products.clusters( productInTS.at(productInTScomb(jp,kp)) ).nAtoms()
+								massNumberP = massNumberP + products%clusters( productInTS%at(productInTScomb(jp,kp)) )%massNumber()
+								nAtomsP = nAtomsP + products%clusters( productInTS%at(productInTScomb(jp,kp)) )%nAtoms()
 							end do
 							
 							! For the given combination of clusters in reactives and products, we check mass and number of atoms conservation
@@ -583,30 +586,30 @@ module Reactor_
 								
 								! lReactives and lProducts include only those clusters involded in a TS
 								! They should be the reactives and products of a TS in the database
-								call lReactives.init( size(reactiveInTScomb,dim=2) )
-								call lProducts.init( size(productInTScomb,dim=2) )
+								call lReactives%init( size(reactiveInTScomb,dim=2) )
+								call lProducts%init( size(productInTScomb,dim=2) )
 								
 								do kr=1,size(reactiveInTScomb,dim=2)
-									lReactives.clusters(kr) = reactives.clusters( reactiveInTS.at(reactiveInTScomb(jr,kr)) )
+									lReactives%clusters(kr) = reactives%clusters( reactiveInTS%at(reactiveInTScomb(jr,kr)) )
 								end do
 							
 								do kp=1,size(productInTScomb,dim=2)
-									lProducts.clusters(kp) = products.clusters( productInTS.at(productInTScomb(jp,kp)) )
+									lProducts%clusters(kp) = products%clusters( productInTS%at(productInTScomb(jp,kp)) )
 								end do
 								
-								if( trim(lReactives.label( details=useDetailsInLabel )) /= trim(lProducts.label( details=useDetailsInLabel )) ) then
+								if( trim(lReactives%label( details=useDetailsInLabel )) /= trim(lProducts%label( details=useDetailsInLabel )) ) then
 									
-									labelTS = trim(lReactives.label( details=useDetailsInLabel ))//"<-->"//trim(lProducts.label( details=useDetailsInLabel ))
+									labelTS = trim(lReactives%label( details=useDetailsInLabel ))//"<-->"//trim(lProducts%label( details=useDetailsInLabel ))
 									
 									if( GOptions_debugLevel >= 2 ) then
-										write(*,*) "       reactives = ", trim(reactives.label( details=useDetailsInLabel ))
-										write(*,*) "        products = ", trim(products.label( details=useDetailsInLabel ))
-										write(*,*) "      lreactives = ", trim(lReactives.label( details=useDetailsInLabel ))
-										write(*,*) "       lproducts = ", trim(lProducts.label( details=useDetailsInLabel ))
-										write(*,*) "label TS located = ", trim(labelTS.fstr)
+										write(*,*) "       reactives = ", trim(reactives%label( details=useDetailsInLabel ))
+										write(*,*) "        products = ", trim(products%label( details=useDetailsInLabel ))
+										write(*,*) "      lreactives = ", trim(lReactives%label( details=useDetailsInLabel ))
+										write(*,*) "       lproducts = ", trim(lProducts%label( details=useDetailsInLabel ))
+										write(*,*) "label TS located = ", trim(labelTS%fstr)
 									end if
 									
-									transitionStateId = FragmentsDB_instance.getIdTransitionStateFromLabel( trim(labelTS.fstr) )
+									transitionStateId = FragmentsDB_instance%getIdTransitionStateFromLabel( trim(labelTS%fstr) )
 									
 									if( GOptions_debugLevel >= 2 ) then
 										write(*,*) "          TS id = ", transitionStateId
@@ -614,30 +617,30 @@ module Reactor_
 									
 									if( transitionStateId == -1 ) cycle
 									
-									call productsTS.init( products.nMolecules() - lProducts.nMolecules() + 1 )
-									call productsType.init( products.nMolecules() )
-									call productsTSType.init( productsTS.nMolecules() )
+									call productsTS%init( products%nMolecules() - lProducts%nMolecules() + 1 )
+									call productsType%init( products%nMolecules() )
+									call productsTSType%init( productsTS%nMolecules() )
 									
-									productsType.data = 0
-									productsTSType.data = 0
+									productsType%data = 0
+									productsTSType%data = 0
 									
 									! The TS is included first
-									call productsTS.set( 1, FragmentsDB_instance.transitionState( transitionStateId ) )
-									call productsTSType.set( 1, 2 )  ! 2 for TS
+									call productsTS%set( 1, FragmentsDB_instance%transitionState( transitionStateId ) )
+									call productsTSType%set( 1, 2 )  ! 2 for TS
 									
 									! .. We include in productsTS all clusters except those which are in the TS
 									j=2
-									do i=1,products.nMolecules()
-										do kp=1,lProducts.nMolecules()
-											label = trim(lProducts.clusters(kp).label( details=useDetailsInLabel ))
+									do i=1,products%nMolecules()
+										do kp=1,lProducts%nMolecules()
+											label = trim(lProducts%clusters(kp)%label( details=useDetailsInLabel ))
 											
-											if( label == trim(products.clusters(i).label( details=useDetailsInLabel )) ) then
-												call productsType.set( i, 1 )    ! 1 for products from TS
-												call productsTSType.set( j, 1 )  ! 1 for products from TS
+											if( label == trim(products%clusters(i)%label( details=useDetailsInLabel )) ) then
+												call productsType%set( i, 1 )    ! 1 for products from TS
+												call productsTSType%set( j, 1 )  ! 1 for products from TS
 											end if
 											
-											if( label /= trim(products.clusters(i).label( details=useDetailsInLabel )) .and. j<=productsTS.nMolecules() ) then
-												call productsTS.set( j, products.clusters(i) )
+											if( label /= trim(products%clusters(i)%label( details=useDetailsInLabel )) .and. j<=productsTS%nMolecules() ) then
+												call productsTS%set( j, products%clusters(i) )
 												j = j+1
 												exit
 											end if
@@ -646,17 +649,19 @@ module Reactor_
 									
 									! .. If There were no clusters in the TS, then we include all the clusters
 									if( j==2 ) then
-										do i=1,products.nMolecules()
-											if( j<=productsTS.nMolecules() ) then
-												call productsTS.set( j, products.clusters(i) )
+										do i=1,products%nMolecules()
+											if( j<=productsTS%nMolecules() ) then
+												call productsTS%set( j, products%clusters(i) )
 												j = j+1
 											end if
 										end do
 									end if
+
+									productsTSModel = FragmentsDB_instance%transitionStateModel( transitionStateId )
 									
 									if( GOptions_debugLevel >= 2 ) then
-										write(*,*) "        products = ", trim(products.label( details=useDetailsInLabel ))
-										write(*,*) "     Eff channel = ", trim(reactives.label( details=useDetailsInLabel ))//"-->"//trim(productsTS.label( details=useDetailsInLabel ))
+										write(*,*) "        products = ", trim(products%label( details=useDetailsInLabel ))
+										write(*,*) "     Eff channel = ", trim(reactives%label( details=useDetailsInLabel ))//"-->"//trim(productsTS%label( details=useDetailsInLabel ))
 ! 										stop
 									end if
 									
@@ -707,11 +712,11 @@ module Reactor_
 		
 		logical :: successFrag
 		
-		nProducts = reactives.nMolecules() + dNfrag
+		nProducts = reactives%nMolecules() + dNfrag
 
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Si el cluster no se puede fragmentar mas, mantenga los reactivos
-		if( nProducts > reactives.nAtoms() ) then
+		if( nProducts > reactives%nAtoms() ) then
 ! 		if( nProducts > 3 ) then   ! @todo Hay que calcular el número máximo de fragmentos al inicio del programa
 			if( GOptions_printLevel >= 2 ) then
 				call GOptions_info( &
@@ -743,7 +748,7 @@ module Reactor_
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Se reserva la memoria necesaria para almacenar
 		! todos los canales
-		nChannels = Math_multisetNumber( FragmentsDB_instance.nMolecules(), nProducts ) ! El tamaño es multiset( N_db, N_prod )
+		nChannels = Math_multisetNumber( FragmentsDB_instance%nMolecules(), nProducts ) ! El tamaño es multiset( N_db, N_prod )
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Si solo hay un canal es porque los reactivos
@@ -756,27 +761,27 @@ module Reactor_
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Se calcula la masa y carga total las cuales se utilizarán
 		! en las retricciones de conservación
-		allocate( ids(FragmentsDB_instance.nMolecules()) )
+		allocate( ids(FragmentsDB_instance%nMolecules()) )
 		
 		internalMassNumber = 0
 		internalCharge = 0
 		internalReactivesComposition = 0
-		do i=1,reactives.nMolecules()
-			internalMassNumber = internalMassNumber + reactives.clusters(i).massNumber()
-			internalCharge = internalCharge + reactives.clusters(i).charge
-			internalReactivesComposition = internalReactivesComposition + reactives.clusters(i).composition
+		do i=1,reactives%nMolecules()
+			internalMassNumber = internalMassNumber + reactives%clusters(i)%massNumber()
+			internalCharge = internalCharge + reactives%clusters(i)%charge
+			internalReactivesComposition = internalReactivesComposition + reactives%clusters(i)%composition
 		end do
 		
-		internalReactivesSpinAvail = reactives.spinAvailable()
+		internalReactivesSpinAvail = reactives%spinAvailable()
 		internalNTrials = 0
 		
-		do i=1,FragmentsDB_instance.nMolecules()
+		do i=1,FragmentsDB_instance%nMolecules()
 			ids(i) = i
 		end do
 		
 		call RandomUtils_randomMultiset( ids, nProducts, channelInfo, reactorConstraint, success=successFrag )
 		deallocate(ids)
-		call internalReactivesSpinAvail.clear()
+		call internalReactivesSpinAvail%clear()
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Si los clusters no pueden satisfacer el constrain, se mantienen los rectivos
@@ -801,16 +806,16 @@ module Reactor_
 			write(*,"(A10,I20,5X,A)") "nTrials", internalNTrials, "used for reactor"
 		end if
 		
-		call products.init( nProducts )
+		call products%init( nProducts )
 		
 		do i=1,nProducts
-			call products.set( i, FragmentsDB_instance.clusters( channelInfo(i) ) )
+			call products%set( i, FragmentsDB_instance%clusters( channelInfo(i) ) )
 		end do
 		
 		if( GOptions_printLevel >= 2 ) then
 			write(*,*) ""
 			write(*,"(5X,A)")      "Choosen channel: "
-			write(*,"(5X,A,5X,A)") "                 ", trim(reactives.label())//" --> "//trim(products.label())
+			write(*,"(5X,A,5X,A)") "                 ", trim(reactives%label())//" --> "//trim(products%label())
 			write(*,*) ""
 		end if
 		
@@ -849,13 +854,13 @@ module Reactor_
 			end if
 			
 			! La molecula a fragmentar se selecciona de forma aleatoria
-			targetMolecule1 = RandomUtils_uniform( [ 1, reactives.nMolecules() ] )
+			targetMolecule1 = RandomUtils_uniform( [ 1, reactives%nMolecules() ] )
 			
 			nProducts = dNfrag+1
 			
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Si el cluster no se puede fragmentar mas, mantenga los reactivos
-			if( nProducts > reactives.clusters(targetMolecule1).nAtoms() ) then
+			if( nProducts > reactives%clusters(targetMolecule1)%nAtoms() ) then
 				if( GOptions_printLevel >= 2 ) then
 					call GOptions_info( &
 						"The fragmentation limit has been reached", &
@@ -871,27 +876,27 @@ module Reactor_
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Se reserva la memoria necesaria para almacenar
 			! todos los canales
-			nChannels = Math_multisetNumber( FragmentsDB_instance.nMolecules(), nProducts ) ! El tamaño es multiset( N_db, N_prod )
+			nChannels = Math_multisetNumber( FragmentsDB_instance%nMolecules(), nProducts ) ! El tamaño es multiset( N_db, N_prod )
 			
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Se calcula la masa y carga total las cuales se utilizarán
 			! en las retricciones de conservación
-			allocate( ids(FragmentsDB_instance.nMolecules()) )
+			allocate( ids(FragmentsDB_instance%nMolecules()) )
 			
-			internalMassNumber = reactives.clusters(targetMolecule1).massNumber()
-			internalCharge = reactives.clusters(targetMolecule1).charge
-			internalReactivesComposition = reactives.clusters(targetMolecule1).composition
+			internalMassNumber = reactives%clusters(targetMolecule1)%massNumber()
+			internalCharge = reactives%clusters(targetMolecule1)%charge
+			internalReactivesComposition = reactives%clusters(targetMolecule1)%composition
 			
-			internalReactivesSpinAvail = reactives.clusters(targetMolecule1).spinAvailable()
+			internalReactivesSpinAvail = reactives%clusters(targetMolecule1)%spinAvailable()
 			internalNTrials = 0
 			
-			do i=1,FragmentsDB_instance.nMolecules()
+			do i=1,FragmentsDB_instance%nMolecules()
 				ids(i) = i
 			end do
 			
 			call RandomUtils_randomMultiset( ids, nProducts, channelInfo, reactorConstraint, success=successFrag )
 			deallocate(ids)
-			call internalReactivesSpinAvail.clear()
+			call internalReactivesSpinAvail%clear()
 			
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Si los clusters no pueden satisfacer el constrain, se mantienen los rectivos
@@ -910,18 +915,18 @@ module Reactor_
 			
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Si la reaccion esta prohibida, se mantienen los rectivos
-			call lReactives.init(1)
-			lReactives.clusters(1) = reactives.clusters(targetMolecule1)
+			call lReactives%init(1)
+			lReactives%clusters(1) = reactives%clusters(targetMolecule1)
 			
-			call lProducts.init(dNfrag+1)
+			call lProducts%init(dNfrag+1)
 			do i=1,dNfrag+1
-				call lProducts.set( i, FragmentsDB_instance.clusters( channelInfo(i) ) )
+				call lProducts%set( i, FragmentsDB_instance%clusters( channelInfo(i) ) )
 			end do
 			
-			sBuffer = reactionString( lReactives, lProducts, details=FragmentsDB_instance.useForbiddenReactionsDetails )
-			if( FragmentsDB_instance.isForbidden( sBuffer ) ) then
+			sBuffer = reactionString( lReactives, lProducts, details=FragmentsDB_instance%useForbiddenReactionsDetails )
+			if( FragmentsDB_instance%isForbidden( sBuffer ) ) then
 				if( GOptions_printLevel >= 2 ) then
-					call GOptions_info( "This reaction is forbidden: "//trim(sBuffer.fstr), &
+					call GOptions_info( "This reaction is forbidden: "//trim(sBuffer%fstr), &
 							"Reactor.changeCompositionSequential()", "The reactives composition is kept." )
 				end if
 				products = reactives
@@ -936,18 +941,18 @@ module Reactor_
 				write(*,"(A10,I20,5X,A)") "nTrials", internalNTrials, "used for reactor"
 			end if
 			
-			call products.init( reactives.nMolecules() + dNfrag )
+			call products%init( reactives%nMolecules() + dNfrag )
 			
 			j = 1
-			do i=1,reactives.nMolecules()
+			do i=1,reactives%nMolecules()
 				if( i /= targetMolecule1  ) then
-					call products.set( j, reactives.clusters(i) )
+					call products%set( j, reactives%clusters(i) )
 					j = j + 1
 				end if
 			end do
 			
 			do i=1,dNfrag+1
-				call products.set( j-1+i, FragmentsDB_instance.clusters( channelInfo(i) ) )
+				call products%set( j-1+i, FragmentsDB_instance%clusters( channelInfo(i) ) )
 			end do
 			
 		else
@@ -960,7 +965,7 @@ module Reactor_
 			
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Si el cluster no se puede fusionar mas, mantenga los reactivos
-			if( reactives.nMolecules() == 1 ) then
+			if( reactives%nMolecules() == 1 ) then
 				if( GOptions_printLevel >= 2 ) then
 					call GOptions_info( &
 						"The fision limit has been reached", &
@@ -975,8 +980,8 @@ module Reactor_
 			
 			! La moleculas a fusionar se seleccionan de forma aleatoria
 			do while( .true. )
-				targetMolecule1 = RandomUtils_uniform( [ 1, reactives.nMolecules() ] )
-				targetMolecule2 = RandomUtils_uniform( [ 1, reactives.nMolecules() ] )
+				targetMolecule1 = RandomUtils_uniform( [ 1, reactives%nMolecules() ] )
+				targetMolecule2 = RandomUtils_uniform( [ 1, reactives%nMolecules() ] )
 				
 				if( targetMolecule1 /= targetMolecule2 ) exit
 			end do
@@ -991,36 +996,36 @@ module Reactor_
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Se reserva la memoria necesaria para almacenar
 			! todos los canales
-			nChannels = Math_multisetNumber( FragmentsDB_instance.nMolecules(), nProducts ) ! El tamaño es multiset( N_db, N_prod )
+			nChannels = Math_multisetNumber( FragmentsDB_instance%nMolecules(), nProducts ) ! El tamaño es multiset( N_db, N_prod )
 			
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Se calcula la masa y carga total las cuales se utilizarán
 			! en las retricciones de conservación
-			allocate( ids(FragmentsDB_instance.nMolecules()) )
+			allocate( ids(FragmentsDB_instance%nMolecules()) )
 			
-			internalMassNumber = reactives.clusters(targetMolecule1).massNumber()+reactives.clusters(targetMolecule2).massNumber()
-			internalCharge = reactives.clusters(targetMolecule1).charge+reactives.clusters(targetMolecule2).charge
-			internalReactivesComposition = reactives.clusters(targetMolecule1).composition+reactives.clusters(targetMolecule2).composition
+			internalMassNumber = reactives%clusters(targetMolecule1)%massNumber()+reactives%clusters(targetMolecule2)%massNumber()
+			internalCharge = reactives%clusters(targetMolecule1)%charge+reactives%clusters(targetMolecule2)%charge
+			internalReactivesComposition = reactives%clusters(targetMolecule1)%composition+reactives%clusters(targetMolecule2)%composition
 			
-			St1 = (FragmentsDB_instance.clusters( targetMolecule1 ).multiplicity-1.0_8)/2.0_8
+			St1 = (FragmentsDB_instance%clusters( targetMolecule1 )%multiplicity-1.0_8)/2.0_8
 			if( St1 < 0.0_8 ) St1=0.0_8
-			St2 = (FragmentsDB_instance.clusters( targetMolecule1 ).multiplicity-1.0_8)/2.0_8
+			St2 = (FragmentsDB_instance%clusters( targetMolecule1 )%multiplicity-1.0_8)/2.0_8
 			if( St2 < 0.0_8 ) St2=0.0_8
 			S = abs(St1-St2)
 			do while( int(2.0*S) <= int(2.0*(St1+St2)) )
-				call internalReactivesSpinAvail.append( S )
+				call internalReactivesSpinAvail%append( S )
 				S = S + 1.0_8
 			end do
 			
 			internalNTrials = 0
 			
-			do i=1,FragmentsDB_instance.nMolecules()
+			do i=1,FragmentsDB_instance%nMolecules()
 				ids(i) = i
 			end do
 			
 			call RandomUtils_randomMultiset( ids, nProducts, channelInfo, reactorConstraint, success=successFrag )
 			deallocate(ids)
-			call internalReactivesSpinAvail.clear()
+			call internalReactivesSpinAvail%clear()
 			
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Si los clusters no pueden satisfacer el constrain, se mantienen los rectivos
@@ -1039,17 +1044,17 @@ module Reactor_
 			
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			! Si la reaccion esta prohibida, se mantienen los rectivos
-			call lReactives.init(2)
-			call lReactives.set( 1, reactives.clusters(targetMolecule1) )
-			call lReactives.set( 2, reactives.clusters(targetMolecule2) )
+			call lReactives%init(2)
+			call lReactives%set( 1, reactives%clusters(targetMolecule1) )
+			call lReactives%set( 2, reactives%clusters(targetMolecule2) )
 			
-			call lProducts.init(1)
-			call lProducts.set( 1, FragmentsDB_instance.clusters( channelInfo(1) ) )
+			call lProducts%init(1)
+			call lProducts%set( 1, FragmentsDB_instance%clusters( channelInfo(1) ) )
 			
-			sBuffer = reactionString( lReactives, lProducts, details=FragmentsDB_instance.useForbiddenReactionsDetails )
-			if( FragmentsDB_instance.isForbidden( sBuffer ) ) then
+			sBuffer = reactionString( lReactives, lProducts, details=FragmentsDB_instance%useForbiddenReactionsDetails )
+			if( FragmentsDB_instance%isForbidden( sBuffer ) ) then
 				if( GOptions_printLevel >= 2 ) then
-					call GOptions_info( "This reaction is forbidden: "//trim(sBuffer.fstr), &
+					call GOptions_info( "This reaction is forbidden: "//trim(sBuffer%fstr), &
 							"Reactor.changeCompositionSequential()", "The reactives composition is kept." )
 				end if
 				products = reactives
@@ -1064,12 +1069,12 @@ module Reactor_
 				write(*,"(A10,I20,5X,A)") "nTrials", internalNTrials, "used for reactor"
 			end if
 			
-			call products.init( reactives.nMolecules() + dNfrag )
+			call products%init( reactives%nMolecules() + dNfrag )
 			
 			j = 1
-			do i=1,reactives.nMolecules()
+			do i=1,reactives%nMolecules()
 				if( i /= targetMolecule1 .and. i /= targetMolecule2 ) then
-					call products.set( j, reactives.clusters(i) )
+					call products%set( j, reactives%clusters(i) )
 					j = j + 1
 				end if
 			end do
@@ -1077,7 +1082,7 @@ module Reactor_
 ! 			do i=1,dNfrag+1
 ! 				call products.set( j-1+i, FragmentsDB_instance.clusters( channelInfo(i) ) )
 				i = 1
-				call products.set( reactives.nMolecules() + dNfrag, FragmentsDB_instance.clusters( channelInfo(i) ) )
+				call products%set( reactives%nMolecules() + dNfrag, FragmentsDB_instance%clusters( channelInfo(i) ) )
 ! 			end do
 			
 		end if
@@ -1085,7 +1090,7 @@ module Reactor_
 		if( GOptions_printLevel >= 2 ) then
 			write(*,*) ""
 			write(*,"(5X,A)")      "Choosen channel: "
-			write(*,"(5X,A,5X,A)") "                 ", trim(reactives.label())//" --> "//trim(products.label())
+			write(*,"(5X,A,5X,A)") "                 ", trim(reactives%label())//" --> "//trim(products%label())
 			write(*,*) ""
 		end if
 			
@@ -1111,138 +1116,138 @@ module Reactor_
 		real(8) :: vibrationalEnergy
 		real(8) :: electronicEnergy
 		
-		this.state = .true.
-		this.replaceTS = .false.
+		this%state = .true.
+		this%replaceTS = .false.
 		
-		call this.showReactorHeader()
+		call this%showReactorHeader()
 		
-		select case( this.type )
+		select case( this%type )
 			case( STRUCTURE_REACTOR )
 			
 				! Se actualiza la composición
-				call this.changeComposition( this.dNFrag )
+				call this%changeComposition( this%dNFrag )
 				
 				! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
-				call this.products.setReactorEnergy( this.reactives.reactorEnergy() )
+				call this%products%setReactorEnergy( this%reactives%reactorEnergy() )
 				
 				! Para que fuerce los centros aleatorios en la siguiente iteración
-				this.products.forceRandomCenters = .true.
+				this%products%forceRandomCenters = .true.
 				
 				! Los productos utilizan parte de la energía
-				call this.products.initialGuessFragmentsList()
+				call this%products%initialGuessFragmentsList()
 				
-! 				call this.products.changeVibrationalEnergy()
-! 				call this.products.changeGeometry()
-! 				call this.products.changeOrientations()
+! 				call this%products%changeVibrationalEnergy()
+! 				call this%products%changeGeometry()
+! 				call this%products%changeOrientations()
 
-! 				if( this.replaceTS ) then
+! 				if( this%replaceTS ) then
 ! 					! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
-! 					call this.productsTS.setReactorEnergy( this.reactives.reactorEnergy() )
+! 					call this%productsTS%setReactorEnergy( this%reactives%reactorEnergy() )
 ! 					
 ! 					! Para que fuerce los centros aleatorios en la siguiente iteración
-! 					this.productsTS.forceRandomCenters = .true.
+! 					this%productsTS%forceRandomCenters = .true.
 ! 					
 ! 					! Los productos utilizan parte de la energía
-! 					call this.productsTS.initialGuessFragmentsList()
+! 					call this%productsTS%initialGuessFragmentsList()
 ! 					
 ! 					write(*,*) "--------------------------------------------------------"
-! 					write(*,*) "reactives ", trim(this.reactives.label())
-! ! 					sBuffer = this.reactives.energyHistoryLine()
+! 					write(*,*) "reactives ", trim(this%reactives%label())
+! ! 					sBuffer = this%reactives%energyHistoryLine()
 ! ! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
-! 					sBuffer = this.reactives.weightHistoryLine()
+! 					sBuffer = this%reactives%weightHistoryLine()
 ! 					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
-! 					write(*,*) "products ", trim(this.products.label())
-! ! 					sBuffer = this.products.energyHistoryLine()
+! 					write(*,*) "products ", trim(this%products%label())
+! ! 					sBuffer = this%products%energyHistoryLine()
 ! ! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
-! 					sBuffer = this.products.weightHistoryLine()
+! 					sBuffer = this%products%weightHistoryLine()
 ! 					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
-! 					write(*,*) "TS located ", trim(this.productsTS.label())
-! 					write(*,*) "first isTS?", this.productsTS.clusters(1).isTransitionState
-! ! 					sBuffer = this.productsTS.energyHistoryLine()
+! 					write(*,*) "TS located ", trim(this%productsTS%label())
+! 					write(*,*) "first isTS?", this%productsTS%clusters(1).isTransitionState
+! ! 					sBuffer = this%productsTS%energyHistoryLine()
 ! ! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
-! 					sBuffer = this.productsTS.weightHistoryLine()
+! 					sBuffer = this%productsTS%weightHistoryLine()
 ! 					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
 ! 					write(*,*) "--------------------------------------------------------"
 ! 					
 ! 				end if
 
-				if( this.replaceTS ) then
+				if( this%replaceTS ) then
 				
 ! 					write(*,*) "--------------------------------------------------------"
-! 					write(*,*) "reactives ", trim(this.reactives.label())
-! ! 					sBuffer = this.reactives.energyHistoryLine()
+! 					write(*,*) "reactives ", trim(this%reactives%label())
+! ! 					sBuffer = this%reactives%energyHistoryLine()
 ! ! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
-! 					sBuffer = this.reactives.weightHistoryLine()
+! 					sBuffer = this%reactives%weightHistoryLine()
 ! 					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
-! 					write(*,*) "products ", trim(this.products.label())
-! ! 					sBuffer = this.products.energyHistoryLine()
+! 					write(*,*) "products ", trim(this%products%label())
+! ! 					sBuffer = this%products%energyHistoryLine()
 ! ! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
-! 					sBuffer = this.products.weightHistoryLine()
+! 					sBuffer = this%products%weightHistoryLine()
 ! 					write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
-! 					write(*,*) "productsTS ", trim(this.productsTS.label())
-! 					write(*,*) "productsTSType", this.productsTSType.data
-! 					write(*,*) "productsType", this.productsType.data
+! 					write(*,*) "productsTS ", trim(this%productsTS%label())
+! 					write(*,*) "productsTSType", this%productsTSType%data
+! 					write(*,*) "productsType", this%productsType%data
 				
-					select case( trim(GOptionsM3C_TSModel.fstr) )
+					select case( trim(this%productsTSModel%fstr) )
 						case( "NONE" )
 							! No correction by TS
 							
 							! Los productos utilizan parte de la energía
-							call this.products.initialGuessFragmentsList()
+							call this%products%initialGuessFragmentsList()
 
 						case( "EARLY" )
 							! Se le asocia la energía del reactor para asegurar que calcula un peso Wt es adecuado para los productos
-							call this.productsTS.setReactorEnergy( this.reactives.reactorEnergy() )
+							call this%productsTS%setReactorEnergy( this%reactives%reactorEnergy() )
 							
 							! Para que fuerce los centros aleatorios en la siguiente iteración
-							this.productsTS.forceRandomCenters = .true.
+							this%productsTS%forceRandomCenters = .true.
 							
 							! Los productos utilizan parte de la energía
-							call this.productsTS.initialGuessFragmentsList()
+							call this%productsTS%initialGuessFragmentsList()
 							
-		! 					sBuffer = this.productsTS.energyHistoryLine()
+		! 					sBuffer = this%productsTS%energyHistoryLine()
 		! 					write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
-							sBuffer = this.productsTS.weightHistoryLine()
-							write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+! 							sBuffer = this%productsTS%weightHistoryLine()
+! 							write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
 							
 						case( "LATE" )
-							this.productsTS2 = this.products
-							this.TS = this.productsTS.clusters(1) ! El primer cluster siempre es el TS
+							this%productsTS2 = this%products
+							this%TS = this%productsTS%clusters(1) ! El primer cluster siempre es el TS
 							
 ! 								type(IntegerVector) :: productsType  ! Same size than products
 ! 								type(IntegerVector) :: productsTSType ! same size than productsTS
 
 							vibrationalEnergy = 0.0_8
 							electronicEnergy = 0.0_8
-							do i=1,this.productsTS2.nMolecules()
-								if( this.productsType.data(i) == 1 ) then  ! If it is the product of the reaction?
-									call this.productsTS2.clusters(i).frozenVibrations()
-									vibrationalEnergy = vibrationalEnergy + this.productsTS2.clusters(i).vibrationalEnergy_
-									electronicEnergy = electronicEnergy + this.productsTS2.clusters(i).electronicEnergy
+							do i=1,this%productsTS2%nMolecules()
+								if( this%productsType%data(i) == 1 ) then  ! If it is the product of the reaction?
+									call this%productsTS2%clusters(i)%frozenVibrations()
+									vibrationalEnergy = vibrationalEnergy + this%productsTS2%clusters(i)%vibrationalEnergy_
+									electronicEnergy = electronicEnergy + this%productsTS2%clusters(i)%electronicEnergy
 								end if
 							end do
 							
 							! Uso la energia vibracional de los productos y la redistribuyo en el TS
-							call this.TS.frozenVibrations( filter="asympt=rot" )
-							call this.TS.changeVibrationalEnergy( maxEnergy=vibrationalEnergy )
+							call this%TS%frozenVibrations( filter="asympt=rot" )
+							call this%TS%changeVibrationalEnergy( maxEnergy=vibrationalEnergy )
 							
-							this.productsTS2.energyShift = this.TS.electronicEnergy-electronicEnergy
+							this%productsTS2%energyShift = this%TS%electronicEnergy-electronicEnergy
 							
 							! Se le asocia la energía del reactor para asegurar que calcula un peso Wt adecuado para los productos
-							call this.productsTS2.setReactorEnergy( this.reactives.reactorEnergy() )
+							call this%productsTS2%setReactorEnergy( this%reactives%reactorEnergy() )
 							
 							! Para que fuerce los centros aleatorios en la siguiente iteración
-							this.productsTS2.forceRandomCenters = .true.
+							this%productsTS2%forceRandomCenters = .true.
 							
 							! Los productos utilizan parte de la energía
-							call this.productsTS2.initialGuessFragmentsList()
+							call this%productsTS2%initialGuessFragmentsList()
 							
-! 								sBuffer = this.productsTS.energyHistoryLine()
-! 								write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
-! 								sBuffer = this.productsTS2.weightHistoryLine()
-! 								write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
+! 							sBuffer = this%productsTS%energyHistoryLine()
+! 							write(*,"(A,A)") "  energy>", trim(sBuffer.fstr)
+! 							sBuffer = this%productsTS2%weightHistoryLine()
+! 							write(*,"(A,A)") "  weight>", trim(sBuffer.fstr)
 						case default
-							write(*,"(A)") "### ERROR ###: Reactor.run(). Unknown TS model ("//trim(GOptionsM3C_TSModel.fstr)//")"
+							write(*,"(A)") "### ERROR ###: Reactor.run(). Unknown TS model ("//trim(this%productsTSModel%fstr)//")"
 							write(*,"(A)") "               Available options: NONE, EARLY, LATE. Default NONE"
 							stop
 					end select
@@ -1254,26 +1259,26 @@ module Reactor_
 			case( VIBRATIONAL_REACTOR )
 			
 				! La composición es igual antes y después
-				this.products = this.reactives
+				this%products = this%reactives
 
 				! Los productos utilizan parte de la energía cinética en vibracional
-				call this.products.changeVibrationalEnergy()
+				call this%products%changeVibrationalEnergy()
 				
 			case( TRANSLATIONAL_REACTOR )
 			
 				! La composición es igual antes y después
-				this.products = this.reactives
+				this%products = this%reactives
 				
 				! Los productos utilizan parte de la energía
-				call this.products.changeGeometry()
+				call this%products%changeGeometry()
 				
 			case( ROTATIONAL_REACTOR )
 			
 				! La composición es igual antes y después
-				this.products = this.reactives
+				this%products = this%reactives
 				
 				! Los productos utilizan parte de la energía
-				call this.products.changeOrientations()
+				call this%products%changeOrientations()
 				
 		end select
 		
@@ -1284,13 +1289,13 @@ module Reactor_
 			write(*,"(A)") "#--------------------------------------------------------------------------------------------------------------"
 			
 			write(*,"(4X,A)") "Reactives"
-			sBuffer = this.reactives.weightHistoryLine()
-			write(*,"(A)") trim(sBuffer.fstr)
+			sBuffer = this%reactives%weightHistoryLine()
+			write(*,"(A)") trim(sBuffer%fstr)
 			write(*,"(A)") ""
 			write(*,"(4X,A)") "Products"
 			
-			sBuffer = this.products.weightHistoryLine()
-			write(*,"(A)") trim(sBuffer.fstr)
+			sBuffer = this%products%weightHistoryLine()
+			write(*,"(A)") trim(sBuffer%fstr)
 
 			write(*,"(A)") ""
 			write(*,"(A)") "#--------------------------------------------------------------------------------------------------------------"
@@ -1300,28 +1305,28 @@ module Reactor_
 
 			write(*,"(4X,A)") "Reactives"
 			
-			sBuffer = this.reactives.energyHistoryLine()
-			write(*,"(A)") trim(sBuffer.fstr)
+			sBuffer = this%reactives%energyHistoryLine()
+			write(*,"(A)") trim(sBuffer%fstr)
 			write(*,"(A)") ""
 			write(*,"(4X,A)") "Products"
 			
-			sBuffer = this.products.energyHistoryLine()
-			write(*,"(A)") trim(sBuffer.fstr)
+			sBuffer = this%products%energyHistoryLine()
+			write(*,"(A)") trim(sBuffer%fstr)
 			write(*,"(A)") "#--------------------------------------------------------------------------------------------------------------"
 			write(*,"(A)") ""
 		end if
 		
-		if( this.products.kineticEnergy() < 0.0_8 ) then
+		if( this%products%kineticEnergy() < 0.0_8 ) then
 			if( GOptions_printLevel >= 2 ) then
 				write(*,*) ""
 				write(*,*) "### Warning ### The kinetic energy is negative"
-				write(*,"(3X,A,F15.5,A)") "Kinetic Energy = ", this.products.kineticEnergy()/eV, "  eV"
+				write(*,"(3X,A,F15.5,A)") "Kinetic Energy = ", this%products%kineticEnergy()/eV, "  eV"
 				write(*,*) "products <= reactives"
 				write(*,*) ""
 			end if
 			
-			this.products = this.reactives
-			this.state = .false.
+			this%products = this%reactives
+			this%state = .false.
 		end if
 		
 	end subroutine run
@@ -1352,28 +1357,28 @@ module Reactor_
 ! 			stop
 ! 		end if
 		
-		sBuffer = iParser.getString( "REACTOR:reactives" )
-		rBuffer = iParser.getReal( "REACTOR:excitationEnergy", def=10.0_8 )*eV
+		sBuffer = iParser%getString( "REACTOR:reactives" )
+		rBuffer = iParser%getReal( "REACTOR:excitationEnergy", def=10.0_8 )*eV
 		
-		call sBuffer.split( reactiveTokens, ":" )
+		call sBuffer%split( reactiveTokens, ":" )
 		
 		if( reactiveTokens(1) == "file" ) then
-			call reactives.loadXYZ( reactiveTokens(2) )
-			reactives.forceInitializing = .false.
+			call reactives%loadXYZ( reactiveTokens(2) )
+			reactives%forceInitializing = .false.
 			
-			call this.initReactor( reactives, rBuffer )
+			call this%initReactor( reactives, rBuffer )
 			write(*,"(A40,F15.5,A)") "excitationEnergy = ", rBuffer/eV, " eV"
 		else
-			strReactives = FragmentsDB_instance.extendFragmentsListName( sBuffer.fstr )
-			call strReactives.split( reactiveTokens, "+" )
+			strReactives = FragmentsDB_instance%extendFragmentsListName( sBuffer%fstr )
+			call strReactives%split( reactiveTokens, "+" )
 			
-			call reactives.init( size(reactiveTokens) )
+			call reactives%init( size(reactiveTokens) )
 			do i=1,size(reactiveTokens)
-				iBuffer = FragmentsDB_instance.getIdClusterFromLabel( reactiveTokens(i) )
-				call reactives.set( i, FragmentsDB_instance.clusters(iBuffer) )
+				iBuffer = FragmentsDB_instance%getIdClusterFromLabel( reactiveTokens(i) )
+				call reactives%set( i, FragmentsDB_instance%clusters(iBuffer) )
 			end do
 			
-			call this.init( reactives, rBuffer )
+			call this%init( reactives, rBuffer )
 			write(*,"(A40,F15.5,A)") "excitationEnergy = ", rBuffer/eV, " eV"
 		end if
 		
@@ -1381,25 +1386,25 @@ module Reactor_
 		
 ! 		call reactives.initialGuessFragmentsList()
 		
-		sBuffer = iParser.getString( "REACTOR:type", def="V" )
-		call this.setType( trim(adjustl(sBuffer.fstr)) )
-		write(*,"(A40,A)") "type = ", sBuffer.fstr
+		sBuffer = iParser%getString( "REACTOR:type", def="V" )
+		call this%setType( trim(adjustl(sBuffer%fstr)) )
+		write(*,"(A40,A)") "type = ", sBuffer%fstr
 		
-		call this.run()
+		call this%run()
 		
-		sBuffer = iParser.getString( "REACTOR:geomReactivesFile", def="#@NONE@#" )
-		if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-			call this.reactives.save( sBuffer.fstr )
+		sBuffer = iParser%getString( "REACTOR:geomReactivesFile", def="#@NONE@#" )
+		if( trim(sBuffer%fstr) /= "#@NONE@#" ) then
+			call this%reactives%save( sBuffer%fstr )
 		end if
 		
-		sBuffer = iParser.getString( "REACTOR:geomProductsFile", def="#@NONE@#" )
-		if( trim(sBuffer.fstr) /= "#@NONE@#" ) then
-			call this.products.save( sBuffer.fstr )
+		sBuffer = iParser%getString( "REACTOR:geomProductsFile", def="#@NONE@#" )
+		if( trim(sBuffer%fstr) /= "#@NONE@#" ) then
+			call this%products%save( sBuffer%fstr )
 		end if
 		
-		if( this.state ) then
+		if( this%state ) then
 			! @todo Creo que es bueno dejar este Pi como una función de la clase reactor
-			rBuffer = this.products.LnW()-this.reactives.LnW()
+			rBuffer = this%products%LnW()-this%reactives%LnW()
 			
 			write(*,*) ""
 			write(*,*) " log(Wn+1/Wn) = ", rBuffer
@@ -1442,52 +1447,52 @@ module Reactor_
 		logical :: containsTS
 		
 		type(StringHistogram) :: fragmentsHistogram
-		class(StringRealMapIterator), pointer :: iter
+		type(StringRealMapIterator), pointer :: iter
 		type(StringRealPair) :: pair
 		real(8) :: energy, minValue, minNegativeValue
 		type(String) :: labelMinEnergy, labelMinNegativeEnergy
 		logical :: warningNegativeEnergy
 		
-		if( .not. iParser.isThereBlock( "FRAGMENTS_DATABASE" ) ) then
+		if( .not. iParser%isThereBlock( "FRAGMENTS_DATABASE" ) ) then
 			return
 		end if
 		
-		nSteps = iParser.getInteger( "FRAGMENTS_DATABASE"//":maxVibNSteps", def=10000 )
+		nSteps = iParser%getInteger( "FRAGMENTS_DATABASE"//":maxVibNSteps", def=10000 )
 		write(*,"(A40,I10)") "maxVibNSteps = ", nSteps
 		write(*,*) ""
 		
-		detailed = iParser.getLogical( "FRAGMENTS_DATABASE"//":maxVibDetailed", def=.false. )
+		detailed = iParser%getLogical( "FRAGMENTS_DATABASE"//":maxVibDetailed", def=.false. )
 		
-		call reactives.init( 1 )
+		call reactives%init( 1 )
 		
 		write(*,"(A10,A30,5X,A)") "energy", "reactive", "channel"
 		write(*,"(A10,A30,5X,A)")     "eV", "", ""
 		write(*,"(A10,A30,5X,A)") "------", "--------", "-------"
 		
-		do id=1,size(FragmentsDB_instance.clusters)
-			if( FragmentsDB_instance.clusters(id).nAtoms() == 1 ) cycle
+		do id=1,size(FragmentsDB_instance%clusters)
+			if( FragmentsDB_instance%clusters(id)%nAtoms() == 1 ) cycle
 			
-			call reactives.set( 1, FragmentsDB_instance.clusters(id) )
-			call FragmentsDB_instance.setEnergyReference( FragmentsDB_instance.clusters(id).electronicEnergy )
+			call reactives%set( 1, FragmentsDB_instance%clusters(id) )
+			call FragmentsDB_instance%setEnergyReference( FragmentsDB_instance%clusters(id)%electronicEnergy )
 			
-			call this.initReactor( reactives, 100.0_8*eV )
+			call this%initReactor( reactives, 100.0_8*eV )
 			
 			warningNegativeEnergy = .false.
 			minValue = Math_INF
 			minNegativeValue = Math_INF
 !			do dN=1,2 ! Maximum number of fragments is 3
 			do dN=1,6 ! Maximum number of fragments is 5
-				call this.setType( "S:"//trim(FString_fromInteger(dN)) )
+				call this%setType( "S:"//trim(FString_fromInteger(dN)) )
 				
-				call fragmentsHistogram.init()
+				call fragmentsHistogram%init()
 				
 				do k=1,nSteps
-! 					call this.run()
-					call this.changeComposition( this.dNFrag )
+! 					call this%run()
+					call this%changeComposition( this%dNFrag )
 					
 					containsTS = .false.
-					do i=1,this.products.nMolecules()
-						if( this.products.clusters(i).isTransitionState ) then
+					do i=1,this%products%nMolecules()
+						if( this%products%clusters(i)%isTransitionState ) then
 							containsTS = .true.
 							exit
 						end if
@@ -1495,21 +1500,21 @@ module Reactor_
 					
 					if( containsTS ) cycle
 					
-					if( this.products.nMolecules() == dN+1 ) then
-						call fragmentsHistogram.add( FString_toString( trim(this.products.label()) ) )
+					if( this%products%nMolecules() == dN+1 ) then
+						call fragmentsHistogram%add( FString_toString( trim(this%products%label()) ) )
 					end if
 				end do
 				
-				call fragmentsHistogram.build()
+				call fragmentsHistogram%build()
 				
 				k=1
-				call fragmentsHistogram.densityBegin( iter )
+				call fragmentsHistogram%densityBegin( iter )
 				do while( associated(iter) )
-					pair = fragmentsHistogram.pair( iter )
-					energy = ( FragmentsDB_instance.getEelecFromName(pair.first.fstr)-FragmentsDB_instance.getEelecFromName(reactives.label()) )/eV
+					pair = fragmentsHistogram%pair( iter )
+					energy = ( FragmentsDB_instance%getEelecFromName(pair%first%fstr)-FragmentsDB_instance%getEelecFromName(reactives%label()) )/eV
 					
 					if( detailed ) &
-						write(*,"(F10.4,5X,A,5X,A)") energy, trim(adjustl(pair.first.fstr)), "#:"//trim(adjustl(reactives.label()))
+						write(*,"(F10.4,5X,A,5X,A)") energy, trim(adjustl(pair%first%fstr)), "#:"//trim(adjustl(reactives%label()))
 					
 					if( energy < minValue ) then
 						if( energy < 0.0_8 ) then
@@ -1517,30 +1522,30 @@ module Reactor_
 							
 							if( energy < minNegativeValue ) then
 								minNegativeValue = energy
-								labelMinNegativeEnergy = pair.first.fstr
+								labelMinNegativeEnergy = pair%first%fstr
 							end if
 						else
 							minValue = energy
-							labelMinEnergy = pair.first.fstr
+							labelMinEnergy = pair%first%fstr
 						end if
 					end if
 					
-					iter => iter.next
+					iter => iter%next
 					k = k+1
 				end do
 				
 				
-				call fragmentsHistogram.clear()
+				call fragmentsHistogram%clear()
 			end do
 			
 			if( detailed ) &
 				write(*,*) ""
 				
-			write(*,"(F10.5,A30,5X,A)",advance="no") minValue, trim(adjustl(reactives.label())), trim(adjustl(labelMinEnergy.fstr))
+			write(*,"(F10.5,A30,5X,A)",advance="no") minValue, trim(adjustl(reactives%label())), trim(adjustl(labelMinEnergy%fstr))
 			if( .not. warningNegativeEnergy ) then
 				write(*,*) ""
 			else
-				write(*,"(A,F10.5,A)") " ==> "//trim(adjustl(labelMinNegativeEnergy.fstr))//" (", minNegativeValue, ")"
+				write(*,"(A,F10.5,A)") " ==> "//trim(adjustl(labelMinNegativeEnergy%fstr))//" (", minNegativeValue, ")"
 			end if
 			
 			if( detailed ) then
@@ -1572,40 +1577,40 @@ module Reactor_
 		
 		type(StringHistogram) :: speciesHistogram, speciesHistogramD
 		type(StringHistogram) :: reactionsHistogram, reactionsHistogramD
-		class(StringRealMapIterator), pointer :: iter
+		type(StringRealMapIterator), pointer :: iter
 		type(StringRealPair) :: pair
 		
-		if( .not. iParser.isThereBlock( "FRAGMENTS_DATABASE" ) ) then
+		if( .not. iParser%isThereBlock( "FRAGMENTS_DATABASE" ) ) then
 			return
 		end if
 		
 		call GOptions_section( "REACTIONS ANALYSIS", indent=1 )
 		
-		details = iParser.getLogical( "FRAGMENTS_DATABASE"//":reactionsAnalysis.details", def=.false. )
+		details = iParser%getLogical( "FRAGMENTS_DATABASE"//":reactionsAnalysis.details", def=.false. )
 		write(*,"(A40,L)") "reactionsAnalysis.details = ", details
 		
-		reactor = iParser.getString( "FRAGMENTS_DATABASE"//":reactionsAnalysis.reactor", def="S:-1:1" )
-		write(*,"(A40,A)") "reactionsAnalysis.reactor = ", trim(reactor.fstr)
+		reactor = iParser%getString( "FRAGMENTS_DATABASE"//":reactionsAnalysis.reactor", def="S:-1:1" )
+		write(*,"(A40,A)") "reactionsAnalysis.reactor = ", trim(reactor%fstr)
 		
-		sBuffer = iParser.inputFileName()
-		dotFile = iParser.getString( "FRAGMENTS_DATABASE"//":reactionsAnalysis.dotFile", def=trim(sBuffer.fstr)//".dot" )
-		write(*,"(A40,A)") "reactionsAnalysis.dotFile = ", trim(dotFile.fstr)
+		sBuffer = iParser%inputFileName()
+		dotFile = iParser%getString( "FRAGMENTS_DATABASE"//":reactionsAnalysis.dotFile", def=trim(sBuffer%fstr)//".dot" )
+		write(*,"(A40,A)") "reactionsAnalysis.dotFile = ", trim(dotFile%fstr)
 		
-		nSteps = iParser.getInteger( "FRAGMENTS_DATABASE"//":reactionsAnalysis.nSteps", def=10000 )
+		nSteps = iParser%getInteger( "FRAGMENTS_DATABASE"//":reactionsAnalysis.nSteps", def=10000 )
 		write(*,"(A40,I10)") "reactionsAnalysis.nSteps = ", nSteps
 		
-		nExps = iParser.getInteger( "FRAGMENTS_DATABASE"//":reactionsAnalysis.nExps", def=20 )
+		nExps = iParser%getInteger( "FRAGMENTS_DATABASE"//":reactionsAnalysis.nExps", def=20 )
 		write(*,"(A40,I10)") "reactionsAnalysis.nExps = ", nExps
 		
-		sBuffer = iParser.getString( "FRAGMENTS_DATABASE:reference", def="@@NONE@@" )
+		sBuffer = iParser%getString( "FRAGMENTS_DATABASE:reference", def="@@NONE@@" )
 		if( sBuffer /= "@@NONE@@" ) then
-			id = FragmentsDB_instance.getIdClusterFromLabel( trim(sBuffer.fstr) )
+			id = FragmentsDB_instance%getIdClusterFromLabel( trim(sBuffer%fstr) )
 		else
-			id = size(FragmentsDB_instance.clusters)
+			id = size(FragmentsDB_instance%clusters)
 		end if
 		
 		write(*,*) ""
-		write(*,"(A40,A)") "reference = ", trim(FragmentsDB_instance.clusters(id).label())
+		write(*,"(A40,A)") "reference = ", trim(FragmentsDB_instance%clusters(id)%label())
 		write(*,*) ""
 		
 		
@@ -1613,117 +1618,117 @@ module Reactor_
 		write(*,"(5X,A)") "--------"
 		write(*,*) ""
 		
-		call reactives.init( 1 )
-		call reactives.set( 1, FragmentsDB_instance.clusters(id) )
-		call FragmentsDB_instance.setEnergyReference( FragmentsDB_instance.clusters(id).electronicEnergy )
+		call reactives%init( 1 )
+		call reactives%set( 1, FragmentsDB_instance%clusters(id) )
+		call FragmentsDB_instance%setEnergyReference( FragmentsDB_instance%clusters(id)%electronicEnergy )
 		
 		
-		call this.setType( reactor.fstr )
+		call this%setType( reactor%fstr )
 		
-		call speciesHistogram.init()
-		call speciesHistogramD.init()
-		call reactionsHistogram.init()
-		call reactionsHistogramD.init()
+		call speciesHistogram%init()
+		call speciesHistogramD%init()
+		call reactionsHistogram%init()
+		call reactionsHistogramD%init()
 		
 		write(*,"(6X)", advance="no")
 		
 		do i=1,nExps
-			call this.initReactor( reactives, 100.0_8*eV )
+			call this%initReactor( reactives, 100.0_8*eV )
 			
 			if( mod(i,max(1,nExps/10/10)) == 0 ) write(*,"(A)", advance="no") "."
 			
 			if( mod(i,max(1,nExps/10)) == 0 ) then
-				write(*,"")
+				write(*,*)
 				write(*,"(6X)",advance="no")
 			end if
 			
 			do k=1,nSteps
-				call this.changeComposition( this.dNFrag )
-! 				call this.run()
+				call this%changeComposition( this%dNFrag )
+! 				call this%run()
 				
-				reactivesLabel = trim(this.reactives.label( details=.true. ))
-				productsLabel = trim(this.products.label( details=.true. ))
+				reactivesLabel = trim(this%reactives%label( details=.true. ))
+				productsLabel = trim(this%products%label( details=.true. ))
 				reactionLabel = reactivesLabel+" --> "+ productsLabel
 				
 				if( reactivesLabel == productsLabel ) cycle
 				
-				call speciesHistogramD.add( reactivesLabel )
-				call speciesHistogramD.add( productsLabel )
-				call reactionsHistogramD.add( reactionLabel )
+				call speciesHistogramD%add( reactivesLabel )
+				call speciesHistogramD%add( productsLabel )
+				call reactionsHistogramD%add( reactionLabel )
 				
-				reactivesLabel = trim(this.reactives.label( details=.false. ))
-				productsLabel = trim(this.products.label( details=.false. ))
+				reactivesLabel = trim(this%reactives%label( details=.false. ))
+				productsLabel = trim(this%products%label( details=.false. ))
 				reactionLabel = reactivesLabel+" --> "+ productsLabel
 				
-				call speciesHistogram.add( reactivesLabel )
-				call speciesHistogram.add( productsLabel )
-				call reactionsHistogram.add( reactionLabel )
+				call speciesHistogram%add( reactivesLabel )
+				call speciesHistogram%add( productsLabel )
+				call reactionsHistogram%add( reactionLabel )
 				
-				this.reactives = this.products
+				this%reactives = this%products
 			end do
 		end do
 		
-		write(*,"")
-		write(*,"")
+		write(*,*)
+		write(*,*)
 		
-		call speciesHistogram.build()
-		call speciesHistogramD.build()
-		call reactionsHistogram.build()
-		call reactionsHistogramD.build()
+		call speciesHistogram%build()
+		call speciesHistogramD%build()
+		call reactionsHistogram%build()
+		call reactionsHistogramD%build()
 		
-		open( 11, file=dotFile.fstr )
-		write( 11, * ) "// dot -O -Tpng "//trim(dotFile.fstr)
+		open( 11, file=dotFile%fstr )
+		write( 11, * ) "// dot -O -Tpng "//trim(dotFile%fstr)
 		write( 11, * ) "graph reacions {"
 		
 		if( .not. details ) then
-			call speciesHistogram.densityBegin( iter )
+			call speciesHistogram%densityBegin( iter )
 			do while( associated(iter) )
-				pair = speciesHistogram.pair( iter )
+				pair = speciesHistogram%pair( iter )
 				
-				specieLabel = pair.first
-				write( 11, "(A)" ) "     "//achar(34)//trim(specieLabel.fstr)//achar(34)//"  [label=<"//trim(specieLabel.fstr)//">]"
+				specieLabel = pair%first
+				write( 11, "(A)" ) "     "//achar(34)//trim(specieLabel%fstr)//achar(34)//"  [label=<"//trim(specieLabel%fstr)//">]"
 				
-				iter => iter.next
+				iter => iter%next
 			end do
 			
-			call reactionsHistogram.densityBegin( iter )
+			call reactionsHistogram%densityBegin( iter )
 			do while( associated(iter) )
-				pair = reactionsHistogram.pair( iter )
+				pair = reactionsHistogram%pair( iter )
 				
-				reactionLabel = pair.first
-				write(*,"(5X,A)") trim(reactionLabel.fstr)
+				reactionLabel = pair%first
+				write(*,"(5X,A)") trim(reactionLabel%fstr)
 				
-				call pair.first.split( tokens, "-->" )
+				call pair%first%split( tokens, "-->" )
 				reactivesLabel = adjustl(tokens(1))
 				productsLabel =adjustl(tokens(2))
-				write( 11, "(A)" ) "     "//achar(34)//trim(reactivesLabel.fstr)//achar(34)//" -- "//achar(34)//trim(productsLabel.fstr)//achar(34)
+				write( 11, "(A)" ) "     "//achar(34)//trim(reactivesLabel%fstr)//achar(34)//" -- "//achar(34)//trim(productsLabel%fstr)//achar(34)
 				
-				iter => iter.next
+				iter => iter%next
 			end do
 		else
-			call speciesHistogramD.densityBegin( iter )
+			call speciesHistogramD%densityBegin( iter )
 			do while( associated(iter) )
-				pair = speciesHistogramD.pair( iter )
+				pair = speciesHistogramD%pair( iter )
 				
-				specieLabel = pair.first
-				write( 11, "(A)" ) "     "//achar(34)//trim(specieLabel.fstr)//achar(34)//"  [label=<"//trim(specieLabel.fstr)//">]"
+				specieLabel = pair%first
+				write( 11, "(A)" ) "     "//achar(34)//trim(specieLabel%fstr)//achar(34)//"  [label=<"//trim(specieLabel%fstr)//">]"
 				
-				iter => iter.next
+				iter => iter%next
 			end do
 			
-			call reactionsHistogramD.densityBegin( iter )
+			call reactionsHistogramD%densityBegin( iter )
 			do while( associated(iter) )
-				pair = reactionsHistogramD.pair( iter )
+				pair = reactionsHistogramD%pair( iter )
 				
-				reactionLabel = pair.first
-				write(*,"(5X,A)") trim(reactionLabel.fstr)
+				reactionLabel = pair%first
+				write(*,"(5X,A)") trim(reactionLabel%fstr)
 				
-				call pair.first.split( tokens, "-->" )
+				call pair%first%split( tokens, "-->" )
 				reactivesLabel = adjustl(tokens(1))
 				productsLabel =adjustl(tokens(2))
-				write( 11, "(A)" ) "     "//achar(34)//trim(reactivesLabel.fstr)//achar(34)//" -- "//achar(34)//trim(productsLabel.fstr)//achar(34)
+				write( 11, "(A)" ) "     "//achar(34)//trim(reactivesLabel%fstr)//achar(34)//" -- "//achar(34)//trim(productsLabel%fstr)//achar(34)
 				
-				iter => iter.next
+				iter => iter%next
 			end do
 		end if
 		
@@ -1734,10 +1739,10 @@ module Reactor_
 		
 		call GOptions_section( "END REACTIONS ANALYSIS", indent=1 )
 		
-		call speciesHistogram.clear()
-		call speciesHistogramD.clear()
-		call reactionsHistogram.clear()
-		call reactionsHistogramD.clear()
+		call speciesHistogram%clear()
+		call speciesHistogramD%clear()
+		call reactionsHistogram%clear()
+		call reactionsHistogramD%clear()
 		if( allocated(tokens) ) deallocate( tokens )
 		
 	end subroutine executeReactionsAnalysis

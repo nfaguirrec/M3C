@@ -88,6 +88,7 @@ module FragmentsDB_
 ! 		"C2(d1)+C(t1)-->C3(s1)" --> 5 . It means transitionState(5)
 ! 		|----------str2id_TS----------|
 		type(Fragment), allocatable :: transitionState(:)
+		type(String), allocatable :: transitionStateModel(:)
 		type(StringIntegerMap) :: str2id_TS
 		logical, allocatable :: involvedInTS(:) ! One for each cluster. For speed purposes only.
 		
@@ -316,22 +317,22 @@ module FragmentsDB_
 		do i=1,size(forbiddenReactionsTable)
 			call forbiddenReactionsTable(i).split( tokens, "<-->" )
 			
-			if( .not. this.forbiddenReactions.contains( FString_toString( trim(tokens(1))//"-->"//trim(tokens(2)) ) ) ) then
+			if( .not. this%forbiddenReactions%contains( FString_toString( trim(tokens(1))//"-->"//trim(tokens(2)) ) ) ) then
 				if ( size(tokens) == 2 ) then
 					
-					call this.forbiddenReactions.insert( FString_toString( trim(tokens(1))//"-->"//trim(tokens(2)) ), 1 )
-					write(IO_STDOUT,"(4X,I6,3X,A)")  this.forbiddenReactions.size()-1, trim(tokens(1))//"-->"//trim(tokens(2))
+					call this%forbiddenReactions%insert( FString_toString( trim(tokens(1))//"-->"//trim(tokens(2)) ), 1 )
+					write(IO_STDOUT,"(4X,I6,3X,A)")  this%forbiddenReactions%size()-1, trim(tokens(1))//"-->"//trim(tokens(2))
 					
 					! Esto evita que se almacenen doblemente las isomerizaciones
 					if( trim(tokens(1)) /= trim(tokens(2)) ) then
-						call this.forbiddenReactions.set( FString_toString( trim(tokens(2))//"-->"//trim(tokens(1)) ), 1 )
-						write(IO_STDOUT,"(4X,I6,5X,A)")  this.forbiddenReactions.size()-1, trim(tokens(2))//"-->"//trim(tokens(1))
+						call this%forbiddenReactions%set( FString_toString( trim(tokens(2))//"-->"//trim(tokens(1)) ), 1 )
+						write(IO_STDOUT,"(4X,I6,5X,A)")  this%forbiddenReactions%size()-1, trim(tokens(2))//"-->"//trim(tokens(1))
 					end if
 					
 				else if( size(tokens) == 1 ) then
 					
-					call this.forbiddenReactions.insert( FString_toString( trim(adjustl(forbiddenReactionsTable(i).fstr)) ), 1 )
-					write(IO_STDOUT,"(4X,I6,3X,A)")  this.forbiddenReactions.size()-1, trim(adjustl(forbiddenReactionsTable(i).fstr))
+					call this%forbiddenReactions%insert( FString_toString( trim(adjustl(forbiddenReactionsTable(i).fstr)) ), 1 )
+					write(IO_STDOUT,"(4X,I6,3X,A)")  this%forbiddenReactions%size()-1, trim(adjustl(forbiddenReactionsTable(i).fstr))
 					
 				else
 					call GOptions_error( &
@@ -381,8 +382,9 @@ module FragmentsDB_
 		
 		if( allocated(this.transitionState) ) deallocate( this.transitionState )
 		allocate( this.transitionState(size(transitionStatesTable)) )
+		allocate( this.transitionStateModel(size(transitionStatesTable)) )
 		
-		this.str2id_TS = StringIntegerMap()
+		this%str2id_TS = StringIntegerMap()
 		
 		if( allocated(this.involvedInTS) ) deallocate( this.involvedInTS )
 		allocate( this.involvedInTS(size(this.clusters)) )
@@ -457,13 +459,13 @@ module FragmentsDB_
 ! 				call this.str2id_TS.insert( FString_toString(trim(reactivesLabel)//"<-->"//trim(productsLabel)), i )
 ! 				call this.str2id_TS.insert( FString_toString(trim(productsLabel)//"<-->"//trim(reactivesLabel)), i )
 ! 				write(*,"(4X,A22,A)")  "Interpreted Path = ", trim(reactivesLabel)//"<-->"//trim(productsLabel)
-				call this.str2id_TS.insert( FString_toString(trim(reactivesdLabel)//"<-->"//trim(productsdLabel)), i )
-				call this.str2id_TS.insert( FString_toString(trim(productsdLabel)//"<-->"//trim(reactivesdLabel)), i )
+				call this%str2id_TS%insert( FString_toString(trim(reactivesdLabel)//"<-->"//trim(productsdLabel)), i )
+				call this%str2id_TS%insert( FString_toString(trim(productsdLabel)//"<-->"//trim(reactivesdLabel)), i )
 				write(*,"(4X,A22,A)")  "Path = ", trim(reactivesdLabel)//"<-->"//trim(productsdLabel)
 				
 				deallocate(reactives)
 				deallocate(products)
-				
+
 			else
 				call GOptions_error( &
 						"Bad number of atoms in transition state (N=0)", &
@@ -471,6 +473,16 @@ module FragmentsDB_
 						trim(transitionStatesTable(i).fstr) &
 					)
 			end if
+
+			!------------------------------------------
+			! Choosing the TS model
+			!------------------------------------------
+			if( size(tokens) >= 10 .and. this.transitionState(i).nAtoms() /= 1 ) then
+				this.transitionStateModel(i) = trim(adjustl(tokens(10)))
+			else
+				this.transitionStateModel(i) = GOptionsM3C_TSModel
+			end if
+			write(*,"(4X,A22,A)")  "Model = ", trim(this.transitionStateModel(i).fstr)
 			
 			deallocate( tokens )
 		end do
@@ -673,17 +685,22 @@ module FragmentsDB_
 		character(100), allocatable :: tokens(:)
 		logical :: firstTime
 		integer :: maxMass
+		character(100) :: fmtStr1, fmtStr2, fmtStr3
 		
 		if( allocated(this.potentials) ) deallocate( this.potentials )
 		allocate( this.potentials(this.nMolecules(),this.nMolecules()) )
 		
+		write(fmtStr1, '("(",i0,"x,A)")') GOptions_indentLength*1
+		write(fmtStr2, '("(",i0,"x,A10,A10,11X,A15,A10)")') GOptions_indentLength*1
+		write(fmtStr3, '("(",i0,"x,A10,A10,5X,2I3)")') GOptions_indentLength*1
+		
 		write(*,"(A)") ""
-		write(*,"(<GOptions_indentLength*1>X,A)") "-----------------------------------------------------------------------"
-		write(*,"(<GOptions_indentLength*1>X,A)") " MODEL POTENTIALS"
-		write(*,"(<GOptions_indentLength*1>X,A)") "-----------------------------------------------------------------------"
+		write(*,fmtStr1) "-----------------------------------------------------------------------"
+		write(*,fmtStr1) " MODEL POTENTIALS"
+		write(*,fmtStr1) "-----------------------------------------------------------------------"
 		write(*,"(A)") ""
-		write(*,"(<GOptions_indentLength*1>X,A10,A10,11X,A15,A10)") "R1", "R2", "potential", "params"
-		write(*,"(<GOptions_indentLength*1>X,A10,A10,11X,A15,A10)") "----", "----", "---------", "------"
+		write(*,fmtStr2) "R1", "R2", "potential", "params"
+		write(*,fmtStr2) "----", "----", "---------", "------"
 		
 		firstTime = .true.
 		do i=1,size(potentialTable)
@@ -702,7 +719,7 @@ module FragmentsDB_
 				idR1 = this.getIdClusterFromLabel( tokens(1) )
 				idR2 = this.getIdClusterFromLabel( tokens(2) )
 				
-				write(*,"(<GOptions_indentLength*1>X,A10,A10,5X,2I3)", advance="no") &
+				write(*,fmtStr3, advance="no") &
 						this.clusters(idR1).name, this.clusters(idR2).name, idR1, idR2
 						
 				if( this.potentials(idR1,idR2).getId() == 0 ) then
@@ -743,7 +760,7 @@ module FragmentsDB_
 							firstTime = .false.
 						end if
 						
-						write(*,"(<GOptions_indentLength*1>X,A10,A10,5X,2I3)", advance="no") &
+						write(*,fmtStr3, advance="no") &
 								this.clusters(i).name, this.clusters(j).name, i, j
 								
 						call this.potentials(i,j).init( "COULOMB(1.0)" )
@@ -768,7 +785,7 @@ module FragmentsDB_
 						firstTime = .false.
 					end if
 				
-					write(*,"(<GOptions_indentLength*1>X,A10,A10,5X,2I3)", advance="no") &
+					write(*,fmtStr3, advance="no") &
 							this.clusters(i).name, this.clusters(j).name, i, j
 							
 					call this.potentials(i,j).init( "HARDSPHERE()" )
@@ -786,7 +803,7 @@ module FragmentsDB_
 		end do
 		write(*,*) ""
 		
-		write(*,"(<GOptions_indentLength*1>X,A)") "-----------------------------------------------------------------------"
+		write(*,fmtStr1) "-----------------------------------------------------------------------"
 		
 		if( allocated(cols) ) deallocate( cols )
 		if( allocated(tokens) ) deallocate( tokens )
@@ -806,14 +823,19 @@ module FragmentsDB_
 		logical :: firstTime
 		integer :: maxMass
 		integer :: composition( AtomicElementsDB_nElems )
+		character(100) :: fmtStr1, fmtStr2, fmtStr3
+		
+		write(fmtStr1, '("(",i0,"x,A)")') GOptions_indentLength*1
+		write(fmtStr2, '("(",i0,"x,A10,A10,11X,A15,A10)")') GOptions_indentLength*1
+		write(fmtStr3, '("(",i0,"x,A10,A10,5X,2I3)")') GOptions_indentLength*1
 		
 		write(*,"(A)") ""
-		write(*,"(<GOptions_indentLength*1>X,A)") "-----------------------------------------------------------------------"
-		write(*,"(<GOptions_indentLength*1>X,A)") " ATOMIC MODEL POTENTIALS"
-		write(*,"(<GOptions_indentLength*1>X,A)") "-----------------------------------------------------------------------"
+		write(*,fmtStr1) "-----------------------------------------------------------------------"
+		write(*,fmtStr1) " ATOMIC MODEL POTENTIALS"
+		write(*,fmtStr1) "-----------------------------------------------------------------------"
 		write(*,"(A)") ""
-		write(*,"(<GOptions_indentLength*1>X,A10,A10,11X,A15,A10)") "R1", "R2", "potential", "params"
-		write(*,"(<GOptions_indentLength*1>X,A10,A10,11X,A15,A10)") "----", "----", "---------", "------"
+		write(*,fmtStr2) "R1", "R2", "potential", "params"
+		write(*,fmtStr2) "----", "----", "---------", "------"
 		
 		firstTime = .true.
 		do i=1,size(potentialTable)
@@ -832,7 +854,7 @@ module FragmentsDB_
 				idR1 = AtomicElementsDB_instance.atomicNumber( tokens(1) )
 				idR2 = AtomicElementsDB_instance.atomicNumber( tokens(2) )
 				
-				write(*,"(<GOptions_indentLength*1>X,A10,A10,5X,2I3)", advance="no") &
+				write(*,fmtStr3, advance="no") &
 						trim(tokens(1)), trim(tokens(2)), idR1, idR2
 						
 				if( this.atomicPotentials(idR1,idR2).getId() == 0 ) then
@@ -878,7 +900,7 @@ module FragmentsDB_
 						firstTime = .false.
 					end if
 				
-					write(*,"(<GOptions_indentLength*1>X,A10,A10,5X,2I3)", advance="no") &
+					write(*,fmtStr3, advance="no") &
 							AtomicElementsDB_instance.symbol(i), &
 							AtomicElementsDB_instance.symbol(j), i, j
 							
@@ -899,7 +921,7 @@ module FragmentsDB_
 		end do
 		write(*,*) ""
 		
-		write(*,"(<GOptions_indentLength*1>X,A)") "-----------------------------------------------------------------------"
+		write(*,fmtStr1) "-----------------------------------------------------------------------"
 		
 		if( allocated(cols) ) deallocate( cols )
 		if( allocated(tokens) ) deallocate( tokens )
@@ -913,6 +935,10 @@ module FragmentsDB_
 		
 		if( allocated(this.clusters) ) deallocate(this.clusters)
 		if( allocated(this.potentials) ) deallocate(this.potentials)
+
+		if( allocated(this.transitionState) ) deallocate(this.transitionState)
+		if( allocated(this.transitionStateModel) ) deallocate(this.transitionStateModel)
+		if( allocated(this.involvedInTS) ) deallocate(this.involvedInTS)
 	end subroutine destroyFragmentsDB
 	
 	!>
@@ -957,8 +983,8 @@ module FragmentsDB_
 		character(*), intent(in) :: name
 		integer :: output
 		
-		if( this.str2id_TS.contains( FString_toString(name) ) ) then
-			output = this.str2id_TS.at( FString_toString(name) )
+		if( this%str2id_TS%contains( FString_toString(name) ) ) then
+			output = this%str2id_TS%at( FString_toString(name) )
 		else
 ! 			call GOptions_error( &
 ! 					"The transition state --"//trim(adjustl(name))//"-- doesn't exist in the database", &
@@ -1148,7 +1174,7 @@ module FragmentsDB_
 		type(String), intent(in) :: label
 		logical :: output
 		
-		output = this.forbiddenReactions.contains( label )
+		output = this%forbiddenReactions%contains( label )
 	end function isForbidden
 	
 	!>

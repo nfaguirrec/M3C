@@ -314,14 +314,14 @@ module Fragment_
 			write(IO_STDOUT,"(4X,A22,A)") "name = ", this.name
 			write(IO_STDOUT,"(4X,A22,A)") "formula = ", trim(this.chemicalFormula())
 			write(IO_STDOUT,"(4X,A23,3F20.5,A)") "Moments of inertia = [", &
-					this.diagInertiaTensor.get(1,1)/amu/angs**2, &
-					this.diagInertiaTensor.get(2,2)/amu/angs**2, &
-					this.diagInertiaTensor.get(3,3)/amu/angs**2, &
+					this%diagInertiaTensor%get(1,1)/amu/angs**2, &
+					this%diagInertiaTensor%get(2,2)/amu/angs**2, &
+					this%diagInertiaTensor%get(3,3)/amu/angs**2, &
 					"  ]   amu*angs**2"
 			write(IO_STDOUT,"(4X,A23,3F20.5,A)") "Moments of inertia = [", &
-					this.diagInertiaTensor.get(1,1), &
-					this.diagInertiaTensor.get(2,2), &
-					this.diagInertiaTensor.get(3,3), &
+					this%diagInertiaTensor%get(1,1), &
+					this%diagInertiaTensor%get(2,2), &
+					this%diagInertiaTensor%get(3,3), &
 					"  ]   a.u."
 ! 			write(IO_STDOUT,"(4X,A23,3F14.5,A)") "Moments of inertia = [", &
 ! 					this.diagInertiaTensor.get(1,1)/amu/12.01_8, &
@@ -339,7 +339,7 @@ module Fragment_
 					lowerLimit = 5*(j-1)+1
 					upperLimit = min( 5*j, size(this.vibFrequencies) )
 					if( j/=1 ) write (IO_STDOUT,"(26X)",advance="no")
-					write (IO_STDOUT,"(<min(5,size(this.vibFrequencies))>F20.2)") ( this.vibFrequencies(i)/cm1, i = lowerLimit, upperLimit )
+					write (IO_STDOUT,"(5F20.2)") ( this.vibFrequencies(i)/cm1, i = lowerLimit, upperLimit )
 				end do
 				
 				write(IO_STDOUT,"(4X,A22)",advance="no")  " vibFreqsData = "
@@ -347,7 +347,7 @@ module Fragment_
 					lowerLimit = 5*(j-1)+1
 					upperLimit = min( 5*j, size(this.vibFrequenciesData) )
 					if( j/=1 ) write (IO_STDOUT,"(26X)",advance="no")
-					write (IO_STDOUT,"(<min(5,size(this.vibFrequencies))>A20)") ( " "//trim(this.vibFrequenciesData(i).fstr), i = lowerLimit, upperLimit )
+					write (IO_STDOUT,"(5A20)") ( " "//trim(this.vibFrequenciesData(i).fstr), i = lowerLimit, upperLimit )
 				end do
 				
 ! 				write(IO_STDOUT,"(4X,A22,F15.7,A)")  "   aver. vib. freq = ", product(this.vibFrequencies)**(1.0_8/size(this.vibFrequencies))/eV, "   eV"
@@ -669,7 +669,7 @@ module Fragment_
 		effMaxEnergy = this.maxEvib
 		if( present(maxEnergy) ) effMaxEnergy = min(this.maxEvib,maxEnergy)
 		
-		if( all(this.frozenVibrations_ == .true.) ) then
+		if( all(this.frozenVibrations_) ) then
 			this.vibrationalEnergy_ = 0.0_8
 		else
 			if( GOptionsM3C_useZPECorrection ) then
@@ -984,7 +984,7 @@ module Fragment_
 		integer :: i, eff_fv
 		real(8) :: ssum
 		
-		if( this.nAtoms() == 1 .or. all(this.frozenVibrations_ == .true.) ) then
+		if( this.nAtoms() == 1 .or. all(this.frozenVibrations_) ) then
 			this.LnWv_ = 0.0_8
 		else
 			ssum = 0.0_8

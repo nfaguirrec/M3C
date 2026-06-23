@@ -85,7 +85,7 @@ module ModelPotential_
 	end enum
 	integer, parameter :: MODEL_SIZE = MODEL_FLATEXP
 	
-	character(*), public, parameter :: MODEL_NAME(0:MODEL_SIZE) = [ &
+	character(*), public, parameter :: MODEL_NAME(0:MODEL_SIZE) = [ character(len=14) :: &
 		"NONE", &
 		"HARDSPHERE", &
 		"MORSE", &

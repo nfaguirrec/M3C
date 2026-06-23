@@ -574,9 +574,11 @@ module FragmentsListBase_
 		class(FragmentsListBase) :: this
 		integer, intent(in) :: pos
 		class(Fragment), intent(in) :: clus
+		character(100) :: fmt
 		
 		if( GOptions_printLevel >= 3 ) then
-			write(*,"(<GOptions_indentLength*2>X,A)") "Added cluster "//trim(clus.label())
+			write(fmt, '("(",i0,"x,A)")') GOptions_indentLength*2
+			write(*,fmt) "Added cluster "//trim(clus.label())
 		end if
 		
 		if( size(this.clusters) >= pos ) then
@@ -1101,8 +1103,9 @@ module FragmentsListBase_
 		integer :: i, j, n
 		real(8) :: centerOfMass(3)
 		logical :: outOfSphere
+		character(100) :: fmtStr1, fmtStr2, fmtStr3
 		
-		if( this.forceInitializing ) then
+		if( this%forceInitializing ) then
 			call this.initialGuessFragmentsListBase()
 			return
 		end if
@@ -1110,9 +1113,9 @@ module FragmentsListBase_
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		! Por omisión se generan centros aleatorios
 		! la primera vez que entra a esta función
-		if( this.forceRandomCenters .or. ( .not. GOptionsM3C_useRandomWalkers ) ) then
+		if( this%forceRandomCenters .or. ( .not. GOptionsM3C_useRandomWalkers ) ) then
 			call this.randomCenters()
-			this.forceRandomCenters = .false.
+			this%forceRandomCenters = .false.
 		else
 			outOfSphere = .true.
 			do n=1,100000
@@ -1158,12 +1161,14 @@ module FragmentsListBase_
 			call GOptions_paragraph( "Geometry", indent=2 )
 			
 			call GOptions_valueReport( "CM", this.centerOfMass(), "A", indent=2 )
-			write(*,*) ""
+			write(fmtStr1, '("(",i0,"x,A20,3X,3A10,3X,A10)")') GOptions_indentLength*2
+			write(fmtStr2, '("(",i0,"x,A33,2A10,3X,A10)")') GOptions_indentLength*2
+			write(fmtStr3, '("(",i0,"x,A20,3X,3F10.5,3X,F10.5)")') GOptions_indentLength*2
 			
-			write(*,"(<GOptions_indentLength*2>X,A20,3X,3A10,3X,A10)") "id", "X", "Y", "Z", "R"
-			write(*,"(<GOptions_indentLength*2>X,A33,2A10,3X,A10)") "A", "A", "A", "A"
+			write(*,fmtStr1) "id", "X", "Y", "Z", "R"
+			write(*,fmtStr2) "A", "A", "A", "A"
 			do i=1,this.nMolecules()
-				write(*,"(<GOptions_indentLength*2>X,A20,3X,3F10.5,3X,F10.5)") trim(this.clusters(i).label()), &
+				write(*,fmtStr3) trim(this.clusters(i).label()), &
 						this.clusters(i).center()/angs, this.clusters(i).radius( type=GOptionsM3C_radiusType )/angs
 			end do
 			write(*,*) ""
@@ -1222,6 +1227,7 @@ module FragmentsListBase_
 		class(FragmentsListBase) :: this
 		
 		integer :: i, n
+		character(100) :: fmtStr1, fmtStr2, fmtStr3, fmtStr4, fmtStr5, fmtStr6
 		
 		if( this.forceInitializing ) then
 			call this.initialGuessFragmentsListBase()
@@ -1246,17 +1252,25 @@ module FragmentsListBase_
 			call GOptions_paragraph( "Vibrational energy summary", indent=2 )
 			
 			if( GOptionsM3C_useZPECorrection ) then
-				write(*,"(<GOptions_indentLength*2>X,A15,2A10)") "id", "Evib", "maxEvib"
-				write(*,"(<GOptions_indentLength*2>X,A25,A10)") "eV", "eV"
+				write(fmtStr1, '("(",i0,"x,A15,2A10)")') GOptions_indentLength*2
+				write(fmtStr2, '("(",i0,"x,A25,A10)")') GOptions_indentLength*2
+				write(fmtStr3, '("(",i0,"x,A15,2F10.5)")') GOptions_indentLength*2
+				
+				write(*,fmtStr1) "id", "Evib", "maxEvib"
+				write(*,fmtStr2) "eV", "eV"
 				do i=1,this.nMolecules()
-					write(*,"(<GOptions_indentLength*2>X,A15,2F10.5)") &
+					write(*,fmtStr3) &
 						trim(this.clusters(i).label()), this.clusters(i).vibrationalEnergy_/eV, this.clusters(i).maxEvib/eV
 				end do
 			else
-				write(*,"(<GOptions_indentLength*2>X,A15,3A10)") "id", "Evib", "ZPE", "maxEvib"
-				write(*,"(<GOptions_indentLength*2>X,A25,2A10)") "eV", "eV", "eV"
+				write(fmtStr4, '("(",i0,"x,A15,3A10)")') GOptions_indentLength*2
+				write(fmtStr5, '("(",i0,"x,A25,2A10)")') GOptions_indentLength*2
+				write(fmtStr6, '("(",i0,"x,A15,3F10.5)")') GOptions_indentLength*2
+				
+				write(*,fmtStr4) "id", "Evib", "ZPE", "maxEvib"
+				write(*,fmtStr5) "eV", "eV", "eV"
 				do i=1,this.nMolecules()
-					write(*,"(<GOptions_indentLength*2>X,A15,3F10.5)") &
+					write(*,fmtStr6) &
 						trim(this.clusters(i).label()), this.clusters(i).vibrationalEnergy_/eV, this.clusters(i).ZPE/eV, this.clusters(i).maxEvib/eV
 				end do
 			end if
@@ -1383,13 +1397,15 @@ module FragmentsListBase_
 		character(1000) :: line
 		character(1) :: prefixEff
 		integer :: i
+		character(100) :: fmt
 		
 		prefixEff = ""
 		if( present(prefix) ) prefixEff = prefix
 		
 ! #define JVal(i) trim(adjustl(FString_fromReal(norm2(this.clusters(i).J_),"(F10.5)")))
 #define JVal(i) trim(adjustl(FString_fromInteger(int(norm2(this.clusters(i).J_)),"(I10)")))
-		write(line,"(1X,A1,2X,<this.nMolecules()>A)") trim(prefixEff), &
+		write(fmt, '("(1X,A1,2X,",i0,"A)")') this.nMolecules()
+		write(line, fmt) trim(prefixEff), &
 			( trim(this.clusters(this.idSorted(i)).label())//"#"//JVal(this.idSorted(i))//"  ", i=1,this.nMolecules() )
 #undef JVal
 		
@@ -1537,7 +1553,7 @@ module FragmentsListBase_
 		integer :: i
 		type(String) :: label
 		
-		class(StringIntegerMapIterator), pointer :: iter
+		type(StringIntegerMapIterator), pointer :: iter
 		type(StringIntegerPair) :: pair
 		
 		counts = StringIntegerMap()
@@ -1724,6 +1740,7 @@ module FragmentsListBase_
 		
 		type(Matrix) :: Im
 		real(8), allocatable :: eValues(:)
+		character(100) :: fmtStr1, fmtStr2
 		integer :: i
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1757,9 +1774,12 @@ module FragmentsListBase_
 			call GOptions_valueReport( "ft", this.ft_, indent=2 )
 			call GOptions_valueReport( "fl", this.fl_, indent=2 )
 			write(*,*) ""
-			write(*,"(<GOptions_indentLength*2>X,3A20)") "Ixx", "Iyy", "Izz"
-			write(*,"(<GOptions_indentLength*2>X,3A20)") "amu*A^2", "amu*A^2", "amu*A^2"
-			write(*,"(<GOptions_indentLength*2>X,3F20.5)") this.diagInertiaTensor/amu/angs**2
+			write(fmtStr1, '("(",i0,"x,3A20)")') GOptions_indentLength*2
+			write(fmtStr2, '("(",i0,"x,3F20.5)")') GOptions_indentLength*2
+			
+			write(*,fmtStr1) "Ixx", "Iyy", "Izz"
+			write(*,fmtStr1) "amu*A^2", "amu*A^2", "amu*A^2"
+			write(*,fmtStr2) this.diagInertiaTensor/amu/angs**2
 			write(*,*) ""
 		end if
 	end subroutine updateInertiaTensor
@@ -1774,16 +1794,26 @@ module FragmentsListBase_
 		real(8) :: Rij, rvij, twoFragContrib, oneFragContrib
 		integer :: idProd
 		real(8) :: rBuffer
+		character(100) :: fmtStr1, fmtStr2, fmtStr3, fmtStr4, fmtStr5, fmtStr6, fmtStr7, fmtStr8
 		
 		this.intermolEnergy_ = 0.0_8
 		
 		if( GOptions_printLevel >= 3 ) then
 			call GOptions_paragraph( "Intermolecular energy contributions", indent=2 )
 			
-			write(*,"(<GOptions_indentLength*2>X,A)") "One body contributions"
+			write(fmtStr1, '("(",i0,"x,A)")') GOptions_indentLength*2
+			write(fmtStr2, '("(",i0,"x,A30,3X,A15)")') GOptions_indentLength*2
+			write(fmtStr3, '("(",i0,"x,33X,A15)")') GOptions_indentLength*2
+			write(fmtStr4, '("(",i0,"x,A30,3X,F15.5)")') GOptions_indentLength*2
+			write(fmtStr5, '("(",i0,"x,A30,3X,A10,3X,A10,3X,A15)")') GOptions_indentLength*2
+			write(fmtStr6, '("(",i0,"x,A43,3X,A10,3X,A15)")') GOptions_indentLength*2
+			write(fmtStr7, '("(",i0,"x,A30,3X,F10.5,3X,F15.5)")') GOptions_indentLength*2
+			write(fmtStr8, '("(",i0,"x,A30,16X,F15.5)")') GOptions_indentLength*2
 			
-			write(*,"(<GOptions_indentLength*2>X,A30,3X,A15)") "id", "E"
-			write(*,"(<GOptions_indentLength*2>X,33X,A15)") "eV"
+			write(*,fmtStr1) "One body contributions"
+			
+			write(*,fmtStr2) "id", "E"
+			write(*,fmtStr3) "eV"
 		end if
 		
 		oneFragContrib = 0.0_8
@@ -1791,7 +1821,7 @@ module FragmentsListBase_
 			oneFragContrib = oneFragContrib + this.clusters(i).electronicEnergy
 			
 			if( GOptions_printLevel >= 3 ) then
-				write(*,"(<GOptions_indentLength*2>X,A30,3X,F15.5)") &
+				write(*,fmtStr4) &
 					trim(this.clusters(i).label()), &
 					this.clusters(i).electronicEnergy/eV
 			end if
@@ -1800,9 +1830,9 @@ module FragmentsListBase_
 ! 		if( this.nMolecules() < 2 ) ... @todo Creo que el siguiente bloque va solo si esto se satisface
 
 		if( GOptions_printLevel >= 3 ) then
-			write(*,"(<GOptions_indentLength*2>X,A)") "Two body contributions"
-			write(*,"(<GOptions_indentLength*2>X,A30,3X,A10,3X,A10,3X,A15)") "id1--id2", "r12", "E"
-			write(*,"(<GOptions_indentLength*2>X,A43,3X,A10,3X,A15)") "A", "eV"
+			write(*,fmtStr1) "Two body contributions"
+			write(*,fmtStr5) "id1--id2", "r12", "E"
+			write(*,fmtStr6) "A", "eV"
 		end if
 		
 		this.currentProducts = 0
@@ -1829,7 +1859,7 @@ module FragmentsListBase_
 				rBuffer = FragmentsDB_instance.potential( this.clusters(i).id, this.clusters(j).id, rvij )
 				
 				if( GOptions_printLevel >= 3 ) then
-					write(*,"(<GOptions_indentLength*2>X,A30,3X,F10.5,3X,F15.5)") &
+					write(*,fmtStr7) &
 						trim(this.clusters(i).label())//"--"//trim(this.clusters(j).label()), &
 						rvij/angs, rBuffer/eV
 				end if
@@ -1842,9 +1872,9 @@ module FragmentsListBase_
 		
 		if( GOptions_printLevel >= 3 ) then
 			write(*,*) ""
-			write(*,"(<GOptions_indentLength*2>X,A30,3X,F15.5)") "V^(1)", oneFragContrib/eV
-			write(*,"(<GOptions_indentLength*2>X,A30,16X,F15.5)") "V^(2)", twoFragContrib/eV
-			write(*,"(<GOptions_indentLength*2>X,A30,16X,F15.5)") "E^0", FragmentsDB_instance.energyReference()/eV
+			write(*,fmtStr4) "V^(1)", oneFragContrib/eV
+			write(*,fmtStr8) "V^(2)", twoFragContrib/eV
+			write(*,fmtStr8) "E^0", FragmentsDB_instance.energyReference()/eV
 			write(*,*) ""
 			call GOptions_valueReport( "V(r)", this.intermolEnergy_/eV, "eV", indent=2 )
 		end if
@@ -2133,9 +2163,9 @@ module FragmentsListBase_
 			call this.clusters(i).setCenter( r.data(:,1) )
 		end do
 		
-		this.inertiaAxes.data(:,1) = [ 1.0_8, 0.0_8, 0.0_8 ]
-		this.inertiaAxes.data(:,2) = [ 0.0_8, 1.0_8, 0.0_8 ]
-		this.inertiaAxes.data(:,3) = [ 0.0_8, 0.0_8, 1.0_8 ]
+		this%inertiaAxes%data(:,1) = [ 1.0_8, 0.0_8, 0.0_8 ]
+		this%inertiaAxes%data(:,2) = [ 0.0_8, 1.0_8, 0.0_8 ]
+		this%inertiaAxes%data(:,3) = [ 0.0_8, 0.0_8, 1.0_8 ]
 		
 ! 		this.ft_ = 0
 ! 		this.fr_ = 0

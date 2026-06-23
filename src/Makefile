@@ -1,10 +1,20 @@
 MAKEFLAGS = -s
 FC = ifort
-FCFLAGS = -static -static-intel -static-libgcc -traceback -w -I. -g -fpp -mkl -I${HOME}/Develop/scift/src
-LDFLAGS = -L${HOME}/Develop/scift/src -lscift
-TLIB = 
+GFCFLAGS = -w -I. -I/home/aguirre/Software/miniconda3/envs/python3.10/include -I/usr/include -cpp -O3 -g -fPIC -fdec-structure -ffree-line-length-none -I$(SCIFT_HOME)/src
+GLDFLAGS = -L$(SCIFT_HOME)/src -L/home/aguirre/Software/miniconda3/envs/python3.10/lib -L/usr/lib -Wl,-rpath,/home/aguirre/Software/miniconda3/envs/python3.10/lib -lscift -lfftw3 -lopenblas -llapack
+IFCFLAGS = -w -I. -O3 -g -fPIC -fpp -mkl -I$(SCIFT_HOME)/src
+ILDFLAGS = -L$(SCIFT_HOME)/src -lscift
+TLIB = libM3C.a
 
-all: AzizSlamanPotential.o Fragment.o FragmentsDB.o FragmentsListBase.o FragmentsList.o GOptionsM3C.o MarkovChain.o ModelPotential.o NNLS.o Reactor.o  $(TLIB) M3CBR M3C M3CfitBR molecule.ZPE 
+ifeq ($(findstring gfortran,$(FC)),gfortran)
+    FCFLAGS = $(GFCFLAGS)
+    LDFLAGS = $(GLDFLAGS)
+else
+    FCFLAGS = $(IFCFLAGS)
+    LDFLAGS = $(ILDFLAGS)
+endif
+
+all:  AzizSlamanPotential.o Fragment.o FragmentsDB.o FragmentsListBase.o FragmentsList.o GOptionsM3C.o MarkovChain.o ModelPotential.o NNLS.o Reactor.o  $(TLIB) M3CBR M3C M3CfitBR molecule.ZPE 
 
 AzizSlamanPotential.o azizslamanpotential_.mod: AzizSlamanPotential.f90 
 	fmake
@@ -75,6 +85,10 @@ Reactor.o reactor_.mod: Reactor.f90 fragment_.mod azizslamanpotential_.mod gopti
 	fmake
 	echo -n 'Building Reactor.f90 '
 	time -f "(%E)" $(FC) $(FCFLAGS) -c Reactor.f90
+
+$(TLIB): AzizSlamanPotential.o Fragment.o FragmentsDB.o FragmentsListBase.o FragmentsList.o GOptionsM3C.o MarkovChain.o ModelPotential.o NNLS.o Reactor.o 
+	echo 'Building library $(TLIB)'
+	ar rvs $(TLIB) AzizSlamanPotential.o Fragment.o FragmentsDB.o FragmentsListBase.o FragmentsList.o GOptionsM3C.o MarkovChain.o ModelPotential.o NNLS.o Reactor.o  > /dev/null 2> /dev/null
 
 clean:
 	rm -f *.o *.mod *~ .deps M3CBR M3C M3CfitBR molecule.ZPE  2> /dev/null

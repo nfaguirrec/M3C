@@ -289,7 +289,7 @@ program M3CBR
 		write(*,*) ""
 		
 		do i=1,size(isMappedExp2Data)
-			if( isMappedExp2Data(i) == .false. ) then
+			if( .not. isMappedExp2Data(i) ) then
 				write(*,"(A)") "@@@ WARNING @@@ "//trim(expBRKey(i).fstr)//" has not been mapped. Selecting zero probability in all range of energy"
 			end if
 		end do

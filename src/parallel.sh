@@ -99,7 +99,7 @@ function parallel()
 				
 				if [ -n "$command" ]
 				then
-					`echo "$command"` &
+					`$command` &
 					pid="$!"
 					
 					pidJobs[$pid]=$pid

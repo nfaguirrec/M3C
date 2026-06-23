@@ -22,13 +22,16 @@ M3C is known to work on GNU/Linux. However, it should work on any POSIX-complian
 
 - **[GNU Awk (gawk)](https://www.gnu.org/software/gawk/)** (version >= 4.0)
 
-- **[Intel® Fortran Compiler](https://software.intel.com/en-us/fortran-compilers)** (version >= 14.0.3)<br>
-  M3C has not been tested with any other compiler.
+- **Fortran Compiler**:
+  - **[Intel® Fortran Compiler (ifort / ifx)](https://software.intel.com/en-us/fortran-compilers)** (version >= 14.0.3)
+  - **[GNU Fortran Compiler (gfortran)](https://gcc.gnu.org/fortran/)**
   
-- **[Intel® Math Kernel Library (Intel® MKL)](https://software.intel.com/en-us/mkl)**<br>
-  M3C has not been tested with any other math library.
+- **Math Libraries**:
+  - For Intel compiler: **[Intel® Math Kernel Library (Intel® MKL)](https://software.intel.com/en-us/mkl)**
+  - For GNU Fortran: **FFTW3, OpenBLAS, LAPACK** (usually available in system repositories or Conda environments)
 
-- **[SciFT (Scientific Fortran Tools)](https://github.com/nfaguirrec/scift)**<br>
+- **[SciFT (Scientific Fortran Tools)](https://github.com/nfaguirrec/scift)** (compiled with the same compiler)
+
 
 **Recommended Dependencies:**
 
@@ -69,21 +72,25 @@ doc   doxyfile  LICENSE.jmol     LICENSE.scift  Makefile   src        utils
 docs  LICENSE   LICENSE.libmsym  M3Cvars.sh     README.md  templates  VERSION
 ```
 
-Enter in the M3C directory (`cd M3C`) and modify the Makefile file (`src/Makefile`). In particular, choose the right path to the scift library (`-I<PATH_TO_SCIFT>/src` and `-L<PATH_TO_SCIFT>/src`).
+Enter the M3C directory (`cd M3C`). To build the code, you can select the Fortran compiler by specifying the `FC` variable (which defaults to `ifort`):
 
-To build the code just type make inside the main directory as follows:
-```
+Using the Intel Compiler:
+```bash
 $ make
-cd src; make; cd ..
-make[1]: Entering directory '/scratch/nestor/M3C/src'
-Building dependencies for AzizSlamanPotential.f90 ... OK
-Building dependencies for Fragment.f90 ... OK
-Building dependencies for FragmentsDB.f90 ... OK
-...
-Building MarkovChain.f90 (0:03.40)
-Building NNLS.f90 (0:00.08)
-Building M3CBR.f90 (0:01.53)
 ```
+
+Using the GNU Fortran Compiler (`gfortran`):
+```bash
+$ make FC=gfortran
+```
+
+You can also override the path to the `SciFT` library using `SCIFT_HOME` (which defaults to `/home/aguirre/Develop/scift`):
+```bash
+$ make FC=gfortran SCIFT_HOME=/path/to/scift
+```
+
+The build process will automatically propagate the chosen compiler down to all sub-makes and dependency builders.
+
 
 ## Installing M3C
 
